@@ -1,0 +1,112 @@
+name: cln-simple-docker
+
+services:
+  nginx:
+    container_name: cln-simple-nginx
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ../api:/var/www/api
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      php:
+        condition: service_healthy
+
+  php:
+    container_name: cln-simple-php
+    build:
+      context: ./php
+    volumes:
+      - ../api:/var/www/html
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+    environment:
+      AUTO_MIGRATE: "1"
+      APP_SECRET: dev_secret_change_in_production
+      JWT_SECRET: dev_jwt_secret_must_be_at_least_32_characters_long
+      DATABASE_URL: mysql://app:app@mysql:3306/app?serverVersion=8.0&charset=utf8mb4
+      REDIS_URL: redis://redis:6379
+      MESSENGER_TRANSPORT_DSN: amqp://guest:guest@rabbitmq:5672/%2f/messages
+      PHP_IDE_CONFIG: serverName=Docker
+    healthcheck:
+      test: ["CMD-SHELL", "php -r \"fsockopen('127.0.0.1', 9000) || exit(1);\""]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 120s
+
+  messenger-worker:
+    container_name: cln-simple-messenger-worker
+    profiles: [workers]
+    build:
+      context: ./php
+    command: php bin/console messenger:consume async scheduler_default -vv --time-limit=3600
+    volumes:
+      - ../api:/var/www/html
+    depends_on:
+      php:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+    environment:
+      AUTO_MIGRATE: "0"
+      APP_SECRET: dev_secret_change_in_production
+      JWT_SECRET: dev_jwt_secret_must_be_at_least_32_characters_long
+      DATABASE_URL: mysql://app:app@mysql:3306/app?serverVersion=8.0&charset=utf8mb4
+      REDIS_URL: redis://redis:6379
+      MESSENGER_TRANSPORT_DSN: amqp://guest:guest@rabbitmq:5672/%2f/messages
+      XDEBUG_MODE: "off"
+    restart: unless-stopped
+
+  mysql:
+    container_name: cln-simple-mysql
+    image: mysql:8
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: app
+      MYSQL_USER: app
+      MYSQL_PASSWORD: app
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  redis:
+    container_name: cln-simple-redis
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+
+  rabbitmq:
+    container_name: cln-simple-rabbitmq
+    image: rabbitmq:3-management
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+volumes:
+  mysql_data:
+    name: cln-simple-mysql-data
+  rabbitmq_data:
+    name: cln-simple-rabbitmq-data

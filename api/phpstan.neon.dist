@@ -1,0 +1,24 @@
+parameters:
+    level: max
+    paths:
+        - src
+        - tests
+    tmpDir: var/phpstan
+
+    inferPrivatePropertyTypeFromConstructor: true
+    checkUninitializedProperties: true
+    checkBenevolentUnionTypes: true
+
+    # Wire stubs: untyped array payloads → $data['key'] is mixed
+    ignoreErrors:
+        -
+            identifier: return.type
+            path: tests/Utils/Asserts/InputAssertUtilsTest.php
+        # Fixture props assigned in setUp / create* helpers, not constructors
+        -
+            identifier: property.uninitialized
+            path: tests/*TestCase.php
+        # Doctrine ManyToOne associations are set via setters / UnitOfWork, not constructors
+        -
+            identifier: property.uninitialized
+            path: src/Infrastructure/Persistence/Doctrine/Entity/*

@@ -1,0 +1,94 @@
+parameters:
+    app.file_storage.path: '%kernel.project_dir%/var/storage'
+    app.file.tmp_ttl_hours: 24
+    app.file.max_upload_bytes: 10485760
+    scheduler_file_cleanup_cron_default: '0 3 * * *'
+    app.scheduler.file_cleanup_cron: '%env(default:scheduler_file_cleanup_cron_default:SCHEDULER_FILE_CLEANUP_CRON)%'
+    app.mailer_from_default: 'noreply@example.com'
+    app.mailer_from: '%env(default:app.mailer_from_default:MAILER_FROM)%'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/Domain/'
+            - '../src/Kernel.php'
+
+    App\Application\Port\User\UserRepositoryInterface:
+        alias: App\Infrastructure\Persistence\Doctrine\Repository\DoctrineUserRepository
+
+    App\Application\Port\Task\TaskRepositoryInterface:
+        alias: App\Infrastructure\Persistence\Doctrine\Repository\DoctrineTaskRepository
+
+    App\Application\Port\Asset\AssetRepositoryInterface:
+        alias: App\Infrastructure\Persistence\Doctrine\Repository\DoctrineAssetRepository
+
+    App\Application\Port\TaskGroup\TaskGroupRepositoryInterface:
+        alias: App\Infrastructure\Persistence\Doctrine\Repository\DoctrineTaskGroupRepository
+
+    App\Application\Port\File\FileRepositoryInterface:
+        alias: App\Infrastructure\Persistence\Doctrine\Repository\DoctrineFileRepository
+
+    App\Application\Port\File\FileStorageInterface:
+        alias: App\Infrastructure\Storage\LocalFileStorageAdapter
+
+    App\Application\Port\File\FileDownloadUrlProviderInterface:
+        alias: App\Infrastructure\Routing\SymfonyFileDownloadUrlProvider
+
+    App\Application\Port\Security\TokenProviderInterface:
+        alias: App\Infrastructure\Security\LexikTokenProvider
+
+    App\Application\Port\PasswordHasherInterface:
+        alias: App\Infrastructure\Security\SymfonyPasswordHasher
+
+    App\Application\Port\TransactionManagerInterface:
+        alias: App\Infrastructure\Persistence\Doctrine\DoctrineTransactionManager
+
+    App\Application\Port\CacheInterface:
+        alias: App\Infrastructure\Cache\RedisCacheService
+
+    App\Application\Port\Notification\NotificationPreferenceRepositoryInterface:
+        alias: App\Infrastructure\Persistence\Doctrine\Repository\DoctrineNotificationPreferenceRepository
+
+    App\Application\Port\Notification\MailerInterface:
+        alias: App\Infrastructure\Notification\Adapter\SymfonyMailerAdapter
+
+    App\Application\Port\Notification\SmsSenderInterface:
+        alias: App\Infrastructure\Notification\Adapter\LoggingSmsSenderAdapter
+
+    App\Application\Port\Notification\NotificationTemplateRendererInterface:
+        alias: App\Infrastructure\Notification\Template\TwigNotificationTemplateRenderer
+
+    App\Infrastructure\Cache\RedisCacheService:
+        arguments:
+            $cache: '@cache.app'
+
+    App\Infrastructure\Storage\LocalFileStorageAdapter:
+        arguments:
+            $basePath: '%app.file_storage.path%'
+
+    App\Infrastructure\Notification\Adapter\SymfonyMailerAdapter:
+        arguments:
+            $fromAddress: '%app.mailer_from%'
+
+    Twig\Environment:
+        factory: ['App\Infrastructure\Notification\Template\TwigEnvironmentFactory', 'create']
+        arguments:
+            $templatesPath: '%kernel.project_dir%/templates'
+
+    App\Application\Policy\File\UploadFilePolicy:
+        arguments:
+            $maxUploadBytes: '%app.file.max_upload_bytes%'
+            $allowedMimeTypes:
+                - image/jpeg
+                - image/png
+                - image/webp
+                - image/gif
+
+    App\Application\Service\File\Lifecycle\FileCleanupTmpService:
+        arguments:
+            $tmpTtlHours: '%app.file.tmp_ttl_hours%'

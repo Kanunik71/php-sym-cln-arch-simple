@@ -1,0 +1,7 @@
+{% block subject %}Welcome{% endblock %}
+
+{% block body %}
+<p>Hello{% if fname %} {{ fname }}{% endif %},</p>
+<p>Your account has been created successfully.</p>
+<p>Email: {{ email }}</p>
+{% endblock %}

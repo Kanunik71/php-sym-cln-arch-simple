@@ -1,0 +1,8 @@
+# Symfony
+/api/.env.local
+/api/var/
+/api/vendor/
+/api/config/jwt/*.pem
+
+# IDE
+.idea/

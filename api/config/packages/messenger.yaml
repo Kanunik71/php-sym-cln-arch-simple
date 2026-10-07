@@ -1,0 +1,18 @@
+framework:
+    messenger:
+        transports:
+            async: '%env(MESSENGER_TRANSPORT_DSN)%'
+            sync: 'sync://'
+
+        routing:
+            'App\Application\Event\Task\TaskCreated': async
+            'App\Application\Event\TaskGroup\TaskGroupsRecalculationRequestedEvent': async
+            'App\Application\Event\TaskGroup\TaskGroupStatusChangedEvent': async
+            'App\Application\Event\User\UserRegisteredEvent': async
+            'App\Application\Event\User\UserUpdatedEvent': async
+
+when@test:
+    framework:
+        messenger:
+            transports:
+                async: 'in-memory://'
