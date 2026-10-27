@@ -2,6 +2,6 @@ lexik_jwt_authentication:
     secret_key: '%env(JWT_SECRET)%'
     public_key: '%env(JWT_SECRET)%'
     pass_phrase: ''
-    token_ttl: 3600
+    token_ttl: '%app.jwt.access_ttl%'
     encoder:
         signature_algorithm: HS256

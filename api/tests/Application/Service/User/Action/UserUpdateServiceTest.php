@@ -4,19 +4,29 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\User\Action;
 
+use App\Application\Service\Auth\RefreshTokenService;
 use App\Application\Service\User\Action\UserLoginService;
+use App\Application\Service\User\Action\UserRefreshService;
 use App\Application\Service\User\Action\UserUpdateService;
 use App\Application\Model\User\Action\UserLoginModel;
+use App\Application\Model\User\Action\UserRefreshModel;
 use App\Application\Model\User\Action\UserUpdateModel;
 use App\Application\Model\User\UserLocationModel;
+use App\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use App\Application\Event\User\UserUpdatedEvent;
 use App\Application\Exception\User\UnauthorizedUserAccessException;
 use App\Application\Exception\User\UserAlreadyExistsException;
 use App\Application\Exception\User\UserNotFoundException;
 use App\Shared\Utils\UidUtils;
 use App\Tests\DatabaseTestCase;
+use App\Tests\Support\TestBed;
 use App\Tests\Support\Trait\Common\AssertMessengerTrait;
 use App\Tests\Support\Trait\Model\AssertsUserModelTrait;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Event\PostFlushEventArgs;
+use Doctrine\ORM\Events;
+use RuntimeException;
+use Symfony\Component\Uid\Uuid;
 
 final class UserUpdateServiceTest extends DatabaseTestCase
 {
@@ -121,6 +131,68 @@ final class UserUpdateServiceTest extends DatabaseTestCase
         ));
 
         $this->assertNotSame('', $loginResult->token);
+    }
+
+    public function testPasswordChangeRollsBackWhenFlushFails(): void
+    {
+        $user = $this->bed->createUser(email: 'john@example.com');
+        $userId = $user->getId();
+        $originalHash = $user->getPasswordHash();
+        $issued = $this->bed->get(RefreshTokenService::class)->issue($userId);
+
+        $entityManager = $this->bed->get(EntityManagerInterface::class);
+        $entityManager->getEventManager()->addEventListener(Events::postFlush, new class($userId) {
+            private int $flushes = 0;
+
+            public function __construct(private string $userId)
+            {
+            }
+
+            public function postFlush(PostFlushEventArgs $args): void
+            {
+                $this->flushes++;
+
+                if ($this->flushes >= 2) {
+                    throw new RuntimeException('forced rollback');
+                }
+
+                $entity = $args->getObjectManager()->find(UserEntity::class, Uuid::fromString($this->userId));
+
+                if ($entity instanceof UserEntity) {
+                    $entity->setFname('rollback-marker');
+                }
+            }
+        });
+
+        try {
+            $this->bed->get(UserUpdateService::class)->execute(
+                new UserUpdateModel(
+                    fname: $user->getFname(),
+                    lname: $user->getLname(),
+                    email: $user->getEmail()->toString(),
+                    password: 'new-secret123',
+                    avatarFileId: $user->getAvatarFileId(),
+                ),
+                userId: $userId,
+                currentUserId: $userId,
+            );
+            $this->fail('Password change must fail so the transaction can roll back.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('forced rollback', $exception->getMessage());
+        }
+
+        self::ensureKernelShutdown();
+        self::bootKernel();
+        $this->bed = TestBed::create(static::getContainer());
+
+        $persisted = $this->bed->findUserById($userId);
+        $this->assertNotNull($persisted);
+        $this->assertSame($originalHash, $persisted->getPasswordHash());
+
+        $refreshed = $this->bed->get(UserRefreshService::class)->execute(
+            new UserRefreshModel(refreshToken: $issued->token),
+        );
+        $this->assertNotSame('', $refreshed->token);
     }
 
     public function testThrowsWhenUserNotFound(): void

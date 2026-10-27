@@ -11,6 +11,9 @@ final readonly class UserLoginResponseModel implements ArrayableModelInterface
 {
     public function __construct(
         public string $token,
+        public string $refreshToken,
+        public string $tokenType = 'Bearer',
+        public int $expiresIn = 900,
     ) {
     }
 
@@ -19,6 +22,11 @@ final readonly class UserLoginResponseModel implements ArrayableModelInterface
     {
         return new self(
             token: InputAssertUtils::requiredString($data['token'] ?? null, 'token'),
+            refreshToken: InputAssertUtils::requiredString($data['refreshToken'] ?? null, 'refreshToken'),
+            tokenType: InputAssertUtils::optionalString($data['tokenType'] ?? null, 'tokenType') ?? 'Bearer',
+            expiresIn: isset($data['expiresIn'])
+                ? InputAssertUtils::requiredInt($data['expiresIn'], 'expiresIn')
+                : 900,
         );
     }
 
@@ -27,6 +35,9 @@ final readonly class UserLoginResponseModel implements ArrayableModelInterface
     {
         return [
             'token' => $this->token,
+            'refreshToken' => $this->refreshToken,
+            'tokenType' => $this->tokenType,
+            'expiresIn' => $this->expiresIn,
         ];
     }
 }

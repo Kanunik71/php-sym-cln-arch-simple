@@ -2,8 +2,13 @@ parameters:
     app.file_storage.path: '%kernel.project_dir%/var/storage'
     app.file.tmp_ttl_hours: 24
     app.file.max_upload_bytes: 10485760
+    app.jwt.access_ttl: 900
+    app.refresh_token.ttl_seconds: 2592000
+    app.refresh_token.cleanup_retention_seconds: 604800
     scheduler_file_cleanup_cron_default: '0 3 * * *'
     app.scheduler.file_cleanup_cron: '%env(default:scheduler_file_cleanup_cron_default:SCHEDULER_FILE_CLEANUP_CRON)%'
+    scheduler_refresh_token_cleanup_cron_default: '30 3 * * *'
+    app.scheduler.refresh_token_cleanup_cron: '%env(default:scheduler_refresh_token_cleanup_cron_default:SCHEDULER_REFRESH_TOKEN_CLEANUP_CRON)%'
     app.mailer_from_default: 'noreply@example.com'
     app.mailer_from: '%env(default:app.mailer_from_default:MAILER_FROM)%'
 
@@ -41,6 +46,18 @@ services:
 
     App\Application\Port\Security\TokenProviderInterface:
         alias: App\Infrastructure\Security\LexikTokenProvider
+
+    App\Application\Port\Auth\RefreshTokenRepositoryInterface:
+        alias: App\Infrastructure\Persistence\Doctrine\Repository\DoctrineRefreshTokenRepository
+
+    App\Application\Service\Auth\RefreshTokenService:
+        arguments:
+            $ttlSeconds: '%app.refresh_token.ttl_seconds%'
+            $cleanupRetentionSeconds: '%app.refresh_token.cleanup_retention_seconds%'
+
+    App\Application\Service\Auth\UserTokenPairService:
+        arguments:
+            $accessTtl: '%app.jwt.access_ttl%'
 
     App\Application\Port\PasswordHasherInterface:
         alias: App\Infrastructure\Security\SymfonyPasswordHasher

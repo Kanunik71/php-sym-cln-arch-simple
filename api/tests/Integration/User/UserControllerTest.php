@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\User;
 
-use App\Application\Model\User\Action\UserLoginModel;
-use App\Application\Model\User\Action\UserUpdateModel;
-use App\Application\Model\User\UserLocationModel;
 use App\Application\Exception\ErrorCodeEnum;
+use App\Application\Model\User\Action\UserLoginModel;
+use App\Application\Model\User\Action\UserRefreshModel;
+use App\Application\Model\User\Action\UserUpdateModel;
+use App\Application\Model\User\Read\UserLoginResponseModel;
+use App\Application\Model\User\UserLocationModel;
 use App\Shared\Utils\UidUtils;
 use App\Tests\AuthenticatedWebTestCase;
 use Symfony\Component\HttpFoundation\Response;
@@ -156,6 +158,73 @@ final class UserControllerTest extends AuthenticatedWebTestCase
         );
 
         $this->assertSame(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
+    }
+
+    public function testPasswordChangeRevokesRefreshTokens(): void
+    {
+        $this->createAuthenticatedClient();
+
+        $this->requestJson(
+            $this->client,
+            'POST',
+            '/api/auth/login',
+            (new UserLoginModel(
+                email: $this->demoUser->getEmail()->toString(),
+                password: 'secret123',
+            ))->toArray(),
+        );
+        $login = $this->decodeModel($this->client, UserLoginResponseModel::class);
+
+        $this->requestJson(
+            $this->client,
+            'PATCH',
+            '/api/users/'.$this->demoUser->getId(),
+            (new UserUpdateModel(
+                fname: $this->demoUser->getFname(),
+                lname: $this->demoUser->getLname(),
+                email: $this->demoUser->getEmail()->toString(),
+                password: 'new-secret123',
+                avatarFileId: $this->demoUser->getAvatarFileId(),
+            ))->toArray(),
+            server: $this->demoAuthorizedServer(),
+        );
+
+        $this->assertSame(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
+
+        $this->requestJson(
+            $this->client,
+            'POST',
+            '/api/auth/refresh',
+            (new UserRefreshModel(refreshToken: $login->refreshToken))->toArray(),
+        );
+
+        $this->assertSame(Response::HTTP_UNAUTHORIZED, $this->client->getResponse()->getStatusCode());
+        $this->assertSame(
+            ErrorCodeEnum::InvalidRefreshToken,
+            $this->decodeErrorModel($this->client)->codeId,
+        );
+    }
+
+    public function testUpdateRejectsShortPassword(): void
+    {
+        $this->createAuthenticatedClient();
+
+        $this->requestJson(
+            $this->client,
+            'PATCH',
+            '/api/users/'.$this->demoUser->getId(),
+            (new UserUpdateModel(
+                fname: $this->demoUser->getFname(),
+                lname: $this->demoUser->getLname(),
+                email: $this->demoUser->getEmail()->toString(),
+                password: '12345',
+                avatarFileId: $this->demoUser->getAvatarFileId(),
+            ))->toArray(),
+            server: $this->demoAuthorizedServer(),
+        );
+
+        $this->assertSame(Response::HTTP_BAD_REQUEST, $this->client->getResponse()->getStatusCode());
+        $this->assertSame(ErrorCodeEnum::ValidationError, $this->decodeErrorModel($this->client)->codeId);
     }
 
     public function testDeleteUserReturnsNoContent(): void

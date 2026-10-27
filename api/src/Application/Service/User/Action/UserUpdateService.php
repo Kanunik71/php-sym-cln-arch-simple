@@ -7,10 +7,14 @@ namespace App\Application\Service\User\Action;
 use App\Application\Mapper\User\UserViewModelMapper;
 use App\Application\Model\User\Action\UserUpdateModel;
 use App\Application\Model\User\Read\UserViewModel;
+use App\Application\Model\User\UserModel;
+use App\Application\Policy\User\PasswordPolicy;
 use App\Application\Policy\User\UpdateUserPolicy;
 use App\Application\Port\File\FileDownloadUrlProviderInterface;
 use App\Application\Port\PasswordHasherInterface;
+use App\Application\Port\TransactionManagerInterface;
 use App\Application\Port\User\UserRepositoryInterface;
+use App\Application\Service\Auth\RefreshTokenService;
 use App\Application\Service\File\Lifecycle\FileLifecycleService;
 use App\Application\Service\User\Lifecycle\UserLifecycleService;
 use App\Application\ValueObject\Common\Email;
@@ -19,11 +23,14 @@ final readonly class UserUpdateService
 {
     public function __construct(
         private UpdateUserPolicy $updateUserPolicy,
+        private PasswordPolicy $passwordPolicy,
         private UserRepositoryInterface $userRepository,
         private PasswordHasherInterface $passwordHasher,
         private FileLifecycleService $fileLifecycleService,
         private FileDownloadUrlProviderInterface $fileDownloadUrlProvider,
         private UserLifecycleService $userLifecycleService,
+        private RefreshTokenService $refreshTokenService,
+        private TransactionManagerInterface $transactionManager,
     ) {
     }
 
@@ -37,11 +44,15 @@ final readonly class UserUpdateService
 
         $this->updateUserPolicy->assertEmailAvailableIo($email, $user);
 
+        if ($model->password !== null) {
+            $this->passwordPolicy->assertValid($model->password);
+        }
+
         $passwordHash = $model->password !== null
             ? $this->passwordHasher->hash($model->password)
             : $user->passwordHash;
 
-        $updatedUser = $this->userRepository->save($user->withProfile(
+        $profile = $user->withProfile(
             fname: $model->fname,
             lname: $model->lname,
             email: $email,
@@ -49,7 +60,18 @@ final readonly class UserUpdateService
             city: $model->location?->city,
             avatarFileId: $model->avatarFileId,
             phone: $model->phone,
-        ));
+        );
+
+        if ($model->password !== null) {
+            $updatedUser = $this->transactionManager->run(function () use ($profile, $userId): UserModel {
+                $saved = $this->userRepository->save($profile);
+                $this->refreshTokenService->revokeAllForUser($userId);
+
+                return $saved;
+            });
+        } else {
+            $updatedUser = $this->userRepository->save($profile);
+        }
 
         $this->fileLifecycleService->syncFileIds(
             $user->getAllFileIds(),

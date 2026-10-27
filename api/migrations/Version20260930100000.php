@@ -26,6 +26,7 @@ final class Version20260930100000 extends AbstractMigration
         $this->addSql('CREATE TABLE tasks (id BINARY(16) NOT NULL, name VARCHAR(255) NOT NULL, estimate_time INT DEFAULT NULL, status VARCHAR(255) NOT NULL, created_at DATETIME NOT NULL, updated_at DATETIME NOT NULL, cancel_reason VARCHAR(1000) DEFAULT NULL, finished_date DATETIME DEFAULT NULL, cancellation_date DATETIME DEFAULT NULL, parent_id BINARY(16) DEFAULT NULL, INDEX IDX_50586597727ACA70 (parent_id), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4');
         $this->addSql('CREATE TABLE user_notification_preferences (id BINARY(16) NOT NULL, type VARCHAR(50) NOT NULL, enabled TINYINT NOT NULL, email_enabled TINYINT NOT NULL, sms_enabled TINYINT NOT NULL, user_id BINARY(16) NOT NULL, INDEX IDX_207F257FA76ED395 (user_id), UNIQUE INDEX UNIQ_USER_NOTIFICATION_TYPE (user_id, type), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4');
         $this->addSql('CREATE TABLE users (id BINARY(16) NOT NULL, fname VARCHAR(100) DEFAULT NULL, lname VARCHAR(100) DEFAULT NULL, email VARCHAR(255) NOT NULL, password VARCHAR(255) NOT NULL, city VARCHAR(100) DEFAULT NULL, phone VARCHAR(20) DEFAULT NULL, created_at DATETIME NOT NULL, updated_at DATETIME NOT NULL, avatar_file_id BINARY(16) DEFAULT NULL, UNIQUE INDEX UNIQ_1483A5E9E7927C74 (email), INDEX IDX_1483A5E945A576B2 (avatar_file_id), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4');
+        $this->addSql('CREATE TABLE refresh_tokens (id BINARY(16) NOT NULL, user_id BINARY(16) NOT NULL, token_hash CHAR(64) NOT NULL, family_id BINARY(16) NOT NULL, created_at DATETIME NOT NULL, expires_at DATETIME NOT NULL, revoked_at DATETIME DEFAULT NULL, INDEX IDX_REFRESH_TOKEN_USER (user_id), INDEX IDX_REFRESH_TOKEN_FAMILY (family_id), INDEX IDX_REFRESH_TOKEN_EXPIRES (expires_at), UNIQUE INDEX UNIQ_REFRESH_TOKEN_HASH (token_hash), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4');
         $this->addSql('ALTER TABLE asset_file ADD CONSTRAINT FK_68FBF3D85DA1941 FOREIGN KEY (asset_id) REFERENCES assets (id)');
         $this->addSql('ALTER TABLE asset_file ADD CONSTRAINT FK_68FBF3D893CB796C FOREIGN KEY (file_id) REFERENCES files (id)');
         $this->addSql('ALTER TABLE assets ADD CONSTRAINT FK_79D17D8E7E3C61F9 FOREIGN KEY (owner_id) REFERENCES users (id)');
@@ -40,6 +41,7 @@ final class Version20260930100000 extends AbstractMigration
         $this->addSql('ALTER TABLE tasks ADD CONSTRAINT FK_50586597727ACA70 FOREIGN KEY (parent_id) REFERENCES tasks (id) ON DELETE SET NULL');
         $this->addSql('ALTER TABLE user_notification_preferences ADD CONSTRAINT FK_207F257FA76ED395 FOREIGN KEY (user_id) REFERENCES users (id)');
         $this->addSql('ALTER TABLE users ADD CONSTRAINT FK_1483A5E945A576B2 FOREIGN KEY (avatar_file_id) REFERENCES files (id) ON DELETE SET NULL');
+        $this->addSql('ALTER TABLE refresh_tokens ADD CONSTRAINT FK_REFRESH_TOKEN_USER FOREIGN KEY (user_id) REFERENCES users (id)');
     }
 
     public function down(Schema $schema): void
@@ -58,6 +60,7 @@ final class Version20260930100000 extends AbstractMigration
         $this->addSql('ALTER TABLE tasks DROP FOREIGN KEY FK_50586597727ACA70');
         $this->addSql('ALTER TABLE user_notification_preferences DROP FOREIGN KEY FK_207F257FA76ED395');
         $this->addSql('ALTER TABLE users DROP FOREIGN KEY FK_1483A5E945A576B2');
+        $this->addSql('ALTER TABLE refresh_tokens DROP FOREIGN KEY FK_REFRESH_TOKEN_USER');
         $this->addSql('DROP TABLE asset_file');
         $this->addSql('DROP TABLE assets');
         $this->addSql('DROP TABLE asset_task');
@@ -67,6 +70,7 @@ final class Version20260930100000 extends AbstractMigration
         $this->addSql('DROP TABLE task_users');
         $this->addSql('DROP TABLE tasks');
         $this->addSql('DROP TABLE user_notification_preferences');
+        $this->addSql('DROP TABLE refresh_tokens');
         $this->addSql('DROP TABLE users');
     }
 }

@@ -25,7 +25,7 @@ final readonly class UserRegisterModel implements ArrayableModelInterface
     {
         return new self(
             email: InputAssertUtils::requiredString($data['email'] ?? null, 'email'),
-            password: InputAssertUtils::requiredString($data['password'] ?? null, 'password'),
+            password: InputAssertUtils::requiredPassword($data['password'] ?? null, 'password'),
             fname: InputAssertUtils::optionalString($data['fname'] ?? null, 'fname'),
             lname: InputAssertUtils::optionalString($data['lname'] ?? null, 'lname'),
             location: InputAssertUtils::optionalNestedModel(

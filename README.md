@@ -6,6 +6,21 @@ Local monorepo. Two directories at the root:
 |-----------|---------|
 | [`api/`](api/README.md) | Main Symfony API (MySQL, JWT, business logic) |
 | [`docker/`](docker/README.md) | Docker Compose for local development (nginx, PHP, database, workers) |
+| [`docs/`](docs/README.md) | SDD: specs, technical plans, tasks, ADR |
+
+## Разработка по SDD
+
+Нетривиальные изменения делаем по Spec-Driven Development:
+
+```
+docs/specs/NNNN-<slug>/spec.md → plan.md → tasks.md → код
+```
+
+- Процесс и Definition of Done: [`docs/README.md`](docs/README.md).
+- Архитектурные правила (конституция проекта): [`api/CLAUDE.md`](api/CLAUDE.md).
+- Решения: [`docs/adr/`](docs/adr/README.md).
+
+В opencode доступны команды `/spec`, `/plan`, `/tasks`.
 
 ---
 

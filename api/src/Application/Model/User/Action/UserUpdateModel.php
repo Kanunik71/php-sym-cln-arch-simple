@@ -28,7 +28,7 @@ final readonly class UserUpdateModel implements ArrayableModelInterface
             fname: InputAssertUtils::optionalString($data['fname'] ?? null, 'fname'),
             lname: InputAssertUtils::optionalString($data['lname'] ?? null, 'lname'),
             email: InputAssertUtils::requiredString($data['email'] ?? null, 'email'),
-            password: InputAssertUtils::optionalNonEmptyString($data['password'] ?? null, 'password'),
+            password: InputAssertUtils::optionalPassword($data['password'] ?? null, 'password'),
             location: InputAssertUtils::optionalNestedModel(
                 $data['location'] ?? null,
                 'location',

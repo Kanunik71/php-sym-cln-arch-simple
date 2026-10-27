@@ -20,7 +20,7 @@ final readonly class UserLoginModel implements ArrayableModelInterface
     {
         return new self(
             email: InputAssertUtils::requiredString($data['email'] ?? null, 'email'),
-            password: InputAssertUtils::requiredString($data['password'] ?? null, 'password'),
+            password: InputAssertUtils::requiredPassword($data['password'] ?? null, 'password'),
         );
     }
 

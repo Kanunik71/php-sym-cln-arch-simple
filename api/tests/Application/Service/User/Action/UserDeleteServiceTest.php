@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\User\Action;
 
+use App\Application\Port\Auth\RefreshTokenRepositoryInterface;
+use App\Application\Service\Auth\RefreshTokenService;
 use App\Application\Service\User\Action\UserDeleteService;
 use App\Application\Enum\Notification\NotificationTypeEnum;
 use App\Application\Enum\Task\TaskUserStatusEnum;
@@ -78,6 +80,27 @@ final class UserDeleteServiceTest extends DatabaseTestCase
         $remainingUsers = $this->bed->taskRepository()->listUsers($remainingTask->id);
         $this->assertFalse(TaskUserListService::has($remainingUsers, $deletedUserId));
         $this->assertTrue(TaskUserListService::has($remainingUsers, $other->getId()));
+    }
+
+    public function testDeletesRefreshTokensAndKeepsOtherUsersTokens(): void
+    {
+        $user = $this->bed->createUser(email: 'john@example.com');
+        $other = $this->bed->createUser(email: 'other@example.com');
+        $refreshTokens = $this->bed->get(RefreshTokenService::class);
+        $repository = $this->bed->get(RefreshTokenRepositoryInterface::class);
+
+        $own = $refreshTokens->issue($user->getId());
+        $foreign = $refreshTokens->issue($other->getId());
+
+        $this->bed->get(UserDeleteService::class)->execute(
+            userId: $user->getId(),
+            currentUserId: $user->getId(),
+        );
+
+        $this->bed->clear();
+
+        $this->assertNull($repository->findByHash(RefreshTokenService::hash($own->token)));
+        $this->assertNotNull($repository->findByHash(RefreshTokenService::hash($foreign->token)));
     }
 
     public function testRollsBackWhenDeleteFailsMidway(): void

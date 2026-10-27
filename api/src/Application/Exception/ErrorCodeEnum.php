@@ -10,6 +10,7 @@ enum ErrorCodeEnum: string
     case UserNotFound = 'USER_NOT_FOUND';
     case UnauthorizedUserAccess = 'UNAUTHORIZED_USER_ACCESS';
     case InvalidCredentials = 'INVALID_CREDENTIALS';
+    case InvalidRefreshToken = 'INVALID_REFRESH_TOKEN';
     case TaskNotFound = 'TASK_NOT_FOUND';
     case UnauthorizedTaskAccess = 'UNAUTHORIZED_TASK_ACCESS';
     case InvalidTaskStatusTransition = 'INVALID_TASK_STATUS_TRANSITION';

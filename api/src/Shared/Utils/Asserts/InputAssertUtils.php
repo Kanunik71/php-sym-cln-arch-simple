@@ -20,6 +20,28 @@ final class InputAssertUtils
         return trim($value);
     }
 
+    public static function requiredPassword(mixed $value, string $field): string
+    {
+        if (!is_string($value) || trim($value) === '') {
+            throw new InvalidArgumentException(sprintf('Field "%s" is required.', $field));
+        }
+
+        return $value;
+    }
+
+    public static function optionalPassword(mixed $value, string $field): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (!is_string($value) || trim($value) === '') {
+            throw new InvalidArgumentException(sprintf('Field "%s" must be a non-empty string.', $field));
+        }
+
+        return $value;
+    }
+
     public static function optionalString(mixed $value, string $field): ?string
     {
         if ($value === null) {

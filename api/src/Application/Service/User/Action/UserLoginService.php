@@ -7,13 +7,13 @@ namespace App\Application\Service\User\Action;
 use App\Application\Model\User\Action\UserLoginModel;
 use App\Application\Model\User\Read\UserLoginResponseModel;
 use App\Application\Policy\User\LoginUserPolicy;
-use App\Application\Port\Security\TokenProviderInterface;
+use App\Application\Service\Auth\UserTokenPairService;
 
 final readonly class UserLoginService
 {
     public function __construct(
         private LoginUserPolicy $loginUserPolicy,
-        private TokenProviderInterface $tokenProvider,
+        private UserTokenPairService $userTokenPairService,
     ) {
     }
 
@@ -21,8 +21,6 @@ final readonly class UserLoginService
     {
         $user = $this->loginUserPolicy->resolveAuthenticatedUserIo($model->email, $model->password);
 
-        $token = $this->tokenProvider->generateToken($user->id, $user->email);
-
-        return new UserLoginResponseModel(token: $token);
+        return $this->userTokenPairService->issue($user);
     }
 }

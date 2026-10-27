@@ -19,6 +19,8 @@ final class AppScheduleProvider implements ScheduleProviderInterface
         private CacheInterface $cache,
         #[Autowire(param: 'app.scheduler.file_cleanup_cron')]
         private string $fileCleanupCron,
+        #[Autowire(param: 'app.scheduler.refresh_token_cleanup_cron')]
+        private string $refreshTokenCleanupCron,
     ) {
     }
 
@@ -31,6 +33,12 @@ final class AppScheduleProvider implements ScheduleProviderInterface
                 RecurringMessage::cron(
                     $this->fileCleanupCron,
                     new RunCommandMessage('app:files:cleanup-tmp'),
+                ),
+            )
+            ->add(
+                RecurringMessage::cron(
+                    $this->refreshTokenCleanupCron,
+                    new RunCommandMessage('app:auth:cleanup-refresh-tokens'),
                 ),
             );
     }
