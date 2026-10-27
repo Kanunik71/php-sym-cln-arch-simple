@@ -82,6 +82,26 @@ final class UserDeleteServiceTest extends DatabaseTestCase
         $this->assertTrue(TaskUserListService::has($remainingUsers, $other->getId()));
     }
 
+    public function testDeletesOwnedTaskGroupsAndKeepsTasks(): void
+    {
+        $user = $this->bed->createUser(email: 'john@example.com');
+        $other = $this->bed->createUser(email: 'other@example.com');
+        $task = $this->bed->createTask(name: 'Shared task');
+        $ownGroup = $this->bed->createTaskGroupForTask($task->getId(), $user->getId(), 'Own');
+        $foreignGroup = $this->bed->createTaskGroupForTask($task->getId(), $other->getId(), 'Foreign');
+
+        $this->bed->get(UserDeleteService::class)->execute(
+            userId: $user->getId(),
+            currentUserId: $user->getId(),
+        );
+
+        $this->bed->clear();
+
+        $this->assertNull($this->bed->findTaskGroupById($ownGroup->id));
+        $this->assertNotNull($this->bed->findTaskGroupById($foreignGroup->id));
+        $this->assertNotNull($this->bed->findTaskById($task->getId()));
+    }
+
     public function testDeletesRefreshTokensAndKeepsOtherUsersTokens(): void
     {
         $user = $this->bed->createUser(email: 'john@example.com');

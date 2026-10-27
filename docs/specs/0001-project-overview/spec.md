@@ -103,7 +103,7 @@ assets >──< files           (asset_file, position)
 | Спека | HTTP-маршруты |
 |-------|---------------|
 | 0002-auth | `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/refresh`, `POST /api/auth/logout` |
-| 0003-users | `GET /api/users`, `GET /api/users/query`, `GET /api/users/query/meta`, `GET/PATCH/DELETE /api/users/{id}` |
+| 0003-users | `GET /api/users`, `GET /api/users/query`, `GET /api/users/query/meta`, `GET/PUT/DELETE /api/users/{id}` |
 | 0004-tasks | `GET/POST /api/tasks`, `GET/DELETE /api/tasks/{id}`, `PATCH /api/tasks/{id}/status` |
 | 0005-task-groups | `GET /api/task-groups/summary`, `POST /api/task-groups`, `GET/POST /api/tasks/{taskId}/task-groups`, `POST .../{id}/attach`, `GET/DELETE .../{id}`, `DELETE .../{id}/tasks/{removeTaskId}` |
 | 0006-assets | `GET/POST /api/assets`, `GET/PATCH/DELETE /api/assets/{id}`, `GET/POST /api/tasks/{taskId}/assets`, `POST .../{id}/attach`, `DELETE .../{id}` |
@@ -130,7 +130,7 @@ assets >──< files           (asset_file, position)
 | Слои | нет `api/src/Domain`, нет `Application/Command|Query|Handler` | `api/CLAUDE.md` описывает Domain + Command/Query/Handler | ADR 0001 |
 | VO | `ValueObject` в `Application/ValueObject` | `api/CLAUDE.md` — `Domain/` | ADR 0001 |
 | Мапперы | `*ViewModelMapper` | `api/CLAUDE.md` — `*ModelMapper` | ADR 0001 |
-| Масштаб | `GET /api/users` и summary групп используют `listAll()` | `Application/CLAUDE.md` запрещает для больших выборок | 0003, 0005, 0009 |
+| Масштаб | summary групп использует `listAll()` | `Application/CLAUDE.md` запрещает для больших выборок | 0005, 0009 |
 | Ошибки `401` | формируются Symfony Security | не через `ErrorResponseModel` | 0009 |
 | UUID в path | regex `[0-9a-fA-F-]{36}` не гарантирует UUID | невалидный 36-символьный id может дать `500` | 0003, 0004, 0005, 0006 |
 | Обработчик | нет handler для `TaskGroupStatusChangedEvent` | событие маршрутизируется в `async` | 0005 |

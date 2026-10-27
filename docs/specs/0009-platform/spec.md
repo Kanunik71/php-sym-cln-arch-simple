@@ -193,8 +193,7 @@ routing:
 - `BatchUtils`: `DEFAULT_SIZE = 1000`; `chunk(list, size)`, `each(list, cb, size)`.
 - Эталон: `TaskGroupRecalculationService` (`listByIds` + `BatchUtils::each`).
 - `listAll()` допускается только для заведомо малых выборок.
-- Фактически `listAll()` используется в `UserListQueryService` и
-  `TaskGroupSummarizeQueryService` (расхождение).
+- Фактически `listAll()` используется в `TaskGroupSummarizeQueryService` (расхождение).
 
 ## Данные и миграции
 
@@ -245,7 +244,7 @@ routing:
 | `401` | тело формирует Symfony Security, не `ErrorResponseModel` | единый контракт | `security.yaml` |
 | Async | нет retry/failure transport; потеря сообщения не компенсируется | надёжность | `messenger.yaml` |
 | Событие | `TaskGroupStatusChangedEvent` без handler | обработка | `messenger.yaml` |
-| Масштаб | `listAll()` в users list и group summary | `listBatch`/batch | 0003, 0005 |
+| Масштаб | `listAll()` в group summary | `listBatch`/batch | 0005 |
 | UUID | regex `[0-9a-fA-F-]{36}` пропускает невалидные id → `500` | `400` | контроллеры |
 | Состояние | `GET /api/tasks` кэш 60 секунд может отдавать устаревший список | инвалидация | 0004 |
 

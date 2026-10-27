@@ -16,7 +16,7 @@
 
 - Все маршруты — `ROLE_USER`, JWT обязателен.
 - `GET` доступен любому аутентифицированному пользователю.
-- `PATCH` и `DELETE` — только self (`UserAccessPolicy::assertSelfAccess`).
+- `PUT` и `DELETE` — только self (`UserAccessPolicy::assertSelfAccess`).
 - Аватар можно прикрепить только из собственных файлов (`AttachFilePolicy`).
 
 ## User stories
@@ -32,11 +32,11 @@
 
 | ID | Требование |
 |----|------------|
-| FR-1 | `GET /api/users` — простой список без пагинации, сортировка `createdAt DESC` |
+| FR-1 | `GET /api/users` — страница без фильтров: `page`/`perPage` (default 1/20, max 100), сортировка `createdAt DESC`, ответ `UserPageModel` |
 | FR-2 | `GET /api/users/query` — пагинация, фильтры, сортировка |
 | FR-3 | `GET /api/users/query/meta` — whitelist фильтров/сортировок/пагинации |
-| FR-4 | `PATCH` — полная замена профиля, кроме `password` (`null` = не менять) |
-| FR-5 | `DELETE` — удаление self и связанных данных в транзакции, включая refresh-токены |
+| FR-4 | `PUT` — полная замена профиля, кроме `password` (`null` = не менять) |
+| FR-5 | `DELETE` — удаление self и связанных данных в транзакции, включая refresh-токены и task groups владельца; задачи остаются |
 | FR-6 | Email уникален; смена на занятый → `409` |
 
 ## Сценарии
@@ -45,7 +45,7 @@
 
 - **Given** пользователь аутентифицирован
 - **When** `GET /api/users` или `GET /api/users/{id}`
-- **Then** `200`; список — `UserViewModel[]`, один — `UserViewModel`
+- **Then** `200`; список — `UserPageModel`, один — `UserViewModel`
 - **Тесты:** `UserControllerTest::testListUsersReturnsOk`, `testGetUserReturnsOk`
 
 ### S-2: Поиск с фильтром и сортировкой
@@ -59,14 +59,14 @@
 ### S-3: Обновление своего профиля
 
 - **Given** пользователь обновляет self
-- **When** `PATCH /api/users/{id}` с валидным `UserUpdateModel`
+- **When** `PUT /api/users/{id}` с валидным `UserUpdateModel`
 - **Then** `200`, обновлённый `UserViewModel`, событие `UserUpdatedEvent`
 - **Тесты:** `testUpdateUserReturnsOk`, `UserUpdateServiceTest::testUpdatesOwnProfile`
 
 ### S-4: Запрет на чужой профиль
 
 - **Given** пользователь пытается изменить/удалить другого
-- **When** `PATCH`/`DELETE`
+- **When** `PUT`/`DELETE`
 - **Then** `403 UNAUTHORIZED_USER_ACCESS`
 - **Тесты:** `testCannotUpdateAnotherUser`, `testCannotDeleteAnotherUser`
 
@@ -74,19 +74,19 @@
 
 - **Given** пользователь удаляет self
 - **When** `DELETE /api/users/{id}`
-- **Then** `204`; в транзакции удалены assets, task users, preferences, files, refresh-токены
+- **Then** `204`; в транзакции удалены assets, task users, preferences, files, refresh-токены и task groups владельца; задачи остаются
 - **Тест:** `UserDeleteServiceTest::testDeletesOwnAccount`
 
 ## API-контракт
 
 | Метод | Путь | Вход | Успех | Ошибки |
 |-------|------|------|-------|--------|
-| GET | `/api/users` | — | `200`, `UserViewModel[]` | `401` |
+| GET | `/api/users` | `page`, `perPage` | `200`, `UserPageModel` | `400`, `401` |
 | GET | `/api/users/query` | query | `200`, `UserPageModel` | `400`, `401` |
 | GET | `/api/users/query/meta` | — | `200`, `SearchQueryMetaModel` | `401` |
 | GET | `/api/users/{id}` | path | `200`, `UserViewModel` | `401`, `404 USER_NOT_FOUND`, `500` на невалидном 36-символьном id |
-| PATCH | `/api/users/{id}` | `UserUpdateModel` | `200`, `UserViewModel` | `400`, `401`, `403`, `404`, `409`, `500` при гонке email |
-| DELETE | `/api/users/{id}` | path | `204` | `401`, `403`, `404`, `500` (невалидный UUID / FK TaskGroup) |
+| PUT | `/api/users/{id}` | `UserUpdateModel` | `200`, `UserViewModel` | `400`, `401`, `403`, `404`, `409`, `500` при гонке email |
+| DELETE | `/api/users/{id}` | path | `204` | `401`, `403`, `404`, `500` (невалидный UUID) |
 
 ### Request `UserUpdateModel`
 
@@ -100,8 +100,7 @@
 | `avatarFileId` | string/null | нет | отсутствует/null → аватар очищается; regex `[0-9a-fA-F-]{36}` |
 | `phone` | string/null | нет | отсутствует/null → `null`; E.164 |
 
-`PATCH` фактически заменяет профиль: `null` у большинства полей очищает
-значение.
+`PUT` заменяет профиль: `null` у большинства полей очищает значение.
 
 ## Query-контракт
 
@@ -140,7 +139,7 @@ Meta (`/query/meta`): `filters` (`{field, type, operators}[]`), `sortFields`,
 - `UserRegisterResponseModel`: без `createdAt`/`avatar`.
 - `UserPageModel`: `items`, `total`, `page`, `perPage`.
 - `total` — отдельный `COUNT(DISTINCT u.id)` с теми же фильтрами.
-- `GET /api/users` использует `listAll()` и не пагинируется.
+- `GET /api/users` — та же страница, что поиск без фильтров: default sort `createdAt DESC`.
 
 ## Права доступа
 
@@ -152,7 +151,7 @@ Meta (`/query/meta`): `filters` (`{field, type, operators}[]`), `sortFields`,
 
 ## Async и события
 
-- `UserUpdatedEvent` после успешного `PATCH` → `async` →
+- `UserUpdatedEvent` после успешного `PUT` → `async` →
   `UserUpdatedMessageHandler` → `NotificationService::notify(user_updated)`.
 - При `DELETE` событие не публикуется.
 - Preferences, files и refresh-токены удаляются напрямую в `UserDeleteService`.
@@ -167,17 +166,14 @@ Meta (`/query/meta`): `filters` (`{field, type, operators}[]`), `sortFields`,
 | `USER_NOT_FOUND` | 404 | пользователь не найден |
 | `FILE_NOT_FOUND` | 404 | `avatarFileId` не найден |
 | `USER_ALREADY_EXISTS` | 409 | email занят |
-| — | 500 | невалидный 36-символьный UUID; FK-конфликт TaskGroup при удалении |
+| — | 500 | невалидный 36-символьный UUID |
 
 ## Известные расхождения
 
 | Где | Факт | Ожидание/документация | Ссылка |
 |-----|------|-----------------------|--------|
-| `GET /api/users` | `listAll()` без пагинации | масштаб ~10⁶, `listBatch` | `UserListQueryService` |
-| `DELETE` | не удаляет `task_groups` владельца → FK violation | корректное каскадное удаление/запрет | `UserDeleteService:55` |
 | UUID в path | regex пропускает 36 дефисов → `500` в GET/DELETE | `400` | `UserController` |
-| `PATCH` | транзакция покрывает профиль и отзыв refresh-токенов; `syncFileIds()` после commit | атомарность вместе с файлами | `UserUpdateService` |
-| `PATCH` | семантика `PATCH` = full replacement | частичное обновление | `UserUpdateModel` |
+| `PUT` | транзакция покрывает профиль и отзыв refresh-токенов; `syncFileIds()` после commit | атомарность вместе с файлами | `UserUpdateService` |
 | `avatarFileId` | проверяется regex, не UUID | строгая валидация | `UserUpdateModel` |
 
 ## Первоисточники
@@ -194,6 +190,4 @@ Meta (`/query/meta`): `filters` (`{field, type, operators}[]`), `sortFields`,
 
 ## Открытые вопросы
 
-- [ ] Должен ли `PATCH` быть частичным?
-- [ ] Что делать при удалении владельца TaskGroup: каскад, переназначение или `409`?
-- [ ] Нужна ли пагинация для `GET /api/users`?
+Нет.

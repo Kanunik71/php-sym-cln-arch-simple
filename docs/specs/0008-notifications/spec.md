@@ -173,7 +173,7 @@ Messenger.
 | Событие | Публикует | Handler | Тип |
 |---------|-----------|---------|-----|
 | `UserRegisteredEvent` | `UserLifecycleService` после регистрации | `UserRegisteredMessageHandler` | `user_registered` |
-| `UserUpdatedEvent` | `UserLifecycleService` после `PATCH /api/users/{id}` | `UserUpdatedMessageHandler` | `user_updated` |
+| `UserUpdatedEvent` | `UserLifecycleService` после `PUT /api/users/{id}` | `UserUpdatedMessageHandler` | `user_updated` |
 
 Оба маршрутизируются в `async` (RabbitMQ). В тестах — `in-memory://`.
 

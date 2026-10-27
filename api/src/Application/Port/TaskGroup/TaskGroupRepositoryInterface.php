@@ -57,4 +57,6 @@ interface TaskGroupRepositoryInterface
     public function listMembershipFactsByIds(array $taskGroupIds): array;
 
     public function delete(TaskGroupModel $taskGroup): void;
+
+    public function deleteByOwnerId(string $ownerId): void;
 }

@@ -16,6 +16,7 @@ use App\Infrastructure\Persistence\Doctrine\Mapper\TaskGroupMapper;
 use App\Infrastructure\Persistence\Doctrine\Query\TaskGroup\TaskGroupEntityFetcher;
 use App\Infrastructure\Persistence\Doctrine\Utils\DoctrineUuidUtils;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Uid\Uuid;
 
 final readonly class DoctrineTaskGroupRepository implements TaskGroupRepositoryInterface
 {
@@ -298,5 +299,15 @@ final readonly class DoctrineTaskGroupRepository implements TaskGroupRepositoryI
 
         $this->entityManager->remove($entity);
         $this->entityManager->flush();
+    }
+
+    public function deleteByOwnerId(string $ownerId): void
+    {
+        $this->entityManager->createQueryBuilder()
+            ->delete(TaskGroupEntity::class, 'tg')
+            ->where('tg.'.TaskGroupEntity::FIELD_OWNER_ID.' = :ownerId')
+            ->setParameter('ownerId', Uuid::fromString($ownerId), 'uuid')
+            ->getQuery()
+            ->execute();
     }
 }

@@ -12,6 +12,7 @@ use App\Application\Port\Auth\RefreshTokenRepositoryInterface;
 use App\Application\Port\File\FileRepositoryInterface;
 use App\Application\Port\Notification\NotificationPreferenceRepositoryInterface;
 use App\Application\Port\Task\TaskRepositoryInterface;
+use App\Application\Port\TaskGroup\TaskGroupRepositoryInterface;
 use App\Application\Port\TransactionManagerInterface;
 use App\Application\Port\User\UserRepositoryInterface;
 use App\Application\Service\Asset\Lifecycle\AssetLifecycleService;
@@ -25,6 +26,7 @@ final readonly class UserDeleteService
         private UserRepositoryInterface $userRepository,
         private AssetRepositoryInterface $assetRepository,
         private TaskRepositoryInterface $taskRepository,
+        private TaskGroupRepositoryInterface $taskGroupRepository,
         private NotificationPreferenceRepositoryInterface $preferenceRepository,
         private RefreshTokenRepositoryInterface $refreshTokenRepository,
         private FileRepositoryInterface $fileRepository,
@@ -77,6 +79,8 @@ final readonly class UserDeleteService
         foreach ($this->fileRepository->listByOwnerId($userId) as $file) {
             $storageKeys = [...$storageKeys, ...$this->fileLifecycleService->deleteRecords([$file->id])];
         }
+
+        $this->taskGroupRepository->deleteByOwnerId($userId);
 
         $this->refreshTokenRepository->deleteAllForUser($userId);
         $this->userRepository->delete($user);

@@ -4,25 +4,22 @@ declare(strict_types=1);
 
 namespace App\Application\Service\User\Query;
 
-use App\Application\Mapper\User\UserViewModelMapper;
-use App\Application\Model\User\Read\UserViewModel;
-use App\Application\Port\File\FileDownloadUrlProviderInterface;
-use App\Application\Port\User\UserRepositoryInterface;
+use App\Application\Model\Common\PaginationModel;
+use App\Application\Model\User\Action\UserSearchModel;
+use App\Application\Model\User\Read\UserPageModel;
 
 final readonly class UserListQueryService
 {
     public function __construct(
-        private UserRepositoryInterface $userRepository,
-        private FileDownloadUrlProviderInterface $fileDownloadUrlProvider,
+        private UserSearchQueryService $searchUsers,
     ) {
     }
 
-    /** @return list<UserViewModel> */
-    public function execute(): array
+    public function execute(PaginationModel $pagination): UserPageModel
     {
-        return UserViewModelMapper::fromModelList(
-            $this->userRepository->listAll(),
-            $this->fileDownloadUrlProvider,
-        );
+        return $this->searchUsers->execute(new UserSearchModel(
+            pagination: $pagination,
+            criteria: [],
+        ));
     }
 }

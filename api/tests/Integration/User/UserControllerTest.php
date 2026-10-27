@@ -62,13 +62,23 @@ final class UserControllerTest extends AuthenticatedWebTestCase
         $this->assertSame(Response::HTTP_UNAUTHORIZED, $client->getResponse()->getStatusCode());
     }
 
+    public function testListRejectsInvalidPerPage(): void
+    {
+        $this->createAuthenticatedClient();
+
+        $this->client->request('GET', '/api/users?perPage=0', server: $this->demoAuthorizedServer());
+
+        $this->assertSame(Response::HTTP_BAD_REQUEST, $this->client->getResponse()->getStatusCode());
+        $this->assertSame(ErrorCodeEnum::ValidationError, $this->decodeErrorModel($this->client)->codeId);
+    }
+
     public function testUpdateUserReturnsOk(): void
     {
         $this->createAuthenticatedClient();
 
         $this->requestJson(
             $this->client,
-            'PATCH',
+            'PUT',
             '/api/users/'.$this->demoUser->getId(),
             (new UserUpdateModel(
                 fname: 'Jane',
@@ -90,7 +100,7 @@ final class UserControllerTest extends AuthenticatedWebTestCase
 
         $this->requestJson(
             $this->client,
-            'PATCH',
+            'PUT',
             '/api/users/'.$otherUser->getId(),
             (new UserUpdateModel(
                 fname: 'Hacked',
@@ -112,7 +122,7 @@ final class UserControllerTest extends AuthenticatedWebTestCase
 
         $this->requestJson(
             $this->client,
-            'PATCH',
+            'PUT',
             '/api/users/'.$this->demoUser->getId(),
             (new UserUpdateModel(
                 fname: $this->demoUser->getFname(),
@@ -133,7 +143,7 @@ final class UserControllerTest extends AuthenticatedWebTestCase
 
         $this->requestJson(
             $this->client,
-            'PATCH',
+            'PUT',
             '/api/users/'.$this->demoUser->getId(),
             (new UserUpdateModel(
                 fname: $this->demoUser->getFname(),
@@ -177,7 +187,7 @@ final class UserControllerTest extends AuthenticatedWebTestCase
 
         $this->requestJson(
             $this->client,
-            'PATCH',
+            'PUT',
             '/api/users/'.$this->demoUser->getId(),
             (new UserUpdateModel(
                 fname: $this->demoUser->getFname(),
@@ -211,7 +221,7 @@ final class UserControllerTest extends AuthenticatedWebTestCase
 
         $this->requestJson(
             $this->client,
-            'PATCH',
+            'PUT',
             '/api/users/'.$this->demoUser->getId(),
             (new UserUpdateModel(
                 fname: $this->demoUser->getFname(),

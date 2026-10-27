@@ -6,6 +6,7 @@ namespace App\Presentation\Controller\User;
 
 use App\Application\Service\User\Action\UserDeleteService;
 use App\Application\Service\User\Action\UserUpdateService;
+use App\Application\Model\Common\PaginationModel;
 use App\Application\Model\User\Action\UserSearchModel;
 use App\Application\Model\User\Action\UserUpdateModel;
 use App\Application\Service\User\Query\UserQueryService;
@@ -42,11 +43,15 @@ final class UserController extends BaseController
     }
 
     #[Route('', name: 'list', methods: ['GET'])]
-    public function list(): JsonResponse
+    public function list(Request $request): JsonResponse
     {
-        $users = $this->listUsers->execute();
+        try {
+            $page = $this->listUsers->execute(PaginationModel::fromArray($request->query->all()));
+        } catch (InvalidArgumentException $exception) {
+            return ErrorResponseUtils::json($exception, Response::HTTP_BAD_REQUEST);
+        }
 
-        return $this->json($users);
+        return $this->json($page);
     }
 
     #[Route('/query', name: 'query', methods: ['GET'])]
@@ -83,7 +88,7 @@ final class UserController extends BaseController
         return $this->json($user);
     }
 
-    #[Route('/{id}', name: 'update', requirements: ['id' => '[0-9a-fA-F-]{36}'], methods: ['PATCH'])]
+    #[Route('/{id}', name: 'update', requirements: ['id' => '[0-9a-fA-F-]{36}'], methods: ['PUT'])]
     public function update(string $id, Request $request): JsonResponse
     {
         try {
