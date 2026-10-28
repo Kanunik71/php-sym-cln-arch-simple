@@ -257,7 +257,6 @@ Event/Task/TaskCreated.php
 Event/User/UserRegisteredEvent.php
 Event/User/UserUpdatedEvent.php
 Event/TaskGroup/TaskGroupsRecalculationRequestedEvent.php
-Event/TaskGroup/TaskGroupStatusChangedEvent.php
 
 Exception/ErrorCodeEnum.php
 Exception/CodedExceptionInterface.php

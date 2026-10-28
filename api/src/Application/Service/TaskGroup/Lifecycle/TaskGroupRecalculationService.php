@@ -15,7 +15,6 @@ final readonly class TaskGroupRecalculationService
 {
     public function __construct(
         private TaskGroupRepositoryInterface $taskGroupRepository,
-        private TaskGroupLifecycleService $taskGroupLifecycleService,
         private int $batchSize = BatchUtils::DEFAULT_SIZE,
     ) {
     }
@@ -62,14 +61,12 @@ final readonly class TaskGroupRecalculationService
             $facts = $factsByGroupId[$taskGroup->id]
                 ?? new TaskGroupMembershipFactsModel(taskCount: 0, hasNonTerminalTask: false);
 
-            $previousStatus = $taskGroup->status;
             $updated = self::recalculated($taskGroup, $facts);
             if ($updated === null) {
                 continue;
             }
 
-            $saved = $this->taskGroupRepository->save($updated);
-            $this->taskGroupLifecycleService->afterStatusChanged($saved, $previousStatus);
+            $this->taskGroupRepository->save($updated);
         }
     }
 

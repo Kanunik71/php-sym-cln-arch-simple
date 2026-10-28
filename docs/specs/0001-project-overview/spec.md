@@ -119,7 +119,6 @@ assets >──< files           (asset_file, position)
 |---------|-----------|------------|--------|
 | `TaskCreated` | создание задачи | `TaskCreatedMessageHandler` | только лог |
 | `TaskGroupsRecalculationRequestedEvent` | Task/TaskGroup actions | `RecalculateTaskGroupsMessageHandler` | пересчёт групп, снятие lock |
-| `TaskGroupStatusChangedEvent` | `TaskGroupLifecycleService` | **нет обработчика** | накапливается в очереди |
 | `UserRegisteredEvent` | регистрация | `UserRegisteredMessageHandler` | email-уведомление |
 | `UserUpdatedEvent` | обновление профиля | `UserUpdatedMessageHandler` | email/SMS по preference |
 
@@ -133,7 +132,6 @@ assets >──< files           (asset_file, position)
 | Масштаб | summary групп использует `listAll()` | `Application/CLAUDE.md` запрещает для больших выборок | 0005, 0009 |
 | Ошибки `401` | формируются Symfony Security | не через `ErrorResponseModel` | 0009 |
 | UUID в path | regex `[0-9a-fA-F-]{36}` не гарантирует UUID | невалидный 36-символьный id может дать `500` | 0003, 0004, 0005, 0006 |
-| Обработчик | нет handler для `TaskGroupStatusChangedEvent` | событие маршрутизируется в `async` | 0005 |
 
 ## Первоисточники
 

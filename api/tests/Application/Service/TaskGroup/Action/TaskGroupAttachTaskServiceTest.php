@@ -6,6 +6,7 @@ namespace App\Tests\Application\Service\TaskGroup\Action;
 
 use App\Application\Dispatcher\TaskGroup\TaskGroupRecalculationDispatcher;
 use App\Application\Event\TaskGroup\TaskGroupsRecalculationRequestedEvent;
+use App\Application\Exception\TaskGroup\UnauthorizedTaskGroupAccessException;
 use App\Application\Service\TaskGroup\Action\TaskGroupAttachTaskService;
 use App\Tests\DatabaseTestCase;
 use App\Tests\Support\Trait\Common\AssertMessengerTrait;
@@ -39,6 +40,25 @@ final class TaskGroupAttachTaskServiceTest extends DatabaseTestCase
             predicate: fn (TaskGroupsRecalculationRequestedEvent $event): bool => $event->taskGroupIds === [$group->getId()],
         );
         $this->bed->get(TaskGroupRecalculationDispatcher::class)->releaseGroupIdsLock([$group->getId()]);
+    }
+
+    public function testRejectsNonOwner(): void
+    {
+        $owner = $this->bed->seedDefaultUser();
+        $otherUser = $this->bed->createUser();
+        $task = $this->bed->createTask(ownerId: $owner->getId(), name: 'Build feature');
+        $groupedTask = $this->bed->createTask(ownerId: $owner->getId(), name: 'Other feature');
+        $group = $this->bed->createTaskGroupForTask($groupedTask->getId(), $owner->getId(), 'Release 1.0');
+
+        $attachTaskToTaskGroup = $this->bed->get(TaskGroupAttachTaskService::class);
+
+        $this->expectException(UnauthorizedTaskGroupAccessException::class);
+
+        $attachTaskToTaskGroup->execute(
+            userId: $otherUser->getId(),
+            taskId: $task->getId(),
+            taskGroupId: $group->getId(),
+        );
     }
 
     public function testAttachIsIdempotent(): void

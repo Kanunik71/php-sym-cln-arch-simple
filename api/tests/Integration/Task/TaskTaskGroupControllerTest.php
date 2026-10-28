@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Task;
 
+use App\Application\Exception\ErrorCodeEnum;
 use App\Application\Model\TaskGroup\Action\TaskGroupCreateModel;
 use App\Shared\Utils\UidUtils;
 use App\Tests\AuthenticatedWebTestCase;
@@ -81,6 +82,73 @@ final class TaskTaskGroupControllerTest extends AuthenticatedWebTestCase
         );
 
         $this->assertSame(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
+    }
+
+    public function testAttachTaskGroupReturnsForbiddenForNonOwner(): void
+    {
+        $this->createAuthenticatedClient(email: 'owner@example.com');
+        $task = $this->bed->createTask(ownerId: $this->demoUser->getId(), name: 'Build feature');
+        $otherTask = $this->bed->createTask(ownerId: $this->demoUser->getId(), name: 'Other feature');
+        $group = $this->bed->createTaskGroupForTask($otherTask->getId(), $this->demoUser->getId(), 'Release 1.0');
+
+        $this->createUser(email: 'other@example.com');
+        $otherToken = $this->loginAs('other@example.com');
+
+        $this->client->request(
+            'POST',
+            '/api/tasks/'.$task->getId().'/task-groups/'.$group->getId().'/attach',
+            server: $this->authorizedServer($otherToken),
+        );
+
+        $this->assertSame(Response::HTTP_FORBIDDEN, $this->client->getResponse()->getStatusCode());
+        $this->assertSame(
+            ErrorCodeEnum::UnauthorizedTaskGroupAccess,
+            $this->decodeErrorModel($this->client)->codeId,
+        );
+    }
+
+    public function testDeleteTaskGroupReturnsForbiddenForNonOwner(): void
+    {
+        $this->createAuthenticatedClient(email: 'owner@example.com');
+        $task = $this->bed->createTask(ownerId: $this->demoUser->getId(), name: 'Build feature');
+        $group = $this->bed->createTaskGroupForTask($task->getId(), $this->demoUser->getId(), 'Release 1.0');
+
+        $this->createUser(email: 'other@example.com');
+        $otherToken = $this->loginAs('other@example.com');
+
+        $this->client->request(
+            'DELETE',
+            '/api/tasks/'.$task->getId().'/task-groups/'.$group->getId(),
+            server: $this->authorizedServer($otherToken),
+        );
+
+        $this->assertSame(Response::HTTP_FORBIDDEN, $this->client->getResponse()->getStatusCode());
+        $this->assertSame(
+            ErrorCodeEnum::UnauthorizedTaskGroupAccess,
+            $this->decodeErrorModel($this->client)->codeId,
+        );
+    }
+
+    public function testRemoveTaskFromTaskGroupReturnsForbiddenForNonOwner(): void
+    {
+        $this->createAuthenticatedClient(email: 'owner@example.com');
+        $task = $this->bed->createTask(ownerId: $this->demoUser->getId(), name: 'Build feature');
+        $group = $this->bed->createTaskGroupForTask($task->getId(), $this->demoUser->getId(), 'Release 1.0');
+
+        $this->createUser(email: 'other@example.com');
+        $otherToken = $this->loginAs('other@example.com');
+
+        $this->client->request(
+            'DELETE',
+            '/api/tasks/'.$task->getId().'/task-groups/'.$group->getId().'/tasks/'.$task->getId(),
+            server: $this->authorizedServer($otherToken),
+        );
+
+        $this->assertSame(Response::HTTP_FORBIDDEN, $this->client->getResponse()->getStatusCode());
+        $this->assertSame(
+            ErrorCodeEnum::UnauthorizedTaskGroupAccess,
+            $this->decodeErrorModel($this->client)->codeId,
+        );
     }
 
     public function testDeleteTaskGroupReturnsNoContent(): void

@@ -4,7 +4,7 @@
 |---|---|
 | Тип | `baseline` (as-is) |
 | Статус | `implemented` |
-| Дата | 2026-10-27 |
+| Дата | 2026-10-28 |
 | Источники | `api/src/Presentation/Controller/TaskGroup/**`, `api/src/Presentation/Controller/Task/TaskTaskGroupController.php`, `api/src/Application/Service/TaskGroup/**`, `api/tests/Integration/TaskGroup/**`, `api/tests/Integration/Task/TaskTaskGroupControllerTest.php` |
 
 ## Контекст
@@ -17,8 +17,9 @@
 - Все маршруты — `ROLE_USER`, JWT обязателен.
 - Доступ определяется доступом к `taskId` из пути (`TaskAccessPolicy`) и
   членством задачи в группе (`TaskGroupAccessPolicy::assertContainsTaskIo`).
-- Владелец группы не проверяется; `TaskGroupAccessPolicy` проверяет только
-  наличие задачи в группе.
+- Владелец группы проверяется при `attach`/`remove`/`delete`
+  (`TaskGroupAccessPolicy::assertOwner`); чтение групп остаётся доступным по
+  доступу к задаче.
 
 ## User stories
 
@@ -38,8 +39,9 @@
 | FR-3 | Статус вычисляется: 0 задач → `Initial`; есть `Initial`/`Active` → `InProgress`; иначе `Completed` |
 | FR-4 | Пересчёт асинхронный, батчами по 1000, с debounce-lock 30 секунд |
 | FR-5 | Повторная привязка/отвязка идемпотентна |
-| FR-6 | Summary возвращает все группы БД без фильтра по владельцу |
+| FR-6 | Summary возвращает все группы БД без фильтра по владельцу и без пагинации |
 | FR-7 | Удаление группы удаляет её и связи `task_group_task` (CASCADE) |
+| FR-8 | `attach`/`remove`/`delete` доступны только владельцу группы, иначе `403`; чтение — без owner-фильтра |
 
 ## Сценарии
 
@@ -78,7 +80,7 @@
 
 - **Given** группа с задачами
 - **When** обработан `TaskGroupsRecalculationRequestedEvent`
-- **Then** статус сохранён и опубликован `TaskGroupStatusChangedEvent`, если изменился
+- **Then** статус сохранён, если изменился
 - **Тесты:** `TaskGroupRecalculationServiceTest::testRecalculateByTaskIdPersistsCompletedStatus`,
   `testRecalculateSkipsSaveWhenStatusUnchanged`,
   `TaskGroupRecalculationStatusTest::testStatusFromMembership`
@@ -160,6 +162,10 @@ hasNonTerminalTask == true -> InProgress
 
 ## Права доступа
 
+`TaskGroupAccessPolicy::assertOwner(ownerId, userId)` → если пользователь не
+владелец группы, `UnauthorizedTaskGroupAccessException` (`403`); вызывается в
+`attach`, `removeTask`, `delete`.
+
 `TaskGroupAccessPolicy::assertContainsTaskIo(groupId, taskId)` → если задачи нет
 в группе, `TaskGroupNotFoundException` (`404`).
 
@@ -168,23 +174,20 @@ hasNonTerminalTask == true -> InProgress
 
 Следствия:
 
-- владелец группы не проверяется;
-- `attach` не проверяет членство и владельца, только доступ к задаче и
-  существование группы;
-- `removeTask` проверяет доступ к `taskId` из пути, но не к `removeTaskId`;
-- `UnauthorizedTaskGroupAccessException` (`403`) объявлен и ловится, но не
-  выбрасывается — код недостижим.
+- `attach` проверяет доступ к задаче, существование группы и владельца; членство
+  не требуется;
+- `removeTask` проверяет доступ к `taskId` из пути и владельца, но не доступ к
+  `removeTaskId`;
+- `delete` проверяет доступ к `taskId`, владельца и членство задачи в группе;
+- чтение (`get`, `list`, `summary`) не проверяет владельца группы.
 
 ## Async, события, кэш
 
 | Событие | Публикует | Обработчик |
 |---------|-----------|------------|
 | `TaskGroupsRecalculationRequestedEvent` | Actions и Task lifecycle | `RecalculateTaskGroupsMessageHandler` |
-| `TaskGroupStatusChangedEvent` | `TaskGroupLifecycleService` | **нет обработчика** |
 
-- `TaskGroupLifecycleService::afterCreated()` публикует `TaskGroupStatusChangedEvent`
-  со статусом `Initial` **до** привязки задач и пересчёта.
-- `afterStatusChanged()` — только при реальной смене статуса.
+- События смены статуса группы нет: `TaskGroupStatusChangedEvent` удалён.
 - Debounce-lock (`TaskGroupCache`):
   - `task_group_recalc.task.{taskId}`;
   - `task_group_recalc.groups.{sha256(sorted ids)}`;
@@ -204,19 +207,15 @@ hasNonTerminalTask == true -> InProgress
 | `UNAUTHORIZED_TASK_ACCESS` | 403 | нет доступа к задаче |
 | `TASK_NOT_FOUND` | 404 | задача не найдена |
 | `TASK_GROUP_NOT_FOUND` | 404 | группа не найдена или задача не входит в неё |
-| `UNAUTHORIZED_TASK_GROUP_ACCESS` | 403 | объявлен, фактически не выбрасывается |
+| `UNAUTHORIZED_TASK_GROUP_ACCESS` | 403 | группу меняет не её владелец |
 
 ## Известные расхождения
 
 | Где | Факт | Ожидание/документация | Ссылка |
 |-----|------|-----------------------|--------|
-| Summary | `listAll()` всех групп без пагинации и фильтра по владельцу | масштаб/изоляция | `TaskGroupSummarizeQueryService` |
-| Событие | нет handler для `TaskGroupStatusChangedEvent` | событие должно потребляться | `Infrastructure/Messaging/TaskGroup` |
-| Создание | `StatusChanged(Initial)` публикуется до привязки задач | событие отражает итоговый статус | `TaskGroupCreateService` |
-| Доступ | владелец группы не проверяется | owner-based доступ | `TaskGroupAccessPolicy` |
-| `403` | `UNAUTHORIZED_TASK_GROUP_ACCESS` недостижим | корректный `403` | `UnauthorizedTaskGroupAccessException` |
+| Summary | `listAll()` всех групп без пагинации и фильтра по владельцу | масштаб | `TaskGroupSummarizeQueryService` |
 | `POST` в задаче | `taskIds` валидируются, но игнорируются | предсказуемый контракт | `TaskTaskGroupController` |
-| Тесты | нет `remove_task`, `400/403/404`, проверок `codeId` | полнота | `tests/Integration/TaskGroup` |
+| Тесты | нет `400/404` и части проверок `codeId` | полнота | `tests/Integration/TaskGroup` |
 
 ## Первоисточники
 
@@ -236,8 +235,6 @@ hasNonTerminalTask == true -> InProgress
 - `api/tests/Integration/TaskGroup/**`, `tests/Integration/Task/TaskTaskGroupControllerTest.php`
 - `api/tests/Application/Service/TaskGroup/**`
 
-## Открытые вопросы
+## Решения по открытым вопросам
 
-- [ ] Нужен ли handler для `TaskGroupStatusChangedEvent` (какой эффект)?
-- [ ] Должен ли summary фильтроваться по владельцу и пагинироваться?
-- [ ] Нужно ли проверять владельца группы при attach/remove/delete?
+Нет.

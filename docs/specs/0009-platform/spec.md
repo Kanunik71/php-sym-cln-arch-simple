@@ -158,7 +158,6 @@ transports:
 routing:
   TaskCreated: async
   TaskGroupsRecalculationRequestedEvent: async
-  TaskGroupStatusChangedEvent: async
   UserRegisteredEvent: async
   UserUpdatedEvent: async
 ```
@@ -167,7 +166,6 @@ routing:
 - Worker: `messenger:consume async scheduler_default -vv --time-limit=3600`
   (docker-профиль `workers`, `restart: unless-stopped`).
 - Retry/failure transport явно не настроены (используются дефолты Messenger).
-- `TaskGroupStatusChangedEvent` маршрутизируется, но handler отсутствует.
 
 ## Кэш
 
@@ -242,7 +240,6 @@ routing:
 | Ошибки | нет глобального обработчика; `500` без `codeId` | единый формат ошибок | `config/packages/framework.yaml` |
 | `401` | тело формирует Symfony Security, не `ErrorResponseModel` | единый контракт | `security.yaml` |
 | Async | нет retry/failure transport; потеря сообщения не компенсируется | надёжность | `messenger.yaml` |
-| Событие | `TaskGroupStatusChangedEvent` без handler | обработка | `messenger.yaml` |
 | Масштаб | `listAll()` в group summary | `listBatch`/batch | 0005 |
 | UUID | regex `[0-9a-fA-F-]{36}` пропускает невалидные id → `500` | `400` | контроллеры |
 | Состояние | `GET /api/tasks` кэш 60 секунд может отдавать устаревший список | инвалидация | 0004 |

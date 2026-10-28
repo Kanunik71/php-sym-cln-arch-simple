@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\TaskGroup\Lifecycle;
 
-use App\Application\Service\TaskGroup\Lifecycle\TaskGroupLifecycleService;
-use App\Application\Service\TaskGroup\Lifecycle\TaskGroupRecalculationService;
 use App\Application\Enum\TaskGroup\TaskGroupStatusEnum;
+use App\Application\Service\TaskGroup\Lifecycle\TaskGroupRecalculationService;
 use App\Tests\DatabaseTestCase;
 
 final class TaskGroupRecalculationServiceTest extends DatabaseTestCase
@@ -68,7 +67,6 @@ final class TaskGroupRecalculationServiceTest extends DatabaseTestCase
 
         $service = new TaskGroupRecalculationService(
             $this->bed->taskGroupRepository(),
-            $this->bed->get(TaskGroupLifecycleService::class),
             batchSize: 2,
         );
         $service->recalculateByGroupIds([

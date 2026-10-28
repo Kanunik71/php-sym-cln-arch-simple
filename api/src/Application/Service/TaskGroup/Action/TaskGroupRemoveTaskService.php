@@ -35,6 +35,7 @@ final readonly class TaskGroupRemoveTaskService
 
         $taskGroup = $this->taskGroupRepository->findOrFail($taskGroupId);
 
+        $this->taskGroupAccessPolicy->assertOwner($taskGroup->ownerId, $userId);
         $this->taskGroupAccessPolicy->assertContainsTaskIo($taskGroupId, $taskId);
 
         if (!$this->taskGroupRepository->containsTask($taskGroupId, $removeTaskId)) {
