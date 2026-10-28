@@ -6,8 +6,10 @@ namespace App\Infrastructure\Persistence\Doctrine\Repository;
 
 use App\Application\Enum\Task\TaskStatusEnum;
 use App\Application\Exception\Task\TaskNotFoundException;
-use App\Application\Model\Task\TaskModel;
+use App\Application\Model\Common\PaginationModel;
+use App\Application\Model\Task\Read\TaskPageModel;
 use App\Application\Model\Task\Read\TaskViewModel;
+use App\Application\Model\Task\TaskModel;
 use App\Application\Port\Task\TaskRepositoryInterface;
 use App\Infrastructure\Persistence\Doctrine\Entity\TaskEntity;
 use App\Infrastructure\Persistence\Doctrine\Mapper\TaskMapper;
@@ -63,14 +65,26 @@ final readonly class DoctrineTaskRepository implements TaskRepositoryInterface
         return $this->taskMapper->toModelArray($this->taskEntityFetcher->listByIds($ids));
     }
 
-    public function listViewsByUserId(string $userId): array
+    public function listViewPageByUserId(string $userId, PaginationModel $pagination): TaskPageModel
     {
-        return $this->taskMapper->toViewModelArray($this->taskEntityFetcher->listViewByUserId($userId));
+        return new TaskPageModel(
+            items: $this->taskMapper->toViewModelArray(
+                $this->taskEntityFetcher->listViewPageByUserId($userId, $pagination),
+            ),
+            total: $this->taskEntityFetcher->countVisibleToUser($userId),
+            page: $pagination->page,
+            perPage: $pagination->perPage,
+        );
     }
 
     public function listByUserId(string $userId): array
     {
         return $this->taskMapper->toModelArray($this->taskEntityFetcher->listByUserId($userId));
+    }
+
+    public function listByOwnerId(string $ownerId): array
+    {
+        return $this->taskMapper->toModelArray($this->taskEntityFetcher->listByOwnerId($ownerId));
     }
 
     public function listUsers(string $taskId): array

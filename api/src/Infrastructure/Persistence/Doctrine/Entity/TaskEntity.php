@@ -20,6 +20,7 @@ class TaskEntity
     public const TABLE = 'tasks';
 
     public const COLUMN_ID = 'id';
+    public const COLUMN_OWNER_ID = 'owner_id';
     public const COLUMN_NAME = 'name';
     public const COLUMN_PARENT_ID = 'parent_id';
     public const COLUMN_ESTIMATE_TIME = 'estimate_time';
@@ -32,6 +33,8 @@ class TaskEntity
 
     /** Doctrine property names for DQL (not SQL column names). */
     public const FIELD_ID = 'id';
+    public const FIELD_OWNER = 'owner';
+    public const FIELD_OWNER_ID = 'ownerId';
     public const FIELD_NAME = 'name';
     public const FIELD_PARENT = 'parent';
     public const FIELD_PARENT_ID = 'parentId';
@@ -43,6 +46,14 @@ class TaskEntity
     #[ORM\Id]
     #[ORM\Column(name: self::COLUMN_ID, type: 'uuid', unique: true)]
     private Uuid $id;
+
+    #[ORM\ManyToOne(targetEntity: UserEntity::class)]
+    #[ORM\JoinColumn(name: self::COLUMN_OWNER_ID, referencedColumnName: 'id', nullable: false)]
+    private UserEntity $owner;
+
+    /** Read-only mirror of owner_id — hydrates without joining users. */
+    #[ORM\Column(name: self::COLUMN_OWNER_ID, type: 'uuid', insertable: false, updatable: false)]
+    private Uuid $ownerId;
 
     #[ORM\Column(name: self::COLUMN_NAME, length: TaskModel::NAME_MAX_LENGTH)]
     private string $name = '';
@@ -114,6 +125,24 @@ class TaskEntity
         $this->id = $id;
 
         return $this;
+    }
+
+    public function getOwner(): UserEntity
+    {
+        return $this->owner;
+    }
+
+    public function setOwner(UserEntity $owner): self
+    {
+        $this->owner = $owner;
+        $this->ownerId = $owner->getId();
+
+        return $this;
+    }
+
+    public function getOwnerId(): Uuid
+    {
+        return $this->ownerId;
     }
 
     public function getParent(): ?TaskEntity

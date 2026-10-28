@@ -16,6 +16,13 @@ final readonly class TaskAccessPolicy
     ) {
     }
 
+    public function assertOwner(string $ownerId, string $userId): void
+    {
+        if ($ownerId !== $userId) {
+            throw UnauthorizedTaskAccessException::create();
+        }
+    }
+
     public function assertUserCanAccessIo(TaskModel $task, string $userId): void
     {
         $users = $this->taskRepository->listUsers($task->id);

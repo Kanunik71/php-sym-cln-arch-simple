@@ -12,7 +12,7 @@ final class AssetDeleteServiceTest extends DatabaseTestCase
     public function testDeletesAsset(): void
     {
         $user = $this->bed->seedDefaultUser();
-        $task = $this->bed->createTask(name: 'Build feature');
+        $task = $this->bed->createTask(ownerId: $user->getId(), name: 'Build feature');
         $asset = $this->bed->createAssetForTask($task->getId(), $user->getId(), 'Laptop', 999.99);
         $assetId = $asset->id;
 

@@ -10,7 +10,6 @@ tests/
 │   └── Trait/
 │       ├── TestBed/   — *TestBedTrait (seed через репозиторий)
 │       ├── Model/     — Asserts*ModelTrait
-│       ├── Cache/     — AssertTaskCacheTrait
 │       └── Common/    — AssertMessengerTrait
 ├── fixtures/       # бинарные файлы (avatar.jpg)
 ├── DatabaseTestCase.php          # Kernel + TestBed, схема на setUp
@@ -70,8 +69,7 @@ Integration/          # один тест на контроллер, зерка�
 5. Выход Action/Query — `*ViewModel` против персистентной `*Model` (`AssertsUserModelTrait`, `AssertsTaskModelTrait`, `AssertsTaskGroupModelTrait`, `AssertsAssetModelTrait`, `AssertsAssetDetailModelTrait`). Persist: `$this->bed->clear()` + `find*ById`.
 6. User `/query` (filter/sort/pagination) — `UserSearchQueryServiceTest`. Whitelist meta без БД — `UserSearchMetaQueryServiceTest`.
 7. Async side effects: `AssertMessengerTrait::assertDispatched($eventClass, times:, predicate:)` по `messenger.transport.async`. По умолчанию транспорт после assert сбрасывается (`resetTransport: true`). Lock диспетчера (`TaskGroupRecalculationDispatcher::releaseTaskLock` / `releaseGroupIdsLock`) снимать явно, если тот же task/group должен уйти в dispatch ещё раз.
-8. Cache invalidation списка Task: `AssertTaskCacheTrait` — `warmTaskUserListCache($userId)` + `assertTaskUserListCacheInvalidated($userId, $callback?)`. Эталон — `TaskLifecycleServiceTest`.
-9. **Typed fixtures:** вход use case — `new *Model(...)`. **Не** `*Model::fromArray`, **не** хелперы с `array $overrides`. `fromArray` / `fromArrayList` — только в `Application/Model` (парсинг wire).
+8. **Typed fixtures:** вход use case — `new *Model(...)`. **Не** `*Model::fromArray`, **не** хелперы с `array $overrides`. `fromArray` / `fromArrayList` — только в `Application/Model` (парсинг wire).
 
 ### Integration
 1. Один `{Name}ControllerTest` на контроллер из `Presentation/Controller/` (у Task их несколько: `Task`, `TaskAsset`, `TaskTaskGroup`).

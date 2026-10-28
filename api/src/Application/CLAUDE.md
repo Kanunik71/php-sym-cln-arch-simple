@@ -199,7 +199,7 @@ Presentation Console только парсит CLI и вызывает `*Service
 
 - `*ViewModelMapper` — persistence `*Model` → response `*ViewModel`
 - `FileItemModelMapper` — `fileId` / `fileIds` → `FileItemModel`
-- `*Cache` — единственные потребители `CacheInterface` (`TaskCache`, `TaskGroupCache`)
+- `*Cache` — единственные потребители `CacheInterface` (`TaskGroupCache`)
 - `*Dispatcher` — «ставить ли async-задачу» (дедуп, нормализация, lock через `*Cache`) + `MessageBusInterface::dispatch`; не выполняет работу Lifecycle и не обрабатывает очередь
 - `*Policy` — preconditions (auth, uniqueness, exists, use-case contract); методы `assert*` / `resolve*`; бросает `Application\Exception`
 - CriteriaApplier / DQL — Infrastructure, не Service

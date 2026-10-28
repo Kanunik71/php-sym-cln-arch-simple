@@ -42,7 +42,7 @@ api/src/
 | **QueryHandler** | `Query → Model/void` | Application | `SearchUsersQueryHandler` |
 | **Mapper** | Domain ↔ Entity | Infrastructure | `UserMapper` |
 | **ModelMapper** | Domain → response Model | Application | `UserModelMapper` |
-| **Cache** | Политика ключей кэша; единственный потребитель `CacheInterface` в Application | Application | `TaskCache` |
+| **Cache** | Политика ключей кэша; единственный потребитель `CacheInterface` в Application | Application | `TaskGroupCache` |
 | **Dispatcher** | Постановка async-работы: дедуп, нормализация, lock, dispatch Domain Event | Application | `TaskGroupRecalculationDispatcher` |
 | **Policy** | Preconditions use case: auth, uniqueness, IO; shared access rules | Application | `UpdateUserPolicy`, `TaskAccessPolicy` |
 | **Repository** | Реализация репозитория | Infrastructure | `DoctrineUserRepository` |

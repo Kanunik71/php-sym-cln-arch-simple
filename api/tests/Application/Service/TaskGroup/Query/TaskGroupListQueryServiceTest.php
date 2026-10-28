@@ -15,7 +15,7 @@ final class TaskGroupListQueryServiceTest extends DatabaseTestCase
     public function testReturnsMappedTaskGroups(): void
     {
         $user = $this->bed->seedDefaultUser();
-        $task = $this->bed->createTask(name: 'Build feature');
+        $task = $this->bed->createTask(ownerId: $user->getId(), name: 'Build feature');
         $group = $this->bed->createTaskGroupForTask($task->getId(), $user->getId(), 'Release 1.0');
 
         $listTaskGroups = $this->bed->get(TaskGroupListQueryService::class);

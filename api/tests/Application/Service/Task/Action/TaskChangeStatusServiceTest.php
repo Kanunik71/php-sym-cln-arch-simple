@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\Task\Action;
 
-use App\Application\Service\Task\Action\TaskChangeStatusService;
 use App\Application\Dispatcher\TaskGroup\TaskGroupRecalculationDispatcher;
-use App\Application\Model\Task\Action\TaskChangeStatusModel;
 use App\Application\Enum\Task\TaskStatusEnum;
 use App\Application\Enum\Task\TaskUserStatusEnum;
+use App\Application\Event\TaskGroup\TaskGroupsRecalculationRequestedEvent;
 use App\Application\Exception\Task\InvalidTaskStatusTransitionException;
 use App\Application\Exception\Task\UnauthorizedTaskAccessException;
-use App\Application\Event\TaskGroup\TaskGroupsRecalculationRequestedEvent;
+use App\Application\Model\Task\Action\TaskChangeStatusModel;
+use App\Application\Service\Task\Action\TaskChangeStatusService;
 use App\Tests\DatabaseTestCase;
 use App\Tests\Support\Trait\Common\AssertMessengerTrait;
 use App\Tests\Support\Trait\Model\AssertsTaskModelTrait;
@@ -24,7 +24,7 @@ final class TaskChangeStatusServiceTest extends DatabaseTestCase
     public function testActivateAndFinishTask(): void
     {
         $user = $this->bed->seedDefaultUser();
-        $task = $this->bed->createTask(name: 'Learn Symfony');
+        $task = $this->bed->createTask(ownerId: $user->getId(), name: 'Learn Symfony');
         $changeTaskStatus = $this->bed->get(TaskChangeStatusService::class);
 
         $activate = new TaskChangeStatusModel(
@@ -75,7 +75,7 @@ final class TaskChangeStatusServiceTest extends DatabaseTestCase
     public function testInvalidStatusTransitionIsRejected(): void
     {
         $user = $this->bed->seedDefaultUser();
-        $task = $this->bed->createTask(name: 'Blocked transition');
+        $task = $this->bed->createTask(ownerId: $user->getId(), name: 'Blocked transition');
         $changeTaskStatus = $this->bed->get(TaskChangeStatusService::class);
 
         $this->expectException(InvalidTaskStatusTransitionException::class);

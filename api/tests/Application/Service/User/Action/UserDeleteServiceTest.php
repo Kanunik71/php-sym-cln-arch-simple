@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\User\Action;
 
-use App\Application\Port\Auth\RefreshTokenRepositoryInterface;
-use App\Application\Service\Auth\RefreshTokenService;
-use App\Application\Service\User\Action\UserDeleteService;
 use App\Application\Enum\Notification\NotificationTypeEnum;
 use App\Application\Enum\Task\TaskUserStatusEnum;
-use App\Application\Model\Task\TaskUserModel;
-use App\Application\Service\Task\Lifecycle\TaskUserListService;
 use App\Application\Exception\User\UnauthorizedUserAccessException;
 use App\Application\Exception\User\UserNotFoundException;
+use App\Application\Model\Task\TaskUserModel;
+use App\Application\Port\Auth\RefreshTokenRepositoryInterface;
+use App\Application\Service\Auth\RefreshTokenService;
+use App\Application\Service\Task\Lifecycle\TaskUserListService;
+use App\Application\Service\User\Action\UserDeleteService;
 use App\Shared\Utils\UidUtils;
 use App\Tests\DatabaseTestCase;
 use App\Tests\Support\TestBed;
@@ -46,6 +46,7 @@ final class UserDeleteServiceTest extends DatabaseTestCase
         $deletedUserId = $user->getId();
 
         $task = $this->bed->createTask(
+            ownerId: $other->getId(),
             name: 'Shared task',
             users: [
                 TaskUserModel::create($deletedUserId, TaskUserStatusEnum::Initial),
@@ -86,7 +87,7 @@ final class UserDeleteServiceTest extends DatabaseTestCase
     {
         $user = $this->bed->createUser(email: 'john@example.com');
         $other = $this->bed->createUser(email: 'other@example.com');
-        $task = $this->bed->createTask(name: 'Shared task');
+        $task = $this->bed->createTask(ownerId: $other->getId(), name: 'Shared task');
         $ownGroup = $this->bed->createTaskGroupForTask($task->getId(), $user->getId(), 'Own');
         $foreignGroup = $this->bed->createTaskGroupForTask($task->getId(), $other->getId(), 'Foreign');
 
@@ -130,6 +131,7 @@ final class UserDeleteServiceTest extends DatabaseTestCase
         $userId = $user->getId();
 
         $task = $this->bed->createTask(
+            ownerId: $other->getId(),
             name: 'Shared task',
             users: [
                 TaskUserModel::create($userId, TaskUserStatusEnum::Initial),
@@ -146,7 +148,7 @@ final class UserDeleteServiceTest extends DatabaseTestCase
 
             public function postFlush(PostFlushEventArgs $args): void
             {
-                $this->flushes++;
+                ++$this->flushes;
                 if ($this->flushes >= 2) {
                     throw new RuntimeException('forced rollback');
                 }
@@ -180,6 +182,35 @@ final class UserDeleteServiceTest extends DatabaseTestCase
         $remainingUsers = $this->bed->taskRepository()->listUsers($remainingTask->id);
         $this->assertTrue(TaskUserListService::has($remainingUsers, $userId));
         $this->assertTrue(TaskUserListService::has($remainingUsers, $other->getId()));
+    }
+
+    public function testDeletesTasksOwnedByTheUser(): void
+    {
+        $user = $this->bed->createUser(email: 'john@example.com');
+        $other = $this->bed->createUser(email: 'other@example.com');
+        $owned = $this->bed->createTask(ownerId: $user->getId(), name: 'Mine');
+        $foreign = $this->bed->createTask(
+            ownerId: $other->getId(),
+            name: 'Theirs',
+            users: [
+                TaskUserModel::create($user->getId(), TaskUserStatusEnum::Initial),
+                TaskUserModel::create($other->getId(), TaskUserStatusEnum::Initial),
+            ],
+        );
+
+        $this->bed->get(UserDeleteService::class)->execute(
+            userId: $user->getId(),
+            currentUserId: $user->getId(),
+        );
+
+        $this->bed->clear();
+        $this->assertNull($this->bed->findTaskById($owned->getId()));
+
+        $remaining = $this->bed->findTaskById($foreign->getId());
+        $this->assertNotNull($remaining);
+        $users = $this->bed->taskRepository()->listUsers($remaining->id);
+        $this->assertFalse(TaskUserListService::has($users, $user->getId()));
+        $this->assertTrue(TaskUserListService::has($users, $other->getId()));
     }
 
     public function testThrowsWhenUserNotFound(): void

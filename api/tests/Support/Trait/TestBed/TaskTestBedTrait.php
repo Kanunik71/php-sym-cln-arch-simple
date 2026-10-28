@@ -23,6 +23,7 @@ trait TaskTestBedTrait
      * @param list<TaskUserModel> $users
      */
     public function createTask(
+        string $ownerId,
         string $name = 'Task',
         TaskStatusEnum $status = TaskStatusEnum::Initial,
         ?string $parentId = null,
@@ -39,6 +40,7 @@ trait TaskTestBedTrait
         return $this->tasks->save(
             new TaskModel(
                 id: $id ?? UidUtils::generateString(),
+                ownerId: $ownerId,
                 name: $name,
                 parentId: $parentId,
                 estimateTime: $estimateTime,
@@ -58,8 +60,10 @@ trait TaskTestBedTrait
         string $name = 'Task',
         int $estimateTime = 60,
         ?string $parentId = null,
+        ?string $ownerId = null,
     ): TaskModel {
         return $this->createTask(
+            ownerId: $ownerId ?? $userId,
             name: $name,
             status: TaskStatusEnum::Active,
             parentId: $parentId,
@@ -74,8 +78,10 @@ trait TaskTestBedTrait
         int $estimateTime = 60,
         ?string $parentId = null,
         ?string $id = null,
+        ?string $ownerId = null,
     ): TaskModel {
         return $this->createTask(
+            ownerId: $ownerId ?? $userId,
             name: $name,
             status: TaskStatusEnum::Finished,
             parentId: $parentId,
@@ -92,8 +98,10 @@ trait TaskTestBedTrait
         string $name = 'Task',
         int $estimateTime = 60,
         ?string $parentId = null,
+        ?string $ownerId = null,
     ): TaskModel {
         return $this->createTask(
+            ownerId: $ownerId ?? $userId,
             name: $name,
             status: TaskStatusEnum::Canceled,
             parentId: $parentId,

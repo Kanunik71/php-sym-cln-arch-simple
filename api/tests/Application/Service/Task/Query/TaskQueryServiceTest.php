@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\Task\Query;
 
-use App\Application\Service\Task\Query\TaskQueryService;
+use App\Application\Enum\Task\TaskUserStatusEnum;
 use App\Application\Exception\Task\UnauthorizedTaskAccessException;
+use App\Application\Model\Task\TaskUserModel;
+use App\Application\Service\Task\Query\TaskQueryService;
 use App\Tests\DatabaseTestCase;
 use App\Tests\Support\Trait\Model\AssertsTaskModelTrait;
 
@@ -16,7 +18,7 @@ final class TaskQueryServiceTest extends DatabaseTestCase
     public function testReturnsMappedTask(): void
     {
         $user = $this->bed->seedDefaultUser();
-        $task = $this->bed->createTask(name: 'Learn Symfony');
+        $task = $this->bed->createTask(ownerId: $user->getId(), name: 'Learn Symfony');
 
         $getTask = $this->bed->get(TaskQueryService::class);
 
@@ -38,5 +40,29 @@ final class TaskQueryServiceTest extends DatabaseTestCase
         $this->expectException(UnauthorizedTaskAccessException::class);
 
         $getTask->execute(taskId: $task->getId(), userId: $other->getId());
+    }
+
+    public function testOwnerWithoutMembershipCannotRead(): void
+    {
+        $owner = $this->bed->seedDefaultUser();
+        $participant = $this->bed->createUser(email: 'participant@example.com');
+        $task = $this->bed->createTask(
+            ownerId: $owner->getId(),
+            name: 'Closed',
+            users: [TaskUserModel::create($participant->getId(), TaskUserStatusEnum::Active)],
+        );
+
+        $result = $this->bed->get(TaskQueryService::class)->execute(
+            taskId: $task->getId(),
+            userId: $participant->getId(),
+        );
+        $this->assertSame($task->getId(), $result->id);
+
+        $this->expectException(UnauthorizedTaskAccessException::class);
+
+        $this->bed->get(TaskQueryService::class)->execute(
+            taskId: $task->getId(),
+            userId: $owner->getId(),
+        );
     }
 }

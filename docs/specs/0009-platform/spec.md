@@ -174,9 +174,8 @@ routing:
 - `framework.cache.app` — `cache.adapter.redis`, `REDIS_URL`.
 - В тестах — `cache.adapter.array`.
 - `CacheInterface` используется только в `*Cache`:
-  - `TaskCache` — список задач пользователя, TTL 60 секунд;
   - `TaskGroupCache` — debounce-lock'и пересчёта, TTL 30 секунд.
-- Ключи: `tasks.user.{userId}`, `task_group_recalc.task.{taskId}`,
+- Ключи: `task_group_recalc.task.{taskId}`,
   `task_group_recalc.groups.{sha256(sorted ids)}`.
 
 ## Scheduler

@@ -12,7 +12,7 @@ final class AssetListQueryServiceTest extends DatabaseTestCase
     public function testReturnsAssetsForUser(): void
     {
         $user = $this->bed->seedDefaultUser();
-        $task = $this->bed->createTask(name: 'Build feature');
+        $task = $this->bed->createTask(ownerId: $user->getId(), name: 'Build feature');
         $asset = $this->bed->createAssetForTask($task->getId(), $user->getId(), 'Laptop', 999.99);
 
         $this->bed->clear();

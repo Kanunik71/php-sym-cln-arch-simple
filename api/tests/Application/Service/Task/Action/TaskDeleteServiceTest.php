@@ -4,24 +4,47 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\Task\Action;
 
-use App\Application\Service\Task\Action\TaskDeleteService;
+use App\Application\Enum\Task\TaskUserStatusEnum;
 use App\Application\Exception\Task\UnauthorizedTaskAccessException;
+use App\Application\Model\Task\TaskUserModel;
+use App\Application\Service\Task\Action\TaskDeleteService;
 use App\Tests\DatabaseTestCase;
 
 final class TaskDeleteServiceTest extends DatabaseTestCase
 {
-    public function testDeletesTask(): void
+    public function testOwnerDeletesTaskWithoutBeingParticipant(): void
     {
-        $user = $this->bed->seedDefaultUser();
-        $task = $this->bed->createTask(name: 'Learn Symfony');
+        $owner = $this->bed->seedDefaultUser();
+        $participant = $this->bed->createUser(email: 'participant@example.com');
+        $task = $this->bed->createTask(
+            ownerId: $owner->getId(),
+            name: 'Learn Symfony',
+            users: [TaskUserModel::create($participant->getId(), TaskUserStatusEnum::Active)],
+        );
         $taskId = $task->getId();
 
-        $deleteTask = $this->bed->get(TaskDeleteService::class);
-
-        $deleteTask->execute(taskId: $taskId, userId: $user->getId());
+        $this->bed->get(TaskDeleteService::class)->execute(taskId: $taskId, userId: $owner->getId());
 
         $this->bed->clear();
         $this->assertNull($this->bed->findTaskById($taskId));
+    }
+
+    public function testParticipantWhoIsNotOwnerCannotDelete(): void
+    {
+        $owner = $this->bed->seedDefaultUser();
+        $participant = $this->bed->createUser(email: 'participant@example.com');
+        $task = $this->bed->createTask(
+            ownerId: $owner->getId(),
+            name: 'Learn Symfony',
+            users: [TaskUserModel::create($participant->getId(), TaskUserStatusEnum::Active)],
+        );
+
+        $this->expectException(UnauthorizedTaskAccessException::class);
+
+        $this->bed->get(TaskDeleteService::class)->execute(
+            taskId: $task->getId(),
+            userId: $participant->getId(),
+        );
     }
 
     public function testThrowsWhenDeletingAnotherUsersTask(): void
@@ -30,10 +53,8 @@ final class TaskDeleteServiceTest extends DatabaseTestCase
         $task = $this->bed->createActiveTask($owner->getId(), 'Owner task');
         $other = $this->bed->createUser(email: 'other@example.com');
 
-        $deleteTask = $this->bed->get(TaskDeleteService::class);
-
         $this->expectException(UnauthorizedTaskAccessException::class);
 
-        $deleteTask->execute(taskId: $task->getId(), userId: $other->getId());
+        $this->bed->get(TaskDeleteService::class)->execute(taskId: $task->getId(), userId: $other->getId());
     }
 }

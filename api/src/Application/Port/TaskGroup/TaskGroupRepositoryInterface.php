@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Application\Port\TaskGroup;
 
+use App\Application\Model\TaskGroup\Read\TaskStatusCountsModel;
 use App\Application\Model\TaskGroup\TaskGroupMembershipFactsModel;
 use App\Application\Model\TaskGroup\TaskGroupModel;
-use App\Application\Model\TaskGroup\Read\TaskStatusCountsModel;
 
 interface TaskGroupRepositoryInterface
 {

@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Infrastructure\Persistence\Doctrine\Mapper;
 
 use App\Application\Mapper\Task\TaskLightModelMapper;
-use App\Application\Model\Task\TaskModel;
-use App\Application\Model\Task\TaskUserModel;
 use App\Application\Model\Task\Read\TaskLightModel;
 use App\Application\Model\Task\Read\TaskViewModel;
+use App\Application\Model\Task\TaskModel;
+use App\Application\Model\Task\TaskUserModel;
 use App\Infrastructure\Persistence\Doctrine\Entity\TaskEntity;
 use App\Infrastructure\Persistence\Doctrine\Entity\TaskUserEntity;
 use App\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
@@ -31,6 +31,7 @@ final readonly class TaskMapper
 
         return new TaskModel(
             id: UidUtils::toString($entity->getId()),
+            ownerId: UidUtils::toString($entity->getOwnerId()),
             name: $entity->getName(),
             parentId: $parentId !== null ? UidUtils::toString($parentId) : null,
             estimateTime: $entity->getEstimateTime(),
@@ -88,6 +89,7 @@ final readonly class TaskMapper
 
         return new TaskViewModel(
             id: $task->id,
+            ownerId: $task->ownerId,
             name: $task->name,
             parentId: $task->parentId,
             estimateTime: $task->estimateTime,
@@ -123,6 +125,9 @@ final readonly class TaskMapper
     ): TaskEntity {
         $entity ??= new TaskEntity();
         $entity->setId(Uuid::fromString($task->id));
+        $entity->setOwner(
+            $this->entityReference->getReference(UserEntity::class, Uuid::fromString($task->ownerId)),
+        );
 
         if ($task->parentId !== null) {
             $entity->setParent(

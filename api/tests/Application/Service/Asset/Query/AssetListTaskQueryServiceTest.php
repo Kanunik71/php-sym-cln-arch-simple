@@ -15,7 +15,7 @@ final class AssetListTaskQueryServiceTest extends DatabaseTestCase
     public function testReturnsMappedAssets(): void
     {
         $user = $this->bed->seedDefaultUser();
-        $task = $this->bed->createTask(name: 'Build feature');
+        $task = $this->bed->createTask(ownerId: $user->getId(), name: 'Build feature');
         $asset = $this->bed->createAssetForTask($task->getId(), $user->getId(), 'Laptop', 999.99);
         $taskId = $task->getId();
         $assetId = $asset->id;

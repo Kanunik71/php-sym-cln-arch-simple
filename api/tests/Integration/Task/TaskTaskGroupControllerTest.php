@@ -30,7 +30,7 @@ final class TaskTaskGroupControllerTest extends AuthenticatedWebTestCase
     public function testListTaskGroupsReturnsOk(): void
     {
         $this->createAuthenticatedClient();
-        $task = $this->bed->createTask(name: 'Build feature');
+        $task = $this->bed->createTask(ownerId: $this->demoUser->getId(), name: 'Build feature');
         $this->bed->createTaskGroupForTask($task->getId(), $this->demoUser->getId(), 'Release 1.0');
 
         $this->client->request(
@@ -54,7 +54,7 @@ final class TaskTaskGroupControllerTest extends AuthenticatedWebTestCase
     public function testCreateTaskGroupReturnsCreated(): void
     {
         $this->createAuthenticatedClient();
-        $task = $this->bed->createTask(name: 'Build feature');
+        $task = $this->bed->createTask(ownerId: $this->demoUser->getId(), name: 'Build feature');
 
         $this->requestJson(
             $this->client,
@@ -70,8 +70,8 @@ final class TaskTaskGroupControllerTest extends AuthenticatedWebTestCase
     public function testAttachTaskGroupReturnsOk(): void
     {
         $this->createAuthenticatedClient();
-        $task = $this->bed->createTask(name: 'Build feature');
-        $otherTask = $this->bed->createTask(name: 'Other feature');
+        $task = $this->bed->createTask(ownerId: $this->demoUser->getId(), name: 'Build feature');
+        $otherTask = $this->bed->createTask(ownerId: $this->demoUser->getId(), name: 'Other feature');
         $group = $this->bed->createTaskGroupForTask($otherTask->getId(), $this->demoUser->getId(), 'Release 1.0');
 
         $this->client->request(
@@ -86,7 +86,7 @@ final class TaskTaskGroupControllerTest extends AuthenticatedWebTestCase
     public function testDeleteTaskGroupReturnsNoContent(): void
     {
         $this->createAuthenticatedClient();
-        $task = $this->bed->createTask(name: 'Build feature');
+        $task = $this->bed->createTask(ownerId: $this->demoUser->getId(), name: 'Build feature');
         $group = $this->bed->createTaskGroupForTask($task->getId(), $this->demoUser->getId(), 'Release 1.0');
 
         $this->client->request(

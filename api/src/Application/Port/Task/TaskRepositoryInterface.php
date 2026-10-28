@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Application\Port\Task;
 
 use App\Application\Enum\Task\TaskStatusEnum;
+use App\Application\Model\Common\PaginationModel;
+use App\Application\Model\Task\Read\TaskPageModel;
+use App\Application\Model\Task\Read\TaskViewModel;
 use App\Application\Model\Task\TaskModel;
 use App\Application\Model\Task\TaskUserModel;
-use App\Application\Model\Task\Read\TaskViewModel;
 
 interface TaskRepositoryInterface
 {
@@ -29,11 +31,13 @@ interface TaskRepositoryInterface
      */
     public function listByIds(array $ids): array;
 
-    /** @return list<TaskViewModel> */
-    public function listViewsByUserId(string $userId): array;
+    public function listViewPageByUserId(string $userId, PaginationModel $pagination): TaskPageModel;
 
     /** @return list<TaskModel> */
     public function listByUserId(string $userId): array;
+
+    /** @return list<TaskModel> */
+    public function listByOwnerId(string $ownerId): array;
 
     /** @return list<TaskUserModel> */
     public function listUsers(string $taskId): array;

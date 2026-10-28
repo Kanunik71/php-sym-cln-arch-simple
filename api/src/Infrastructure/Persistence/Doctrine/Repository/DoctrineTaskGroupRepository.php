@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Persistence\Doctrine\Repository;
 
-use App\Application\Model\TaskGroup\Read\TaskStatusCountsModel;
-use App\Application\Model\TaskGroup\TaskGroupMembershipFactsModel;
-use App\Application\Port\TaskGroup\TaskGroupRepositoryInterface;
 use App\Application\Enum\Task\TaskStatusEnum;
 use App\Application\Exception\TaskGroup\TaskGroupNotFoundException;
+use App\Application\Model\TaskGroup\Read\TaskStatusCountsModel;
+use App\Application\Model\TaskGroup\TaskGroupMembershipFactsModel;
 use App\Application\Model\TaskGroup\TaskGroupModel;
+use App\Application\Port\TaskGroup\TaskGroupRepositoryInterface;
 use App\Infrastructure\Persistence\Doctrine\Entity\TaskEntity;
 use App\Infrastructure\Persistence\Doctrine\Entity\TaskGroupEntity;
 use App\Infrastructure\Persistence\Doctrine\Mapper\TaskGroupMapper;

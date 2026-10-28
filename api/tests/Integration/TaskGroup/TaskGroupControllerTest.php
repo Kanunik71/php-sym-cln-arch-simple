@@ -14,7 +14,7 @@ final class TaskGroupControllerTest extends AuthenticatedWebTestCase
     public function testCreateTaskGroupReturnsCreated(): void
     {
         $this->createAuthenticatedClient();
-        $task = $this->bed->createTask(name: 'Build feature');
+        $task = $this->bed->createTask(ownerId: $this->demoUser->getId(), name: 'Build feature');
 
         $this->requestJson(
             $this->client,

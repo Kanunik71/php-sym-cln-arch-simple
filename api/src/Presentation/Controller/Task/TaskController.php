@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace App\Presentation\Controller\Task;
 
-use App\Application\Service\Task\Action\TaskChangeStatusService;
-use App\Application\Service\Task\Action\TaskCreateService;
-use App\Application\Service\Task\Action\TaskDeleteService;
-use App\Application\Model\Task\Action\TaskChangeStatusModel;
-use App\Application\Model\Task\Action\TaskCreateModel;
-use App\Application\Service\Task\Query\TaskQueryService;
-use App\Application\Service\Task\Query\TaskListQueryService;
 use App\Application\Exception\Task\InvalidTaskStatusTransitionException;
 use App\Application\Exception\Task\TaskNotFoundException;
 use App\Application\Exception\Task\UnauthorizedTaskAccessException;
+use App\Application\Model\Common\PaginationModel;
+use App\Application\Model\Task\Action\TaskChangeStatusModel;
+use App\Application\Model\Task\Action\TaskCreateModel;
+use App\Application\Service\Task\Action\TaskChangeStatusService;
+use App\Application\Service\Task\Action\TaskCreateService;
+use App\Application\Service\Task\Action\TaskDeleteService;
+use App\Application\Service\Task\Query\TaskListQueryService;
+use App\Application\Service\Task\Query\TaskQueryService;
 use App\Presentation\Controller\BaseController;
 use App\Shared\Utils\Http\ErrorResponseUtils;
 use InvalidArgumentException;
@@ -37,13 +38,18 @@ final class TaskController extends BaseController
     }
 
     #[Route('', name: 'list', methods: ['GET'])]
-    public function list(): JsonResponse
+    public function list(Request $request): JsonResponse
     {
-        $tasks = $this->listTasks->execute(
-            userId: $this->getCurrentUserId(),
-        );
+        try {
+            $page = $this->listTasks->execute(
+                userId: $this->getCurrentUserId(),
+                pagination: PaginationModel::fromArray($request->query->all()),
+            );
+        } catch (InvalidArgumentException $exception) {
+            return ErrorResponseUtils::json($exception, Response::HTTP_BAD_REQUEST);
+        }
 
-        return $this->json($tasks);
+        return $this->json($page);
     }
 
     #[Route('', name: 'create', methods: ['POST'])]

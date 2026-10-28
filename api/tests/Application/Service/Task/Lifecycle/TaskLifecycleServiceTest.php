@@ -5,33 +5,24 @@ declare(strict_types=1);
 namespace App\Tests\Application\Service\Task\Lifecycle;
 
 use App\Application\Dispatcher\TaskGroup\TaskGroupRecalculationDispatcher;
-use App\Application\Service\Task\Lifecycle\TaskLifecycleService;
 use App\Application\Enum\Task\TaskStatusEnum;
 use App\Application\Event\Task\TaskCreated;
 use App\Application\Event\TaskGroup\TaskGroupsRecalculationRequestedEvent;
+use App\Application\Service\Task\Lifecycle\TaskLifecycleService;
 use App\Tests\DatabaseTestCase;
-use App\Tests\Support\Trait\Cache\AssertTaskCacheTrait;
 use App\Tests\Support\Trait\Common\AssertMessengerTrait;
 
 final class TaskLifecycleServiceTest extends DatabaseTestCase
 {
     use AssertMessengerTrait;
-    use AssertTaskCacheTrait;
 
-    public function testAfterTaskPersistedOnCreateDispatchesTaskCreatedAndInvalidatesActorListCache(): void
+    public function testAfterTaskPersistedOnCreateDispatchesTaskCreated(): void
     {
         $user = $this->bed->seedDefaultUser();
         $service = $this->bed->get(TaskLifecycleService::class);
+        $task = $this->bed->createTask(ownerId: $user->getId(), name: 'Learn Symfony');
 
-        $this->warmTaskUserListCache($user->getId(), []);
-
-        $task = $this->bed->createTask(name: 'Learn Symfony');
-
-        $service->afterTaskPersisted(
-            task: $task,
-            actorUserId: $user->getId(),
-            created: true,
-        );
+        $service->afterTaskPersisted(task: $task, created: true);
 
         $this->assertDispatched(
             TaskCreated::class,
@@ -40,26 +31,15 @@ final class TaskLifecycleServiceTest extends DatabaseTestCase
                 && $event->estimateTime === $task->getEstimateTime()
                 && $event->parentId === $task->getParentId(),
         );
-
-        $tasks = $this->assertTaskUserListCacheInvalidated(
-            $user->getId(),
-            fn () => $this->bed->taskRepository()->listByUserId($user->getId()),
-        );
-
-        $this->assertCount(1, $tasks);
-        $this->assertSame($task->getId(), $tasks[0]->getId());
-        $this->assertSame($task->getName(), $tasks[0]->getName());
     }
 
-    public function testAfterTaskPersistedOnUpdateInvalidatesListsAndRequestsRecalculation(): void
+    public function testAfterTaskPersistedOnUpdateRequestsRecalculation(): void
     {
         $user = $this->bed->seedDefaultUser();
         $task = $this->bed->createActiveTask($user->getId(), 'Active task', 60);
         $service = $this->bed->get(TaskLifecycleService::class);
 
         $this->assertSame(TaskStatusEnum::Active, $this->bed->findTaskById($task->getId())?->getStatus());
-
-        $this->warmTaskUserListCache($user->getId());
 
         $finishedTask = $this->bed->createFinishedTask(
             userId: $user->getId(),
@@ -68,11 +48,7 @@ final class TaskLifecycleServiceTest extends DatabaseTestCase
             id: $task->getId(),
         );
 
-        $service->afterTaskPersisted(
-            task: $finishedTask,
-            actorUserId: $user->getId(),
-            previousUserIds: [$user->getId()],
-        );
+        $service->afterTaskPersisted(task: $finishedTask);
 
         $this->assertDispatched(
             TaskGroupsRecalculationRequestedEvent::class,
@@ -80,10 +56,6 @@ final class TaskLifecycleServiceTest extends DatabaseTestCase
         );
         $this->bed->get(TaskGroupRecalculationDispatcher::class)->releaseTaskLock($task->getId());
 
-        $this->assertTaskUserListCacheInvalidated($user->getId());
-
-        $persisted = $this->bed->findTaskById($task->getId());
-        $this->assertNotNull($persisted);
-        $this->assertSame(TaskStatusEnum::Finished, $persisted->getStatus());
+        $this->assertSame(TaskStatusEnum::Finished, $this->bed->findTaskById($task->getId())->getStatus());
     }
 }

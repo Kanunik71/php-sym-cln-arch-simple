@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Task;
 
+use App\Application\Enum\Task\TaskStatusEnum;
+use App\Application\Exception\ErrorCodeEnum;
 use App\Application\Model\Task\Action\TaskChangeStatusModel;
 use App\Application\Model\Task\Action\TaskCreateModel;
-use App\Application\Exception\ErrorCodeEnum;
-use App\Application\Enum\Task\TaskStatusEnum;
+use App\Application\Model\Task\Read\TaskPageModel;
 use App\Shared\Utils\UidUtils;
 use App\Tests\AuthenticatedWebTestCase;
 use Symfony\Component\HttpFoundation\Response;
@@ -18,17 +19,31 @@ final class TaskControllerTest extends AuthenticatedWebTestCase
     public function testListTasksReturnsOk(): void
     {
         $this->createAuthenticatedClient();
-        $this->bed->createTask(name: 'Learn Symfony');
+        $this->bed->createTask(ownerId: $this->demoUser->getId(), name: 'Learn Symfony');
 
         $this->client->request('GET', '/api/tasks', server: $this->demoAuthorizedServer());
 
         $this->assertSame(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
+        $page = $this->decodeModel($this->client, TaskPageModel::class);
+        $this->assertSame(1, $page->page);
+        $this->assertSame(20, $page->perPage);
+        $this->assertSame(1, $page->total);
+    }
+
+    public function testListRejectsInvalidPerPage(): void
+    {
+        $this->createAuthenticatedClient();
+
+        $this->client->request('GET', '/api/tasks?perPage=0', server: $this->demoAuthorizedServer());
+
+        $this->assertSame(Response::HTTP_BAD_REQUEST, $this->client->getResponse()->getStatusCode());
+        $this->assertSame(ErrorCodeEnum::ValidationError, $this->decodeErrorModel($this->client)->codeId);
     }
 
     public function testGetTaskReturnsOk(): void
     {
         $this->createAuthenticatedClient();
-        $task = $this->bed->createTask(name: 'Learn Symfony');
+        $task = $this->bed->createTask(ownerId: $this->demoUser->getId(), name: 'Learn Symfony');
 
         $this->client->request(
             'GET',
@@ -82,7 +97,7 @@ final class TaskControllerTest extends AuthenticatedWebTestCase
     public function testChangeStatusReturnsOk(): void
     {
         $this->createAuthenticatedClient();
-        $task = $this->bed->createTask(name: 'Learn Symfony');
+        $task = $this->bed->createTask(ownerId: $this->demoUser->getId(), name: 'Learn Symfony');
 
         $this->requestJson(
             $this->client,
@@ -101,7 +116,7 @@ final class TaskControllerTest extends AuthenticatedWebTestCase
     public function testInvalidStatusTransitionReturnsConflict(): void
     {
         $this->createAuthenticatedClient();
-        $task = $this->bed->createTask(name: 'Blocked');
+        $task = $this->bed->createTask(ownerId: $this->demoUser->getId(), name: 'Blocked');
 
         $this->requestJson(
             $this->client,
@@ -138,7 +153,7 @@ final class TaskControllerTest extends AuthenticatedWebTestCase
     public function testDeleteTaskReturnsNoContent(): void
     {
         $this->createAuthenticatedClient();
-        $task = $this->bed->createTask(name: 'Learn Symfony');
+        $task = $this->bed->createTask(ownerId: $this->demoUser->getId(), name: 'Learn Symfony');
 
         $this->client->request(
             'DELETE',

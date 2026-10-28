@@ -31,6 +31,7 @@ final readonly class TaskModel implements \App\Application\Model\Common\Identifi
 
     public function __construct(
         public string $id,
+        public string $ownerId,
         string $name,
         ?string $parentId,
         ?int $estimateTime,
@@ -55,6 +56,7 @@ final readonly class TaskModel implements \App\Application\Model\Common\Identifi
 
     public static function create(
         string $name,
+        string $ownerId,
         ?int $estimateTime = null,
         ?string $parentId = null,
     ): self {
@@ -62,6 +64,7 @@ final readonly class TaskModel implements \App\Application\Model\Common\Identifi
 
         return new self(
             id: UidUtils::generateString(),
+            ownerId: $ownerId,
             name: $name,
             parentId: $parentId,
             estimateTime: $estimateTime,
@@ -77,6 +80,7 @@ final readonly class TaskModel implements \App\Application\Model\Common\Identifi
 
         return new self(
             id: $this->id,
+            ownerId: $this->ownerId,
             name: $this->name,
             parentId: $this->parentId,
             estimateTime: NumberAssertUtils::min($estimateTime, 0, 'Estimate time'),
@@ -95,6 +99,7 @@ final readonly class TaskModel implements \App\Application\Model\Common\Identifi
 
         return new self(
             id: $this->id,
+            ownerId: $this->ownerId,
             name: $this->name,
             parentId: $this->parentId,
             estimateTime: $this->estimateTime,
@@ -113,6 +118,7 @@ final readonly class TaskModel implements \App\Application\Model\Common\Identifi
 
         return new self(
             id: $this->id,
+            ownerId: $this->ownerId,
             name: $this->name,
             parentId: $this->parentId,
             estimateTime: $this->estimateTime,
@@ -128,6 +134,11 @@ final readonly class TaskModel implements \App\Application\Model\Common\Identifi
     public function getId(): string
     {
         return $this->id;
+    }
+
+    public function getOwnerId(): string
+    {
+        return $this->ownerId;
     }
 
     public function getName(): string

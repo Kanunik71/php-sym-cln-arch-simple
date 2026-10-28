@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Application\Service\User\Action;
 
-use App\Application\Cache\Task\TaskCache;
 use App\Application\Model\User\UserModel;
 use App\Application\Policy\User\UserAccessPolicy;
 use App\Application\Port\Asset\AssetRepositoryInterface;
@@ -17,6 +16,7 @@ use App\Application\Port\TransactionManagerInterface;
 use App\Application\Port\User\UserRepositoryInterface;
 use App\Application\Service\Asset\Lifecycle\AssetLifecycleService;
 use App\Application\Service\File\Lifecycle\FileLifecycleService;
+use App\Application\Service\Task\Action\TaskDeleteService;
 use App\Application\Service\Task\Lifecycle\TaskUserListService;
 
 final readonly class UserDeleteService
@@ -32,8 +32,8 @@ final readonly class UserDeleteService
         private FileRepositoryInterface $fileRepository,
         private AssetLifecycleService $assetLifecycleService,
         private FileLifecycleService $fileLifecycleService,
+        private TaskDeleteService $deleteTask,
         private TransactionManagerInterface $transactionManager,
-        private TaskCache $taskCache,
     ) {
     }
 
@@ -50,7 +50,6 @@ final readonly class UserDeleteService
         );
 
         $this->fileLifecycleService->purgeStorage($storageKeys);
-        $this->taskCache->invalidateUserList($userId);
     }
 
     /**
@@ -62,6 +61,10 @@ final readonly class UserDeleteService
 
         foreach ($this->assetRepository->listByOwnerId($userId) as $asset) {
             $storageKeys = [...$storageKeys, ...$this->assetLifecycleService->deleteRecords($asset)];
+        }
+
+        foreach ($this->taskRepository->listByOwnerId($userId) as $ownedTask) {
+            $this->deleteTask->execute(taskId: $ownedTask->id, userId: $userId);
         }
 
         foreach ($this->taskRepository->listByUserId($userId) as $task) {

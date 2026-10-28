@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace App\Application\Service\Task\Action;
 
-use App\Application\Cache\Task\TaskCache;
 use App\Application\Dispatcher\TaskGroup\TaskGroupRecalculationDispatcher;
 use App\Application\Policy\Task\TaskAccessPolicy;
 use App\Application\Port\Task\TaskRepositoryInterface;
 use App\Application\Port\TaskGroup\TaskGroupRepositoryInterface;
-use App\Application\Service\Task\Lifecycle\TaskUserListService;
 use App\Shared\Utils\ArrayUtils;
 
 final readonly class TaskDeleteService
@@ -18,7 +16,6 @@ final readonly class TaskDeleteService
         private TaskAccessPolicy $taskAccessPolicy,
         private TaskRepositoryInterface $taskRepository,
         private TaskGroupRepositoryInterface $taskGroupRepository,
-        private TaskCache $taskCache,
         private TaskGroupRecalculationDispatcher $recalculationDispatcher,
     ) {
     }
@@ -27,20 +24,13 @@ final readonly class TaskDeleteService
     {
         $task = $this->taskRepository->findOrFail($taskId);
 
-        $this->taskAccessPolicy->assertUserCanAccessIo($task, $userId);
-
-        $userIdsToInvalidate = [
-            $userId,
-            ...TaskUserListService::ids($this->taskRepository->listUsers($task->id)),
-        ];
+        $this->taskAccessPolicy->assertOwner($task->ownerId, $userId);
 
         $affectedGroupIds = ArrayUtils::ids(
             $this->taskGroupRepository->listByTaskId($taskId),
         );
 
         $this->taskRepository->delete($task);
-
-        $this->taskCache->invalidateUserLists(...$userIdsToInvalidate);
 
         $this->recalculationDispatcher->requestByGroupIds($affectedGroupIds);
     }

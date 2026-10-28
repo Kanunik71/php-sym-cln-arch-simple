@@ -13,7 +13,7 @@ final class TaskGroupSummarizeQueryServiceTest extends DatabaseTestCase
     {
         $user = $this->bed->seedDefaultUser();
 
-        $initialTask = $this->bed->createTask(name: 'Initial task');
+        $initialTask = $this->bed->createTask(ownerId: $user->getId(), name: 'Initial task');
         $activeTask = $this->bed->createActiveTask($user->getId(), 'Active task');
         $finishedTask = $this->bed->createFinishedTask($user->getId(), 'Finished task');
         $canceledTask = $this->bed->createCanceledTask($user->getId(), 'No longer needed', 'Canceled task');

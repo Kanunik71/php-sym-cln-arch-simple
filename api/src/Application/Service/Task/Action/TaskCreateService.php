@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Application\Service\Task\Action;
 
 use App\Application\Model\Task\Action\TaskCreateModel;
-use App\Application\Model\Task\TaskModel;
 use App\Application\Model\Task\Read\TaskViewModel;
+use App\Application\Model\Task\TaskModel;
 use App\Application\Policy\Task\CreateTaskPolicy;
 use App\Application\Port\Task\TaskRepositoryInterface;
 use App\Application\Service\Task\Lifecycle\TaskLifecycleService;
@@ -26,6 +26,7 @@ final readonly class TaskCreateService
 
         $task = TaskModel::create(
             name: $model->name,
+            ownerId: $userId,
             estimateTime: $model->estimateTime,
             parentId: $model->parentId,
         );
@@ -34,7 +35,6 @@ final readonly class TaskCreateService
 
         $this->taskLifecycleService->afterTaskPersisted(
             task: $savedTask,
-            actorUserId: $userId,
             created: true,
         );
 

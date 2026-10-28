@@ -14,28 +14,32 @@ use PHPUnit\Framework\TestCase;
 
 final class TaskModelTest extends TestCase
 {
+    private const OWNER_ID = '11111111-1111-1111-1111-111111111111';
+
     public function testCreateSetsInitialStatus(): void
     {
-        $task = TaskModel::create('Parent task');
-        $child = TaskModel::create('Child task', parentId: $task->id);
+        $task = TaskModel::create('Parent task', self::OWNER_ID);
+        $child = TaskModel::create('Child task', self::OWNER_ID, parentId: $task->id);
 
         $this->assertSame(TaskStatusEnum::Initial, $task->status);
+        $this->assertSame(self::OWNER_ID, $task->ownerId);
         $this->assertSame($task->id, $child->parentId);
     }
 
     public function testActivatedTransitionsStatus(): void
     {
-        $task = TaskModel::create('Draft task');
+        $task = TaskModel::create('Draft task', self::OWNER_ID);
         $activated = $task->activated(estimateTime: 90);
 
         $this->assertSame(TaskStatusEnum::Active, $activated->status);
         $this->assertSame(90, $activated->estimateTime);
+        $this->assertSame(self::OWNER_ID, $activated->ownerId);
         $this->assertSame(TaskStatusEnum::Initial, $task->status);
     }
 
     public function testActivateRejectsInvalidTransition(): void
     {
-        $task = TaskModel::create('Draft task')->activated(30)->finished();
+        $task = TaskModel::create('Draft task', self::OWNER_ID)->activated(30)->finished();
 
         $this->expectException(InvalidTaskStatusTransitionException::class);
         $task->activated(10);
@@ -44,19 +48,19 @@ final class TaskModelTest extends TestCase
     public function testRejectsBlankName(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        TaskModel::create('   ');
+        TaskModel::create('   ', self::OWNER_ID);
     }
 
     public function testRejectsNameExceedingMaxLength(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        TaskModel::create(str_repeat('a', TaskModel::NAME_MAX_LENGTH + 1));
+        TaskModel::create(str_repeat('a', TaskModel::NAME_MAX_LENGTH + 1), self::OWNER_ID);
     }
 
     public function testRejectsNegativeEstimateTime(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        TaskModel::create('Draft task', estimateTime: -1);
+        TaskModel::create('Draft task', self::OWNER_ID, estimateTime: -1);
     }
 
     public function testTaskUserModelCreate(): void

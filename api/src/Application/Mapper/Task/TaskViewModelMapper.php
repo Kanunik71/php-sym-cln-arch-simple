@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Application\Mapper\Task;
 
+use App\Application\Model\Task\Read\TaskViewModel;
 use App\Application\Model\Task\TaskModel;
 use App\Application\Model\Task\TaskUserModel;
-use App\Application\Model\Task\Read\TaskViewModel;
 use App\Shared\Utils\ArrayUtils;
 use App\Shared\Utils\DateUtils;
 
@@ -19,6 +19,7 @@ final class TaskViewModelMapper
     {
         return new TaskViewModel(
             id: $task->id,
+            ownerId: $task->ownerId,
             name: $task->name,
             parentId: $task->parentId,
             estimateTime: $task->estimateTime,

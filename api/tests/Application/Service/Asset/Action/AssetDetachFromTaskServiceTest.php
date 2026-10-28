@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\Asset\Action;
 
-use App\Application\Service\Asset\Action\AssetDetachFromTaskService;
 use App\Application\Enum\Asset\AssetTypeEnum;
+use App\Application\Service\Asset\Action\AssetDetachFromTaskService;
 use App\Tests\DatabaseTestCase;
 
 final class AssetDetachFromTaskServiceTest extends DatabaseTestCase
@@ -13,7 +13,7 @@ final class AssetDetachFromTaskServiceTest extends DatabaseTestCase
     public function testDeletesAssetWhenLastTaskDetached(): void
     {
         $user = $this->bed->seedDefaultUser();
-        $task = $this->bed->createTask(name: 'Build feature');
+        $task = $this->bed->createTask(ownerId: $user->getId(), name: 'Build feature');
         $asset = $this->bed->createAssetForTask($task->getId(), $user->getId(), 'Laptop', 999.99);
         $assetId = $asset->id;
 
@@ -32,8 +32,8 @@ final class AssetDetachFromTaskServiceTest extends DatabaseTestCase
     public function testKeepsAssetWhenOtherTasksRemain(): void
     {
         $user = $this->bed->seedDefaultUser();
-        $firstTask = $this->bed->createTask(name: 'First task');
-        $secondTask = $this->bed->createTask(name: 'Second task');
+        $firstTask = $this->bed->createTask(ownerId: $user->getId(), name: 'First task');
+        $secondTask = $this->bed->createTask(ownerId: $user->getId(), name: 'Second task');
         $asset = $this->bed->createAssetForTask($firstTask->getId(), $user->getId(), 'Shared server', 2500, AssetTypeEnum::Virtual);
         $this->bed->linkAssetToTask($asset, $secondTask->getId());
 

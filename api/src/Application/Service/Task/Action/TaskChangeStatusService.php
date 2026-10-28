@@ -7,8 +7,8 @@ namespace App\Application\Service\Task\Action;
 use App\Application\Enum\Task\TaskStatusEnum;
 use App\Application\Enum\Task\TaskUserStatusEnum;
 use App\Application\Model\Task\Action\TaskChangeStatusModel;
-use App\Application\Model\Task\TaskModel;
 use App\Application\Model\Task\Read\TaskViewModel;
+use App\Application\Model\Task\TaskModel;
 use App\Application\Policy\Task\ChangeTaskStatusPolicy;
 use App\Application\Policy\Task\TaskAccessPolicy;
 use App\Application\Port\Task\TaskRepositoryInterface;
@@ -35,18 +35,12 @@ final readonly class TaskChangeStatusService
         $this->taskAccessPolicy->assertUserCanAccessIo($task, $userId);
 
         $users = $this->taskRepository->listUsers($task->id);
-        $previousUserIds = TaskUserListService::ids($users);
 
         [$updatedTask, $usersToSave] = $this->applyStatusChange($task, $users, $status, $model);
 
         $savedTask = $this->taskRepository->save($updatedTask, $usersToSave);
 
-        $this->taskLifecycleService->afterTaskPersisted(
-            task: $savedTask,
-            actorUserId: $userId,
-            previousUserIds: $previousUserIds,
-            currentUserIds: TaskUserListService::ids($usersToSave),
-        );
+        $this->taskLifecycleService->afterTaskPersisted(task: $savedTask);
 
         return $this->taskRepository->findViewOrFail($savedTask->id);
     }
@@ -69,9 +63,7 @@ final readonly class TaskChangeStatusService
                 $users,
             ],
             TaskStatusEnum::Finished => [$task->finished(), $users],
-            TaskStatusEnum::Initial => throw new InvalidArgumentException(
-                'Invalid status. Allowed values: Active, Canceled, Finished.',
-            ),
+            TaskStatusEnum::Initial => throw new InvalidArgumentException('Invalid status. Allowed values: Active, Canceled, Finished.'),
         };
     }
 

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\TaskGroup\Action;
 
-use App\Application\Service\TaskGroup\Action\TaskGroupCreateService;
 use App\Application\Dispatcher\TaskGroup\TaskGroupRecalculationDispatcher;
-use App\Application\Model\TaskGroup\Action\TaskGroupCreateModel;
 use App\Application\Event\TaskGroup\TaskGroupsRecalculationRequestedEvent;
+use App\Application\Model\TaskGroup\Action\TaskGroupCreateModel;
+use App\Application\Service\TaskGroup\Action\TaskGroupCreateService;
 use App\Tests\DatabaseTestCase;
 use App\Tests\Support\Trait\Common\AssertMessengerTrait;
 
@@ -18,8 +18,8 @@ final class TaskGroupCreateServiceTest extends DatabaseTestCase
     public function testCreatesTaskGroupWithTaskIds(): void
     {
         $user = $this->bed->seedDefaultUser();
-        $task = $this->bed->createTask(name: 'Build feature');
-        $otherTask = $this->bed->createTask(name: 'Other feature');
+        $task = $this->bed->createTask(ownerId: $user->getId(), name: 'Build feature');
+        $otherTask = $this->bed->createTask(ownerId: $user->getId(), name: 'Other feature');
         $create = new TaskGroupCreateModel(
             name: 'Release 1.0',
             taskIds: [$task->getId(), $otherTask->getId()],

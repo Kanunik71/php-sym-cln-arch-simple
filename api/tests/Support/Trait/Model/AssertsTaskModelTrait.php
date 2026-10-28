@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Support\Trait\Model;
 
-use App\Application\Model\Task\TaskModel;
 use App\Application\Model\Task\Read\TaskViewModel;
-use App\Application\Port\Task\TaskRepositoryInterface;
+use App\Application\Model\Task\TaskModel;
 use App\Shared\Utils\DateUtils;
 use App\Tests\Support\TestBed;
 
@@ -20,6 +19,7 @@ trait AssertsTaskModelTrait
         $users = $this->bed->taskRepository()->listUsers($task->id);
 
         $this->assertSame($task->id, $model->id);
+        $this->assertSame($task->ownerId, $model->ownerId);
         $this->assertSame($task->name, $model->name);
         $this->assertSame($task->parentId, $model->parentId);
         $this->assertSame($task->estimateTime, $model->estimateTime);

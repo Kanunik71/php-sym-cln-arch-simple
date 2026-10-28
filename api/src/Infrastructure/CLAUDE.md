@@ -128,7 +128,7 @@ Side effects (object storage, cache, events) **никогда** не делег�
 
 ### Cache
 
-Реализация `CacheInterface` (Application Port). Не знает о Task/User/Asset — только ключ, TTL и callback. Потребители в Application — только классы `*Cache` (`TaskCache`, `TaskGroupCache`), не Service. `*Dispatcher` берёт lock через `*Cache` (`TaskGroupCache`), не через `CacheInterface` напрямую.
+Реализация `CacheInterface` (Application Port). Не знает о Task/User/Asset — только ключ, TTL и callback. Потребители в Application — только классы `*Cache` (`TaskGroupCache`), не Service. `*Dispatcher` берёт lock через `*Cache` (`TaskGroupCache`), не через `CacheInterface` напрямую.
 
 | Класс | Роль |
 |-------|------|
