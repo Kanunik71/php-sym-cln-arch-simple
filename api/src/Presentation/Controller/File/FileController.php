@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Presentation\Controller\File;
 
+use App\Application\Exception\File\FileNotFoundException;
+use App\Application\Exception\File\UnauthorizedFileAccessException;
 use App\Application\Service\File\Action\FileUploadTmpService;
 use App\Application\Service\File\Query\FileDownloadQueryService;
 use App\Application\Service\File\Query\FileQueryService;
-use App\Application\Exception\File\FileNotFoundException;
-use App\Application\Exception\File\UnauthorizedFileAccessException;
 use App\Presentation\Controller\BaseController;
 use App\Shared\Utils\Http\ErrorResponseUtils;
 use InvalidArgumentException;
@@ -21,7 +21,6 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/files', name: 'files_')]
-#[IsGranted('ROLE_USER')]
 final class FileController extends BaseController
 {
     public function __construct(
@@ -32,6 +31,7 @@ final class FileController extends BaseController
     }
 
     #[Route('', name: 'upload', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
     public function upload(Request $request): JsonResponse
     {
         $uploadedFile = $request->files->get('file');
@@ -97,6 +97,7 @@ final class FileController extends BaseController
     }
 
     #[Route('/{id}', name: 'get', requirements: ['id' => '[0-9a-fA-F-]{36}'], methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
     public function get(string $id): JsonResponse
     {
         try {
@@ -114,12 +115,13 @@ final class FileController extends BaseController
     }
 
     #[Route('/{id}/download', name: 'download', requirements: ['id' => '[0-9a-fA-F-]{36}'], methods: ['GET'])]
-    public function download(string $id): Response
+    public function download(string $id, Request $request): Response
     {
         try {
             $download = $this->downloadFile->execute(
-                userId: $this->getCurrentUserId(),
                 fileId: $id,
+                expiresAt: $request->query->getString('exp'),
+                signature: $request->query->getString('sig'),
             );
         } catch (FileNotFoundException $exception) {
             return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);

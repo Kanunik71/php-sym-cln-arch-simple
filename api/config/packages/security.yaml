@@ -24,6 +24,7 @@ security:
 
     access_control:
         - { path: ^/api/auth, roles: PUBLIC_ACCESS }
+        - { path: '^/api/files/[0-9a-fA-F-]{36}/download$', roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:

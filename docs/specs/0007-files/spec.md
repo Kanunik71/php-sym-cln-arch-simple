@@ -4,22 +4,23 @@
 |---|---|
 | Тип | `baseline` (as-is) |
 | Статус | `implemented` |
-| Дата | 2026-10-27 |
+| Дата | 2026-10-28 |
 | Источники | `api/src/Presentation/Controller/File/FileController.php`, `api/src/Application/Service/File/**`, `api/src/Application/Model/File/**`, `api/src/Application/Policy/File/**`, `api/src/Infrastructure/Storage/LocalFileStorageAdapter.php`, `api/config/services.yaml`, `api/tests/Integration/File/**`, `api/tests/Application/Service/File/**` |
 
 ## Контекст
 
 Файлы загружаются сначала как временные, затем при привязке к ассету/аватару
 становятся постоянными. Временные файлы старше TTL удаляются по расписанию.
-Скачивание — потоковое, только владельцем.
+Скачивание — потоковое, по подписанному URL, без JWT: так ссылка работает в `<img src>`.
 
 ## Акторы и доступ
 
-- Все маршруты — `ROLE_USER`, JWT обязателен.
-- Владелец файла — единственный, кто может читать метаданные и скачивать файл
-  (`FileAccessPolicy`).
+- Загрузка и метаданные — `ROLE_USER`, JWT обязателен.
+- Метаданные читает только владелец (`FileAccessPolicy`).
+- Скачивание не требует JWT. Пропуск — query `exp` и `sig` в `url`, который API
+  уже отдал в ответе (ассет задачи, аватар, деталь своего ассета).
 - Загрузка доступна любому аутентифицированному пользователю.
-- Публичного доступа к файлам нет.
+- Каталог storage не публичный. UUID без подписи не скачивается.
 
 ## User stories
 
@@ -41,6 +42,7 @@
 | FR-5 | При привязке файл становится `Permanent`, ключ `permanent/{id}` |
 | FR-6 | Скачивание отдаёт `Content-Disposition: inline`, оригинальный MIME |
 | FR-7 | Временные файлы старше 24 часов удаляются командой/планировщиком |
+| FR-8 | Download URL содержит `exp` (unix) и `sig` = HMAC-SHA256 от `fileId\|exp`, ключ `%kernel.secret%`. Срок — `app.file.download_url_ttl_seconds` (3600). `exp` строго больше `time()` |
 
 ## Сценарии
 
@@ -61,15 +63,20 @@
 ### S-3: Метаданные и скачивание
 
 - **Given** файл принадлежит пользователю
-- **When** `GET /api/files/{id}` или `GET /api/files/{id}/download`
-- **Then** `200`; метаданные — JSON, скачивание — `StreamedResponse`
-- **Тесты:** покрыто косвенно; отдельных успешных Integration-тестов нет
+- **When** `GET /api/files/{id}` с JWT владельца
+- **Then** `200`, `FileViewModel`
+- **When** `GET /api/files/{id}/download?exp&sig` с подписью из выданного `url`
+- **Then** `200`, `StreamedResponse`, без JWT
+- **Тест:** `FileControllerTest::testSignedDownloadUrlWorksWithoutJwt`
 
-### S-4: Чужой файл
+### S-4: Чужой файл и плохая подпись
 
 - **Given** файл принадлежит другому пользователю
-- **When** `GET` или `download`
+- **When** `GET /api/files/{id}` с чужим JWT
 - **Then** `403 UNAUTHORIZED_FILE_ACCESS`
+- **When** download без query или с чужой/просроченной подписью
+- **Then** `403 UNAUTHORIZED_FILE_ACCESS` (даже для владельца)
+- **Тест:** `FileControllerTest::testSignedDownloadUrlWorksWithoutJwt` (download без query)
 
 ### S-5: Очистка
 
@@ -80,8 +87,10 @@
 ### S-6: Без аутентификации
 
 - **Given** нет JWT
-- **When** любой маршрут `/api/files/*`
+- **When** `POST /api/files` или `GET /api/files/{id}`
 - **Then** `401`
+- **When** download без подписи
+- **Then** `403`, не `401`
 - **Тест:** `FileControllerTest::testFilesRequireAuthentication`
 
 ## API-контракт
@@ -90,7 +99,7 @@
 |-------|------|------|-------|--------|
 | POST | `/api/files` | multipart `file` | `201`, `FileViewModel` | `400 VALIDATION_ERROR`, `401`, `500` при ошибке storage |
 | GET | `/api/files/{id}` | path | `200`, `FileViewModel` | `401`, `403`, `404`, `500` на невалидном 36-символьном id |
-| GET | `/api/files/{id}/download` | path | `200`, поток | `401`, `403`, `404`, `500` |
+| GET | `/api/files/{id}/download` | path + query `exp`, `sig` | `200`, поток | `403`, `404`, `500` |
 
 ### Upload
 
@@ -112,6 +121,11 @@
 
 `Content-Type` = сохранённый `mimeType`; `Content-Disposition: inline;
 filename="<originalName>"`. Тело — поток из storage (без буферизации в память).
+
+JWT не проверяется. `exp` и `sig` обязательны. Подпись считает
+`FileDownloadSignature`, в URL её кладёт `SymfonyFileDownloadUrlProvider`
+(`FileItemModel.url`). Пересланная ссылка работает до `exp`, даже если доступ
+к задаче уже отозван. Содержимое файла не проверяется.
 
 ## Модели и инварианты
 
@@ -162,7 +176,7 @@ cleanup (>24h)-> удалить storage + строку БД (только Tempor
 | `codeId` | HTTP | Когда |
 |----------|------|-------|
 | `VALIDATION_ERROR` | 400 | нет поля `file`, пустой файл, размер > лимита, MIME не разрешён |
-| `UNAUTHORIZED_FILE_ACCESS` | 403 | чужой файл |
+| `UNAUTHORIZED_FILE_ACCESS` | 403 | чужие метаданные; download без верной непросроченной подписи |
 | `FILE_NOT_FOUND` | 404 | файл не найден |
 | `INVALID_FILE_STATE` | 403 | объявлен, но нигде не выбрасывается |
 | — | 500 | ошибка чтения/записи storage; невалидный 36-символьный UUID |
@@ -171,9 +185,8 @@ cleanup (>24h)-> удалить storage + строку БД (только Tempor
 
 | Где | Факт | Ожидание/документация | Ссылка |
 |-----|------|-----------------------|--------|
-| MIME | доверяет client MIME / расширению, содержимое не проверяется | проверка реального типа | `FileController::resolveUploadedMimeType` |
-| Скачивание | только владелец; URL изображения ассета недоступен участникам задачи | доступ по контексту ассета/задачи | `FileAccessPolicy` |
-| Тесты | успешные upload/get/download не покрыты Integration-тестами | полнота контракта | `FileControllerTest` |
+| MIME | доверяет client MIME / расширению, содержимое не проверяется | принято: проверку содержимого не делаем | `FileController::resolveUploadedMimeType` |
+| Тесты | успешные upload/get не покрыты Integration-тестами | полнота контракта | `FileControllerTest` |
 | Очистка | storage удаляется до БД, без транзакции | согласованность | `FileCleanupTmpService` |
 | Имя | `Content-Disposition` не экранирует кавычки/переводы строк | безопасный заголовок | `FileController::download` |
 | Промоушен | `move` + `save` без транзакции; при сбое `save` файл уже перемещён | компенсация | `FileLifecycleService::promote` |
@@ -189,6 +202,7 @@ cleanup (>24h)-> удалить storage + строку БД (только Tempor
 - `api/src/Application/Port/File/{FileRepositoryInterface,FileStorageInterface,FileDownloadUrlProviderInterface}.php`
 - `api/src/Infrastructure/Storage/LocalFileStorageAdapter.php`
 - `api/src/Infrastructure/Routing/SymfonyFileDownloadUrlProvider.php`
+- `api/src/Infrastructure/Routing/FileDownloadSignature.php`
 - `api/config/services.yaml` (`app.file.*`, allowed MIME)
 - `api/src/Infrastructure/Scheduler/AppScheduleProvider.php`
 - `api/tests/Integration/File/FileControllerTest.php`
@@ -196,6 +210,6 @@ cleanup (>24h)-> удалить storage + строку БД (только Tempor
 
 ## Открытые вопросы
 
-- [ ] Нужна ли проверка реального MIME/содержимого (image dimensions, malware)?
-- [ ] Должны ли участники задачи скачивать изображения чужих ассетов?
-- [ ] Нужен ли публичный/подписанный URL вместо JWT-скачивания?
+- [x] Проверку реального MIME/содержимого не делаем.
+- [x] Участник качает картинку, если API уже отдал её `url` (в списке ассетов задачи это `mainImage`). Остальные изображения детали по-прежнему только у владельца.
+- [x] Скачивание — подписанный URL, не JWT: `<img src>` не шлёт `Authorization`.

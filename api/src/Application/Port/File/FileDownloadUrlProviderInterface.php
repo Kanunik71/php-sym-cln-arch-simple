@@ -9,4 +9,6 @@ interface FileDownloadUrlProviderInterface
     public function buildDownloadUrl(string $fileId): string;
 
     public function buildDownloadUrlOrNull(?string $fileId): ?string;
+
+    public function matches(string $fileId, ?string $expiresAt, ?string $signature): bool;
 }

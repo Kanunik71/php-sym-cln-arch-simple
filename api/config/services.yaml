@@ -2,6 +2,7 @@ parameters:
     app.file_storage.path: '%kernel.project_dir%/var/storage'
     app.file.tmp_ttl_hours: 24
     app.file.max_upload_bytes: 10485760
+    app.file.download_url_ttl_seconds: 3600
     app.jwt.access_ttl: 900
     app.refresh_token.ttl_seconds: 2592000
     app.refresh_token.cleanup_retention_seconds: 604800
@@ -43,6 +44,14 @@ services:
 
     App\Application\Port\File\FileDownloadUrlProviderInterface:
         alias: App\Infrastructure\Routing\SymfonyFileDownloadUrlProvider
+
+    App\Infrastructure\Routing\FileDownloadSignature:
+        arguments:
+            $secret: '%kernel.secret%'
+
+    App\Infrastructure\Routing\SymfonyFileDownloadUrlProvider:
+        arguments:
+            $ttlSeconds: '%app.file.download_url_ttl_seconds%'
 
     App\Application\Port\Security\TokenProviderInterface:
         alias: App\Infrastructure\Security\LexikTokenProvider
