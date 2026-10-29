@@ -21,6 +21,5 @@ enum ErrorCodeEnum: string
     case InvalidFileState = 'INVALID_FILE_STATE';
     case TaskGroupNotFound = 'TASK_GROUP_NOT_FOUND';
     case UnauthorizedTaskGroupAccess = 'UNAUTHORIZED_TASK_GROUP_ACCESS';
-    case NotificationPreferenceNotFound = 'NOTIFICATION_PREFERENCE_NOT_FOUND';
     case ValidationError = 'VALIDATION_ERROR';
 }

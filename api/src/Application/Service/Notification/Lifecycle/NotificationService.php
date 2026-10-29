@@ -11,6 +11,7 @@ use App\Application\Port\Notification\SmsSenderInterface;
 use App\Application\Port\User\UserRepositoryInterface;
 use App\Application\Enum\Notification\NotificationChannelEnum;
 use App\Application\Enum\Notification\NotificationTypeEnum;
+use App\Application\Model\Notification\NotificationPreferenceModel;
 use App\Application\Model\User\UserModel;
 use Psr\Log\LoggerInterface;
 
@@ -62,9 +63,10 @@ final readonly class NotificationService
             return [NotificationChannelEnum::Email];
         }
 
-        $preference = $this->preferenceRepository->findByOwnerIdAndType($user->getId(), $type);
+        $preference = $this->preferenceRepository->findByOwnerIdAndType($user->getId(), $type)
+            ?? NotificationPreferenceModel::defaultFor($user->getId(), $type);
 
-        if ($preference === null || !$preference->isEnabled()) {
+        if (!$preference->isEnabled()) {
             return [];
         }
 

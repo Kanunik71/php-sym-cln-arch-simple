@@ -7,7 +7,6 @@ namespace App\Presentation\Controller\Notification;
 use App\Application\Service\Notification\Action\NotificationUpdateService;
 use App\Application\Model\Notification\Action\UpdateNotificationPreferencesModel;
 use App\Application\Service\Notification\Query\NotificationQueryService;
-use App\Application\Exception\Notification\NotificationPreferenceNotFoundException;
 use App\Presentation\Controller\BaseController;
 use App\Shared\Utils\Http\ErrorResponseUtils;
 use InvalidArgumentException;
@@ -45,8 +44,6 @@ final class NotificationPreferenceController extends BaseController
                 model: UpdateNotificationPreferencesModel::fromArray($this->requestPayload($request)),
                 currentUserId: $this->getCurrentUserId(),
             );
-        } catch (NotificationPreferenceNotFoundException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
         } catch (InvalidArgumentException $exception) {
             return ErrorResponseUtils::json($exception, Response::HTTP_BAD_REQUEST);
         }

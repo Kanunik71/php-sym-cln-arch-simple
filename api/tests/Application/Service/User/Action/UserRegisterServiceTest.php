@@ -38,11 +38,9 @@ final class UserRegisterServiceTest extends DatabaseTestCase
         $this->assertSame('+79001234567', $result->phone);
         $this->assertTrue($this->bed->userExistsByEmail('john@example.com'));
 
-        $preference = $this->bed->findNotificationPreference($result->id, NotificationTypeEnum::UserUpdated);
-        $this->assertNotNull($preference);
-        $this->assertTrue($preference->isEnabled());
-        $this->assertTrue($preference->isEmailEnabled());
-        $this->assertTrue($preference->isSmsEnabled());
+        $this->assertNull(
+            $this->bed->findNotificationPreference($result->id, NotificationTypeEnum::UserUpdated),
+        );
 
         $this->assertDispatched(
             UserRegisteredEvent::class,

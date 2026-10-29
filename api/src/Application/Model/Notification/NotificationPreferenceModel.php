@@ -39,6 +39,50 @@ final readonly class NotificationPreferenceModel
         );
     }
 
+    /** @return list<self> */
+    public static function defaults(string $ownerId): array
+    {
+        return [self::createDefaultUserUpdated($ownerId)];
+    }
+
+    public static function defaultFor(string $ownerId, NotificationTypeEnum $type): self
+    {
+        foreach (self::defaults($ownerId) as $default) {
+            if ($default->type === $type) {
+                return $default;
+            }
+        }
+
+        throw new InvalidArgumentException(sprintf(
+            'Notification type "%s" is transactional and cannot be configured.',
+            $type->value,
+        ));
+    }
+
+    /**
+     * Catalog defaults, with a stored row replacing the same type.
+     *
+     * @param list<self> $stored
+     *
+     * @return list<self>
+     */
+    public static function resolve(string $ownerId, array $stored): array
+    {
+        $overrides = [];
+
+        foreach ($stored as $preference) {
+            $overrides[$preference->type->value] = $preference;
+        }
+
+        $resolved = [];
+
+        foreach (self::defaults($ownerId) as $default) {
+            $resolved[] = $overrides[$default->type->value] ?? $default;
+        }
+
+        return $resolved;
+    }
+
     /** @return list<NotificationChannelEnum> */
     public function getChannels(): array
     {

@@ -11,8 +11,8 @@
 
 Уведомления отправляются по событиям пользователя. `user_registered` —
 транзакционное (всегда email), `user_updated` — настраиваемое (email/SMS).
-Пользователь читает и обновляет настройки; отправка идёт асинхронно через
-Messenger.
+Чтение и отправка берутся из каталога дефолтов; строка в БД хранит только
+переопределение. Отправка идёт асинхронно через Messenger.
 
 ## Акторы и доступ
 
@@ -37,11 +37,11 @@ Messenger.
 | FR-1 | Настройки — список `{type, enabled, channels}` |
 | FR-2 | `channels` ⊆ `{email, sms}`; пустой список допустим |
 | FR-3 | `user_registered` нельзя настроить (`400`) |
-| FR-4 | `PUT` обновляет только существующие записи; отсутствующая → `404` |
+| FR-4 | `PUT` перезаписывает пункты каталога, которые прислал клиент; отсутствующая строка создаётся |
 | FR-5 | Транзакционные типы всегда шлют email, настройки игнорируются |
-| FR-6 | Нет настроек → уведомление не отправляется (дефолты не синтезируются) |
+| FR-6 | Нет строки → действует каталог дефолтов (`user_updated`: enabled, email и sms) |
 | FR-7 | SMS не отправляется при отсутствии телефона (warning в лог) |
-| FR-8 | При регистрации создаётся `user_updated = {enabled: true, email, sms}` |
+| FR-8 | Регистрация не пишет настройки; строка в БД — только переопределение каталога |
 
 ## Сценарии
 
@@ -49,7 +49,7 @@ Messenger.
 
 - **Given** пользователь зарегистрирован
 - **When** `GET /api/users/me/notification-preferences`
-- **Then** `200`, список `NotificationPreferenceViewModel[]` (обычно один —
+- **Then** `200`, каталог с учётом переопределений (без строки — дефолт
   `user_updated`)
 - **Тест:** `NotificationPreferenceControllerTest::testGetPreferencesReturnsOk`
 
@@ -70,12 +70,12 @@ Messenger.
 - **Тесты:** `testUpdatePreferencesRejectsTransactionalType`,
   `NotificationUpdateServiceTest::testThrowsWhenTypeIsTransactional`
 
-### S-4: Отсутствующая настройка
+### S-4: Переопределение без строки
 
 - **Given** записи для типа нет
-- **When** `PUT`
-- **Then** `404 NOTIFICATION_PREFERENCE_NOT_FOUND`
-- **Тест:** `NotificationUpdateServiceTest::testThrowsWhenPreferenceMissing`
+- **When** `PUT` с `user_updated`
+- **Then** `200`, строка создана и заменяет дефолт; остальные пункты каталога не меняются
+- **Тест:** `NotificationUpdateServiceTest::testCreatesOverrideWhenPreferenceMissing`
 
 ### S-5: Регистрация
 
@@ -97,7 +97,7 @@ Messenger.
 | Метод | Путь | Вход | Успех | Ошибки |
 |-------|------|------|-------|--------|
 | GET | `/api/users/me/notification-preferences` | — | `200`, `NotificationPreferenceViewModel[]` | `401` |
-| PUT | `/api/users/me/notification-preferences` | `UpdateNotificationPreferencesModel` | `200`, `NotificationPreferenceViewModel[]` | `400`, `401`, `404` |
+| PUT | `/api/users/me/notification-preferences` | `UpdateNotificationPreferencesModel` | `200`, каталог с переопределениями | `400`, `401` |
 
 ### Request `UpdateNotificationPreferencesModel`
 
@@ -133,7 +133,9 @@ Messenger.
 - `getChannels()` → включённые каналы;
 - `withChannels(enabled, channels)` полностью перезаписывает каналы;
   `enabled` не влияет на каналы;
-- `createDefaultUserUpdated(ownerId)` → `{enabled: true, email: true, sms: true}`;
+- каталог: `defaults()` / `defaultFor()` — `user_updated = {enabled: true, email, sms}`;
+  `resolve()` подставляет сохранённую строку вместо пункта каталога;
+- `createDefaultUserUpdated(ownerId)` → этот дефолт;
 - таблица `user_notification_preferences`, уникальность `(owner_id, type)`.
 
 Хранение каналов — две булевы колонки (`email_enabled`, `sms_enabled`), не
@@ -146,7 +148,7 @@ Messenger.
 1. Загрузить пользователя.
 2. `resolveChannels`:
    - transactional → `[Email]`;
-   - иначе найти preference; `null`/`enabled=false` → `[]`;
+   - иначе строка или дефолт каталога; `enabled=false` → `[]`;
    - убрать `Sms`, если `phone === null` (warning).
 3. Если каналов нет — выйти.
 4. Для каждого канала: `templateRenderer->render(type, channel, vars)`.
@@ -176,13 +178,14 @@ Messenger.
 | `UserUpdatedEvent` | `UserLifecycleService` после `PUT /api/users/{id}` | `UserUpdatedMessageHandler` | `user_updated` |
 
 Оба маршрутизируются в `async` (RabbitMQ). В тестах — `in-memory://`.
+Повтор — политика транспорта `async`: 3 попытки, delay 1 с, multiplier 2, затем `failed`
+(`docs/specs/0009-platform`). Отдельного retry для SMS нет: падает всё сообщение handler-а.
 
 ## Ошибки
 
 | `codeId` | HTTP | Когда |
 |----------|------|-------|
 | `VALIDATION_ERROR` | 400 | невалидный JSON/`type`/`channels`; transactional-тип |
-| `NOTIFICATION_PREFERENCE_NOT_FOUND` | 404 | настройки для типа нет |
 | — | 401 | нет/невалиден JWT |
 
 ## Известные расхождения
@@ -191,8 +194,7 @@ Messenger.
 |-----|------|-----------------------|--------|
 | `PUT` | обновление нескольких записей без транзакции; ошибка на N-й оставляет предыдущие сохранёнными | атомарность | `NotificationUpdateService` |
 | `PUT` | дубли `type` в запросе не проверяются | валидация контракта | `UpdateNotificationPreferencesPolicy` |
-| GET | отсутствие настроек возвращает `[]`, не синтезирует дефолт | предсказуемый дефолт | `NotificationQueryService` |
-| SMS | реального провайдера нет (только лог) | рабочая доставка | `LoggingSmsSenderAdapter` |
+| SMS | доставка — заглушка в лог; реального провайдера не будет | — | `LoggingSmsSenderAdapter` |
 | Тесты | нет тестов handlers и повторной отправки | покрытие async | `tests/Application/Service/Notification` |
 | Email | HTML-шаблоны без text-альтернативы | deliverability | `SymfonyMailerAdapter` |
 
@@ -212,8 +214,8 @@ Messenger.
 - `api/tests/Integration/Notification/**`
 - `api/tests/Application/Service/Notification/**`
 
-## Открытые вопросы
+## Решения
 
-- [ ] Нужны ли новые типы уведомлений (задачи, группы, дедлайны)?
-- [ ] Нужен ли реальный SMS-провайдер и retry-политика?
-- [ ] Должен ли `PUT` создавать отсутствующие настройки (upsert)?
+- Новые типы (задачи, группы, дедлайны) не добавляем.
+- Реального SMS-провайдера не будет. Retry — общий `async` (см. выше).
+- База — каталог дефолтов. `PUT` перезаписывает только присланные пункты.

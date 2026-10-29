@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Application\Service\Notification\Action;
 
-use App\Application\Exception\Notification\NotificationPreferenceNotFoundException;
 use App\Application\Mapper\Notification\NotificationPreferenceViewModelMapper;
+use App\Application\Model\Notification\NotificationPreferenceModel;
 use App\Application\Model\Notification\Read\NotificationPreferenceViewModel;
 use App\Application\Model\Notification\Action\UpdateNotificationPreferencesModel;
 use App\Application\Policy\Notification\UpdateNotificationPreferencesPolicy;
@@ -28,11 +28,7 @@ final readonly class NotificationUpdateService
             $existing = $this->preferenceRepository->findByOwnerIdAndType(
                 $currentUserId,
                 $item->type,
-            );
-
-            if ($existing === null) {
-                throw NotificationPreferenceNotFoundException::forOwnerAndType($currentUserId, $item->type);
-            }
+            ) ?? NotificationPreferenceModel::defaultFor($currentUserId, $item->type);
 
             $this->preferenceRepository->save($existing->update(
                 enabled: $item->enabled,
@@ -41,7 +37,10 @@ final readonly class NotificationUpdateService
         }
 
         return NotificationPreferenceViewModelMapper::fromModelList(
-            $this->preferenceRepository->listByOwnerId($currentUserId),
+            NotificationPreferenceModel::resolve(
+                $currentUserId,
+                $this->preferenceRepository->listByOwnerId($currentUserId),
+            ),
         );
     }
 }

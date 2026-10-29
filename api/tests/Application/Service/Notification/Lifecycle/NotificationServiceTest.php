@@ -55,6 +55,23 @@ final class NotificationServiceTest extends DatabaseTestCase
         $this->assertSame('+79001234567', $sms->sent[0]['to']);
     }
 
+    public function testUserUpdatedUsesCatalogDefaultWhenUnset(): void
+    {
+        $user = $this->bed->createUser(
+            email: 'john@example.com',
+            phone: '+79001234567',
+            withDefaultNotificationPreferences: false,
+        );
+        $mailer = new RecordingMailer();
+        $sms = new RecordingSmsSender();
+
+        $this->createService($mailer, $sms)->notify($user->getId(), NotificationTypeEnum::UserUpdated);
+
+        $this->assertCount(1, $mailer->sent);
+        $this->assertCount(1, $sms->sent);
+        $this->assertSame('+79001234567', $sms->sent[0]['to']);
+    }
+
     public function testUserUpdatedSkipsWhenDisabled(): void
     {
         $user = $this->bed->createUser(email: 'john@example.com', phone: '+79001234567');

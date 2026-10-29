@@ -5,15 +5,12 @@ declare(strict_types=1);
 namespace App\Application\Service\User\Action;
 
 use App\Application\Mapper\User\UserRegisterModelMapper;
-use App\Application\Model\Notification\NotificationPreferenceModel;
 use App\Application\Model\User\Action\UserRegisterModel;
 use App\Application\Model\User\Read\UserRegisterResponseModel;
 use App\Application\Model\User\UserModel;
 use App\Application\Policy\User\PasswordPolicy;
 use App\Application\Policy\User\RegisterUserPolicy;
-use App\Application\Port\Notification\NotificationPreferenceRepositoryInterface;
 use App\Application\Port\PasswordHasherInterface;
-use App\Application\Port\TransactionManagerInterface;
 use App\Application\Port\User\UserRepositoryInterface;
 use App\Application\Service\User\Lifecycle\UserLifecycleService;
 use App\Application\ValueObject\Common\Email;
@@ -25,8 +22,6 @@ final readonly class UserRegisterService
         private PasswordPolicy $passwordPolicy,
         private UserRepositoryInterface $userRepository,
         private PasswordHasherInterface $passwordHasher,
-        private NotificationPreferenceRepositoryInterface $preferenceRepository,
-        private TransactionManagerInterface $transactionManager,
         private UserLifecycleService $userLifecycleService,
     ) {
     }
@@ -47,15 +42,7 @@ final readonly class UserRegisterService
             phone: $model->phone,
         );
 
-        $savedUser = $this->transactionManager->run(function () use ($user): UserModel {
-            $savedUser = $this->userRepository->save($user);
-
-            $this->preferenceRepository->save(
-                NotificationPreferenceModel::createDefaultUserUpdated($savedUser->id),
-            );
-
-            return $savedUser;
-        });
+        $savedUser = $this->userRepository->save($user);
 
         $this->userLifecycleService->afterUserPersisted($savedUser, created: true);
 

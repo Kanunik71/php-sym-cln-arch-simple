@@ -50,7 +50,7 @@
 | FR-1 | Регистрация создаёт пользователя без выдачи access/refresh токенов |
 | FR-2 | Email нормализуется (trim, lower-case) и должен быть уникальным |
 | FR-3 | Пароль при регистрации и смене должен содержать 6–72 байта; пробелы по краям не обрезаются |
-| FR-4 | При регистрации создаётся default-preference `user_updated` (email+sms) |
+| FR-4 | Регистрация не создаёт строку notification preference; дефолт — каталог в `0008` |
 | FR-5 | Логин при верных credentials возвращает access JWT и refresh-токен |
 | FR-6 | Access JWT живёт 900 секунд; refresh-токен — 30 дней от выдачи или последней ротации, без абсолютного потолка сессии |
 | FR-7 | Refresh-токен непрозрачный, в БД хранится только `sha256`-хеш |
@@ -210,8 +210,6 @@
   публикует `UserRegisteredEvent` → `async` → `UserRegisteredMessageHandler` →
   `NotificationService::notify(user_registered)` (email).
 - После логина, refresh и logout событий нет.
-- Default preference `user_updated` создаётся в той же транзакции, что и
-  пользователь.
 - `app:auth:cleanup-refresh-tokens` запускается ежедневно (`30 3 * * *`,
   `SCHEDULER_REFRESH_TOKEN_CLEANUP_CRON`) через `AppScheduleProvider`.
   Удаляются только строки, у которых `expires_at` или `revoked_at` старше

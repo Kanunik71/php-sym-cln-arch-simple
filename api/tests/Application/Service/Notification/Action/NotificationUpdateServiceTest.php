@@ -9,7 +9,6 @@ use App\Application\Model\Notification\Read\NotificationPreferenceViewModel;
 use App\Application\Model\Notification\Action\UpdateNotificationPreferencesModel;
 use App\Application\Enum\Notification\NotificationChannelEnum;
 use App\Application\Enum\Notification\NotificationTypeEnum;
-use App\Application\Exception\Notification\NotificationPreferenceNotFoundException;
 use App\Tests\DatabaseTestCase;
 use InvalidArgumentException;
 
@@ -42,7 +41,7 @@ final class NotificationUpdateServiceTest extends DatabaseTestCase
         $this->assertFalse($persisted->isSmsEnabled());
     }
 
-    public function testThrowsWhenPreferenceMissing(): void
+    public function testCreatesOverrideWhenPreferenceMissing(): void
     {
         $user = $this->bed->createUser(
             email: 'john@example.com',
@@ -50,18 +49,26 @@ final class NotificationUpdateServiceTest extends DatabaseTestCase
         );
         $updateNotificationPreferences = $this->bed->get(NotificationUpdateService::class);
 
-        $this->expectException(NotificationPreferenceNotFoundException::class);
-
-        $updateNotificationPreferences->execute(
+        $result = $updateNotificationPreferences->execute(
             model: new UpdateNotificationPreferencesModel([
                 new NotificationPreferenceViewModel(
                     type: NotificationTypeEnum::UserUpdated,
                     enabled: false,
-                    channels: [],
+                    channels: [NotificationChannelEnum::Email],
                 ),
             ]),
             currentUserId: $user->getId(),
         );
+
+        $this->assertCount(1, $result);
+        $this->assertFalse($result[0]->enabled);
+        $this->assertSame([NotificationChannelEnum::Email], $result[0]->channels);
+
+        $persisted = $this->bed->findNotificationPreference($user->getId(), NotificationTypeEnum::UserUpdated);
+        $this->assertNotNull($persisted);
+        $this->assertFalse($persisted->isEnabled());
+        $this->assertTrue($persisted->isEmailEnabled());
+        $this->assertFalse($persisted->isSmsEnabled());
     }
 
     public function testThrowsWhenTypeIsTransactional(): void

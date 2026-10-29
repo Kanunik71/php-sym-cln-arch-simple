@@ -22,4 +22,21 @@ final class NotificationQueryServiceTest extends DatabaseTestCase
         $this->assertSame(NotificationTypeEnum::UserUpdated, $result[0]->type);
         $this->assertSame([NotificationChannelEnum::Email, NotificationChannelEnum::Sms], $result[0]->channels);
     }
+
+    public function testReturnsCatalogDefaultWhenNothingStored(): void
+    {
+        $user = $this->bed->createUser(
+            email: 'john@example.com',
+            withDefaultNotificationPreferences: false,
+        );
+        $getNotificationPreferences = $this->bed->get(NotificationQueryService::class);
+
+        $result = $getNotificationPreferences->execute(currentUserId: $user->getId());
+
+        $this->assertCount(1, $result);
+        $this->assertSame(NotificationTypeEnum::UserUpdated, $result[0]->type);
+        $this->assertTrue($result[0]->enabled);
+        $this->assertSame([NotificationChannelEnum::Email, NotificationChannelEnum::Sms], $result[0]->channels);
+        $this->assertNull($this->bed->findNotificationPreference($user->getId(), NotificationTypeEnum::UserUpdated));
+    }
 }
