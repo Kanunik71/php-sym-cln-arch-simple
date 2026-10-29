@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Persistence\Doctrine\Query\Asset;
 
+use App\Application\Model\Common\PaginationModel;
 use App\Infrastructure\Persistence\Doctrine\Entity\AssetEntity;
 use App\Infrastructure\Persistence\Doctrine\Entity\TaskEntity;
+use App\Infrastructure\Persistence\Doctrine\Query\Common\DoctrinePaginationApplier;
 use App\Shared\Utils\UidUtils;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
@@ -15,7 +17,7 @@ use Symfony\Component\Uid\Uuid;
  * Loads AssetEntity with the associations the caller needs (no lazy follow-up for Mapper).
  *
  * - Light (`findById` / `listByOwnerId`): root only — ownerId is a scalar column.
- * - View (`findViewById` / `listViewBy*`): tasks + assetFiles.
+ * - View (`findViewById` / `listViewPageByOwnerId` / `listViewByTaskId`): tasks + assetFiles.
  * - Detail (`findDetailById`): same as view (task.parentId is scalar on Task).
  */
 final readonly class AssetEntityFetcher
@@ -30,6 +32,7 @@ final readonly class AssetEntityFetcher
 
     public function __construct(
         private EntityManagerInterface $entityManager,
+        private DoctrinePaginationApplier $paginationApplier,
     ) {
     }
 
@@ -79,19 +82,47 @@ final readonly class AssetEntityFetcher
         return $entities;
     }
 
-    /** @return list<AssetEntity> */
-    public function listViewByOwnerId(string $ownerId): array
+    public function countByOwnerId(string $ownerId): int
     {
-        /** @var list<AssetEntity> $entities */
-        $entities = $this->viewQuery()
+        $count = $this->entityManager->createQueryBuilder()
+            ->select('COUNT('.self::ALIAS.'.'.AssetEntity::FIELD_ID.')')
+            ->from(AssetEntity::class, self::ALIAS)
+            ->where(self::ALIAS.'.'.AssetEntity::FIELD_OWNER_ID.' = :ownerId')
+            ->setParameter('ownerId', Uuid::fromString($ownerId), 'uuid')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return (int) $count;
+    }
+
+    /**
+     * Page of view entities. Limit applies to assets, not joined task/file rows.
+     *
+     * @return list<AssetEntity>
+     */
+    public function listViewPageByOwnerId(string $ownerId, PaginationModel $pagination): array
+    {
+        $qb = $this->baseQuery()
             ->where(self::ALIAS.'.'.AssetEntity::FIELD_OWNER_ID.' = :ownerId')
             ->setParameter('ownerId', Uuid::fromString($ownerId), 'uuid')
             ->orderBy(self::ALIAS.'.'.AssetEntity::FIELD_CREATED_AT, 'DESC')
-            ->addOrderBy(self::ALIAS.'.'.AssetEntity::FIELD_ID, 'DESC')
-            ->getQuery()
-            ->getResult();
+            ->addOrderBy(self::ALIAS.'.'.AssetEntity::FIELD_ID, 'DESC');
 
-        return $this->uniqueById($entities);
+        $this->paginationApplier->applyLimit($qb, $pagination);
+
+        /** @var list<AssetEntity> $page */
+        $page = $qb->getQuery()->getResult();
+
+        if ($page === []) {
+            return [];
+        }
+
+        $ids = array_map(
+            static fn (AssetEntity $entity): string => UidUtils::toString($entity->getId()),
+            $page,
+        );
+
+        return $this->listViewsByIdsInOrder($ids);
     }
 
     /** @return list<AssetEntity> */
@@ -127,6 +158,45 @@ final readonly class AssetEntityFetcher
             ->addSelect(self::ALIAS_TASK, self::ALIAS_ASSET_FILE)
             ->leftJoin(self::ALIAS.'.'.AssetEntity::FIELD_TASKS, self::ALIAS_TASK)
             ->leftJoin(self::ALIAS.'.'.AssetEntity::FIELD_ASSET_FILES, self::ALIAS_ASSET_FILE);
+    }
+
+    /**
+     * @param list<string> $ids
+     *
+     * @return list<AssetEntity>
+     */
+    private function listViewsByIdsInOrder(array $ids): array
+    {
+        $qb = $this->viewQuery();
+        $orX = $qb->expr()->orX();
+
+        foreach ($ids as $index => $id) {
+            $param = 'viewId'.$index;
+            $orX->add(self::ALIAS.'.'.AssetEntity::FIELD_ID.' = :'.$param);
+            $qb->setParameter($param, Uuid::fromString($id), 'uuid');
+        }
+
+        /** @var list<AssetEntity> $entities */
+        $entities = $qb
+            ->where($orX)
+            ->getQuery()
+            ->getResult();
+
+        $byId = [];
+
+        foreach ($this->uniqueById($entities) as $entity) {
+            $byId[UidUtils::toString($entity->getId())] = $entity;
+        }
+
+        $ordered = [];
+
+        foreach ($ids as $id) {
+            if (isset($byId[$id])) {
+                $ordered[] = $byId[$id];
+            }
+        }
+
+        return $ordered;
     }
 
     /**

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Application\Service\Asset\Action;
 
 use App\Application\Enum\Asset\AssetTypeEnum;
+use App\Application\Exception\Asset\UnauthorizedAssetAccessException;
 use App\Application\Service\Asset\Action\AssetDetachFromTaskService;
 use App\Tests\DatabaseTestCase;
 
@@ -51,6 +52,22 @@ final class AssetDetachFromTaskServiceTest extends DatabaseTestCase
         $this->assertSame(
             [$secondTask->getId()],
             $this->bed->assetRepository()->listTaskIds($persisted->id),
+        );
+    }
+
+    public function testRejectsDetachByNonOwner(): void
+    {
+        $owner = $this->bed->seedDefaultUser();
+        $other = $this->bed->createUser();
+        $task = $this->bed->createTask(ownerId: $owner->getId(), name: 'Shared task');
+        $asset = $this->bed->createAssetForTask($task->getId(), $owner->getId(), 'Laptop', 999.99);
+
+        $this->expectException(UnauthorizedAssetAccessException::class);
+
+        $this->bed->get(AssetDetachFromTaskService::class)->execute(
+            userId: $other->getId(),
+            taskId: $task->getId(),
+            assetId: $asset->id,
         );
     }
 }

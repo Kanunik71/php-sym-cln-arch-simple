@@ -106,7 +106,7 @@ assets >──< files           (asset_file, position)
 | 0003-users | `GET /api/users`, `GET /api/users/query`, `GET /api/users/query/meta`, `GET/PUT/DELETE /api/users/{id}` |
 | 0004-tasks | `GET/POST /api/tasks`, `GET/DELETE /api/tasks/{id}`, `PATCH /api/tasks/{id}/status` |
 | 0005-task-groups | `GET /api/task-groups/summary`, `POST /api/task-groups`, `GET/POST /api/tasks/{taskId}/task-groups`, `POST .../{id}/attach`, `GET/DELETE .../{id}`, `DELETE .../{id}/tasks/{removeTaskId}` |
-| 0006-assets | `GET/POST /api/assets`, `GET/PATCH/DELETE /api/assets/{id}`, `GET/POST /api/tasks/{taskId}/assets`, `POST .../{id}/attach`, `DELETE .../{id}` |
+| 0006-assets | `GET/POST /api/assets`, `GET/PUT/DELETE /api/assets/{id}`, `GET/POST /api/tasks/{taskId}/assets`, `POST .../{id}/attach`, `DELETE .../{id}` |
 | 0007-files | `POST /api/files`, `GET /api/files/{id}`, `GET /api/files/{id}/download` |
 | 0008-notifications | `GET/PUT /api/users/me/notification-preferences` |
 

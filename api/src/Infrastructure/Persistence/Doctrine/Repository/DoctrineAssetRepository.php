@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Persistence\Doctrine\Repository;
 
-use App\Application\Model\Asset\Read\AssetDetailModel;
+use App\Application\Exception\Asset\AssetNotFoundException;
 use App\Application\Model\Asset\AssetModel;
+use App\Application\Model\Asset\Read\AssetDetailModel;
+use App\Application\Model\Asset\Read\AssetPageModel;
 use App\Application\Model\Asset\Read\AssetViewModel;
+use App\Application\Model\Common\PaginationModel;
 use App\Application\Port\Asset\AssetRepositoryInterface;
 use App\Application\Port\File\FileDownloadUrlProviderInterface;
-use App\Application\Exception\Asset\AssetNotFoundException;
 use App\Infrastructure\Persistence\Doctrine\Entity\AssetEntity;
 use App\Infrastructure\Persistence\Doctrine\Mapper\AssetMapper;
 use App\Infrastructure\Persistence\Doctrine\Query\Asset\AssetEntityFetcher;
@@ -75,11 +77,16 @@ final readonly class DoctrineAssetRepository implements AssetRepositoryInterface
         return $this->assetMapper->toDetailModel($entity, $this->fileDownloadUrlProvider);
     }
 
-    public function listViewsByOwnerId(string $ownerId): array
+    public function listViewPageByOwnerId(string $ownerId, PaginationModel $pagination): AssetPageModel
     {
-        return $this->assetMapper->toViewModelArray(
-            $this->assetEntityFetcher->listViewByOwnerId($ownerId),
-            $this->fileDownloadUrlProvider,
+        return new AssetPageModel(
+            items: $this->assetMapper->toViewModelArray(
+                $this->assetEntityFetcher->listViewPageByOwnerId($ownerId, $pagination),
+                $this->fileDownloadUrlProvider,
+            ),
+            total: $this->assetEntityFetcher->countByOwnerId($ownerId),
+            page: $pagination->page,
+            perPage: $pagination->perPage,
         );
     }
 

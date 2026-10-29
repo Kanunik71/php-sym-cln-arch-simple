@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace App\Presentation\Controller\Asset;
 
-use App\Application\Service\Asset\Action\AssetCreateService;
-use App\Application\Service\Asset\Action\AssetDeleteService;
-use App\Application\Service\Asset\Action\AssetUpdateService;
-use App\Application\Model\Asset\Action\AssetCreateModel;
-use App\Application\Model\Asset\Action\AssetUpdateModel;
-use App\Application\Service\Asset\Query\AssetQueryService;
-use App\Application\Service\Asset\Query\AssetListQueryService;
 use App\Application\Exception\Asset\AssetNotFoundException;
 use App\Application\Exception\Asset\UnauthorizedAssetAccessException;
 use App\Application\Exception\File\FileNotFoundException;
 use App\Application\Exception\File\InvalidFileStateException;
 use App\Application\Exception\File\UnauthorizedFileAccessException;
+use App\Application\Model\Asset\Action\AssetCreateModel;
+use App\Application\Model\Asset\Action\AssetUpdateModel;
+use App\Application\Model\Common\PaginationModel;
+use App\Application\Service\Asset\Action\AssetCreateService;
+use App\Application\Service\Asset\Action\AssetDeleteService;
+use App\Application\Service\Asset\Action\AssetUpdateService;
+use App\Application\Service\Asset\Query\AssetListQueryService;
+use App\Application\Service\Asset\Query\AssetQueryService;
 use App\Presentation\Controller\BaseController;
 use App\Shared\Utils\Http\ErrorResponseUtils;
 use InvalidArgumentException;
@@ -39,13 +40,18 @@ final class AssetController extends BaseController
     }
 
     #[Route('', name: 'list', methods: ['GET'])]
-    public function list(): JsonResponse
+    public function list(Request $request): JsonResponse
     {
-        $assets = $this->listAssets->execute(
-            userId: $this->getCurrentUserId(),
-        );
+        try {
+            $page = $this->listAssets->execute(
+                userId: $this->getCurrentUserId(),
+                pagination: PaginationModel::fromArray($request->query->all()),
+            );
+        } catch (InvalidArgumentException $exception) {
+            return ErrorResponseUtils::json($exception, Response::HTTP_BAD_REQUEST);
+        }
 
-        return $this->json($assets);
+        return $this->json($page);
     }
 
     #[Route('', name: 'create', methods: ['POST'])]
@@ -84,7 +90,7 @@ final class AssetController extends BaseController
         return $this->json($asset);
     }
 
-    #[Route('/{id}', name: 'update', methods: ['PATCH'], requirements: ['id' => '[0-9a-fA-F-]{36}'])]
+    #[Route('/{id}', name: 'update', methods: ['PUT'], requirements: ['id' => '[0-9a-fA-F-]{36}'])]
     public function update(string $id, Request $request): JsonResponse
     {
         try {

@@ -4,7 +4,7 @@
 |---|---|
 | Тип | `baseline` (as-is) |
 | Статус | `implemented` |
-| Дата | 2026-10-27 |
+| Дата | 2026-10-29 |
 | Источники | `api/src/Presentation/Controller/Asset/AssetController.php`, `api/src/Presentation/Controller/Task/TaskAssetController.php`, `api/src/Application/Service/Asset/**`, `api/src/Application/Model/Asset/**`, `api/src/Infrastructure/Persistence/Doctrine/Repository/DoctrineAssetRepository.php`, `api/tests/Integration/{Asset,Task}/**`, `api/tests/Application/Service/Asset/**` |
 
 ## Контекст
@@ -22,7 +22,7 @@
   (`TaskAccessPolicy`).
 - Список ассетов задачи доступен любому, у кого есть доступ к задаче, и
   возвращает ассеты всех владельцев.
-- `detach` **не проверяет** владельца ассета (см. расхождения).
+- `detach` проверяет доступ к задаче и владельца ассета.
 
 ## User stories
 
@@ -42,7 +42,7 @@
 | FR-3 | `imageFileIds` — список UUID; порядок = позиции; первый = `mainImage` |
 | FR-4 | Изображения должны принадлежать пользователю; `Temporary` повышаются при привязке, `Permanent` допускаются |
 | FR-5 | `inProgress` = есть связанная задача в `Initial` или `Active` |
-| FR-6 | `GET /api/assets` возвращает только ассеты текущего пользователя |
+| FR-6 | `GET /api/assets` — страница своих ассетов: `page`/`perPage` (1 и 20 по умолчанию, максимум 100), без фильтров |
 | FR-7 | Привязка идемпотентна; отвязка последней задачи удаляет ассет |
 | FR-8 | Удаление ассета удаляет его изображения (БД + storage) |
 
@@ -69,9 +69,12 @@
 - **Given** ассеты пользователя/задачи
 - **When** `GET /api/assets` или `GET /api/assets/{id}` или
   `GET /api/tasks/{taskId}/assets`
-- **Then** `200`; список — `AssetViewModel[]`, деталь — `AssetDetailModel`
+- **Then** `200`; свой список — `AssetPageModel`, деталь — `AssetDetailModel`,
+  список задачи — `AssetViewModel[]`
 - **Тесты:** `AssetControllerTest::testListAssetsReturnsOk`,
-  `testGetAssetReturnsOk`, `TaskAssetControllerTest::testListAssetsReturnsOk`
+  `testListRejectsInvalidPerPage`, `testGetAssetReturnsOk`,
+  `TaskAssetControllerTest::testListAssetsReturnsOk`,
+  `AssetListQueryServiceTest::testPaginatesByCreatedAtThenId`
 
 ### S-4: Привязка
 
@@ -83,18 +86,18 @@
 
 ### S-5: Отвязка
 
-- **Given** ассет привязан к задаче
+- **Given** пользователь владеет ассетом и ассет привязан к задаче
 - **When** `DELETE /api/tasks/{taskId}/assets/{id}`
-- **Then** `204`; если задача была последней — ассет удалён
+- **Then** `204`; если задача была последней — ассет удалён; чужой ассет — `403`
 - **Тесты:** `TaskAssetControllerTest::testDetachAssetReturnsNoContent`,
   `AssetDetachFromTaskServiceTest::testDeletesAssetWhenLastTaskDetached`,
-  `testKeepsAssetWhenOtherTasksRemain`
+  `testKeepsAssetWhenOtherTasksRemain`, `testRejectsDetachByNonOwner`
 
 ### S-6: Обновление и удаление
 
 - **Given** пользователь владеет ассетом
-- **When** `PATCH /api/assets/{id}` или `DELETE /api/assets/{id}`
-- **Then** `200` / `204`; при `PATCH` изображения заменяются целиком
+- **When** `PUT /api/assets/{id}` или `DELETE /api/assets/{id}`
+- **Then** `200` / `204`; при `PUT` `name`, `price` и `imageFileIds` заменяются целиком
 - **Тесты:** `AssetControllerTest::testUpdateAssetReturnsOk`,
   `testDeleteAssetReturnsNoContent`, `AssetUpdateServiceTest::testUpdatesAsset`
 
@@ -102,10 +105,10 @@
 
 | Метод | Путь | Вход | Успех | Ошибки |
 |-------|------|------|-------|--------|
-| GET | `/api/assets` | — | `200`, `AssetViewModel[]` | `401` |
+| GET | `/api/assets` | `page`, `perPage` | `200`, `AssetPageModel` | `400`, `401` |
 | POST | `/api/assets` | `AssetCreateModel` | `201`, `AssetViewModel` | `400`, `403 FILE`, `404 FILE/TASK`, `401` |
 | GET | `/api/assets/{id}` | path | `200`, `AssetDetailModel` | `403`, `404`, `500` на невалидном 36-символьном id |
-| PATCH | `/api/assets/{id}` | `AssetUpdateModel` | `200`, `AssetViewModel` | `400`, `403`, `404`, `500` |
+| PUT | `/api/assets/{id}` | `AssetUpdateModel` | `200`, `AssetViewModel` | `400`, `403`, `404`, `500` |
 | DELETE | `/api/assets/{id}` | path | `204` | `403`, `404`, `500` |
 | GET | `/api/tasks/{taskId}/assets` | — | `200`, `AssetViewModel[]` | `403`, `404 TASK`, `500` |
 | POST | `/api/tasks/{taskId}/assets` | `AssetCreateModel` | `201`, `AssetViewModel` | `400`, `403`, `404`, `500` |
@@ -140,6 +143,9 @@
 `inProgress`, `mainImage` (`{id, url}|null`). `mainImage` — первый файл по
 позиции.
 
+`AssetPageModel`: `items` (`AssetViewModel[]`), `total`, `page`, `perPage`.
+Порядок — `createdAt` DESC, затем `id` DESC.
+
 ### Response `AssetDetailModel`
 
 `id`, `ownerId`, `name`, `tasks` (`TaskLightModel[]` — `id`, `name`, `status`,
@@ -168,7 +174,7 @@
 | create in task | доступ к задаче из пути |
 | list by task | доступ к задаче |
 | attach | доступ к задаче + владение ассетом |
-| detach | доступ к задаче + принадлежность ассета задаче (**без владельца**) |
+| detach | доступ к задаче + владение ассетом + принадлежность ассета задаче |
 
 ## Файлы и изображения
 
@@ -196,7 +202,7 @@
 
 | `codeId` | HTTP | Когда |
 |----------|------|-------|
-| `VALIDATION_ERROR` | 400 | невалидный JSON/поля/цена/тип/списки id |
+| `VALIDATION_ERROR` | 400 | невалидный JSON/поля/цена/тип/списки id/`page`/`perPage` |
 | `UNAUTHORIZED_ASSET_ACCESS` | 403 | чужой ассет или ассет не в задаче |
 | `UNAUTHORIZED_TASK_ACCESS` | 403 | нет доступа к задаче |
 | `UNAUTHORIZED_FILE_ACCESS` | 403 | чужой файл |
@@ -209,11 +215,7 @@
 
 | Где | Факт | Ожидание/документация | Ссылка |
 |-----|------|-----------------------|--------|
-| `detach` | не проверяет владельца ассета | только владелец управляет ассетом | `AssetDetachFromTaskService` |
 | Транзакции | create/update без общей транзакции | атомарность БД + файлы | `AssetCreateService`, `AssetUpdateService` |
-| `PATCH` | `imageFileIds` не передан → удаление всех изображений | частичное обновление | `AssetUpdateModel` |
-| `PATCH` | нельзя сменить `type`/`taskIds` | ожидаемый полный update | `AssetUpdateModel` |
-| Список | нет пагинации/фильтров | масштаб | `AssetListQueryService` |
 | Состояние файла | `INVALID_FILE_STATE` объявлен и ловится, но не выбрасывается | проверка состояния | `AttachFilePolicy` |
 | Создание | `taskIds` не проверяются на дубли | нормализация | `AssetCreateService` |
 | Storage | при ошибке `attachFiles` после `save` остаётся ассет | откат/компенсация | `AssetCreateService` |
@@ -234,9 +236,3 @@
 - `api/tests/Integration/Asset/AssetControllerTest.php`
 - `api/tests/Integration/Task/TaskAssetControllerTest.php`
 - `api/tests/Application/Service/Asset/**`
-
-## Открытые вопросы
-
-- [ ] Должен ли `detach` проверять владельца?
-- [ ] Нужны ли фильтры/пагинация для списка ассетов?
-- [ ] Должен ли `PATCH` быть частичным и разрешать смену `type`?

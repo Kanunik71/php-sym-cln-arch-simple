@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Application\Service\Asset\Query;
 
-use App\Application\Model\Asset\Read\AssetViewModel;
+use App\Application\Model\Asset\Read\AssetPageModel;
+use App\Application\Model\Common\PaginationModel;
 use App\Application\Port\Asset\AssetRepositoryInterface;
 
 final readonly class AssetListQueryService
@@ -14,9 +15,8 @@ final readonly class AssetListQueryService
     ) {
     }
 
-    /** @return list<AssetViewModel> */
-    public function execute(string $userId): array
+    public function execute(string $userId, PaginationModel $pagination): AssetPageModel
     {
-        return $this->assetRepository->listViewsByOwnerId($userId);
+        return $this->assetRepository->listViewPageByOwnerId($userId, $pagination);
     }
 }

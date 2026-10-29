@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Application\Port\Asset;
 
-use App\Application\Model\Asset\Read\AssetDetailModel;
 use App\Application\Model\Asset\AssetModel;
+use App\Application\Model\Asset\Read\AssetDetailModel;
+use App\Application\Model\Asset\Read\AssetPageModel;
 use App\Application\Model\Asset\Read\AssetViewModel;
+use App\Application\Model\Common\PaginationModel;
 
 /**
  * AssetModel mirrors assets row scalars only.
@@ -15,8 +17,8 @@ use App\Application\Model\Asset\Read\AssetViewModel;
 interface AssetRepositoryInterface
 {
     /**
-     * @param list<string>|null $taskIds       null = leave existing links unchanged
-     * @param list<string>|null $imageFileIds  null = leave existing links unchanged
+     * @param list<string>|null $taskIds      null = leave existing links unchanged
+     * @param list<string>|null $imageFileIds null = leave existing links unchanged
      */
     public function save(
         AssetModel $asset,
@@ -33,8 +35,7 @@ interface AssetRepositoryInterface
     /** Read model for GetAsset (tasks as TaskLightModel; one query). */
     public function findDetailOrFail(string $id): AssetDetailModel;
 
-    /** @return list<AssetViewModel> */
-    public function listViewsByOwnerId(string $ownerId): array;
+    public function listViewPageByOwnerId(string $ownerId, PaginationModel $pagination): AssetPageModel;
 
     /** @return list<AssetViewModel> */
     public function listViewsByTaskId(string $taskId): array;

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Asset;
 
+use App\Application\Enum\Asset\AssetTypeEnum;
+use App\Application\Exception\ErrorCodeEnum;
 use App\Application\Model\Asset\Action\AssetCreateModel;
 use App\Application\Model\Asset\Action\AssetUpdateModel;
-use App\Application\Enum\Asset\AssetTypeEnum;
+use App\Application\Model\Asset\Read\AssetPageModel;
 use App\Tests\AuthenticatedWebTestCase;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -26,6 +28,20 @@ final class AssetControllerTest extends AuthenticatedWebTestCase
         );
 
         $this->assertSame(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
+        $page = $this->decodeModel($this->client, AssetPageModel::class);
+        $this->assertSame(1, $page->page);
+        $this->assertSame(20, $page->perPage);
+        $this->assertSame(1, $page->total);
+    }
+
+    public function testListRejectsInvalidPerPage(): void
+    {
+        $this->createAuthenticatedClient();
+
+        $this->client->request('GET', '/api/assets?perPage=0', server: $this->demoAuthorizedServer());
+
+        $this->assertSame(Response::HTTP_BAD_REQUEST, $this->client->getResponse()->getStatusCode());
+        $this->assertSame(ErrorCodeEnum::ValidationError, $this->decodeErrorModel($this->client)->codeId);
     }
 
     public function testGetAssetReturnsOk(): void
@@ -81,7 +97,7 @@ final class AssetControllerTest extends AuthenticatedWebTestCase
 
         $this->requestJson(
             $this->client,
-            'PATCH',
+            'PUT',
             '/api/assets/'.$asset->id,
             (new AssetUpdateModel(name: 'Desktop', price: 1299.99))->toArray(),
             server: $this->demoAuthorizedServer(),

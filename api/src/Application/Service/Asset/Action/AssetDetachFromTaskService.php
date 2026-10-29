@@ -29,6 +29,8 @@ final readonly class AssetDetachFromTaskService
 
         $asset = $this->assetRepository->findOrFail($assetId);
 
+        $this->assetAccessPolicy->assertUserCanAccess($asset, $userId);
+
         $this->assetAccessPolicy->assertBelongsToTask(
             $this->assetRepository->belongsToTask($asset->id, $taskId),
         );
