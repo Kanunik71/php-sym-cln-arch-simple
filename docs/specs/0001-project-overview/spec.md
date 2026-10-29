@@ -129,9 +129,6 @@ assets >──< files           (asset_file, position)
 | Слои | нет `api/src/Domain`, нет `Application/Command|Query|Handler` | `api/CLAUDE.md` описывает Domain + Command/Query/Handler | ADR 0001 |
 | VO | `ValueObject` в `Application/ValueObject` | `api/CLAUDE.md` — `Domain/` | ADR 0001 |
 | Мапперы | `*ViewModelMapper` | `api/CLAUDE.md` — `*ModelMapper` | ADR 0001 |
-| Масштаб | summary групп использует `listAll()` | `Application/CLAUDE.md` запрещает для больших выборок | 0005, 0009 |
-| Ошибки `401` | формируются Symfony Security | не через `ErrorResponseModel` | 0009 |
-| UUID в path | regex `[0-9a-fA-F-]{36}` не гарантирует UUID | невалидный 36-символьный id может дать `500` | 0003, 0004, 0005, 0006 |
 
 ## Первоисточники
 
@@ -144,5 +141,5 @@ assets >──< files           (asset_file, position)
 ## Открытые вопросы
 
 - [ ] Нужно ли заводить change-спеки на исправление найденных расхождений
-      (`listAll`, отсутствующий handler, `500` на невалидном UUID)?
+      (отсутствующий handler)?
 - [ ] Нужна ли отдельная baseline-спека по Docker/инфраструктуре?

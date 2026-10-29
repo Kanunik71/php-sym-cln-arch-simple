@@ -16,9 +16,6 @@ interface TaskGroupRepositoryInterface
 
     public function findOrFail(string $id): TaskGroupModel;
 
-    /** @return list<TaskGroupModel> */
-    public function listAll(): array;
-
     /**
      * Stable page for full-table batch scans (not API pagination).
      *

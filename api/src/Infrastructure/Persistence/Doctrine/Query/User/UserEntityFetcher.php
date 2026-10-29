@@ -47,18 +47,6 @@ final readonly class UserEntityFetcher
         return $entity;
     }
 
-    /** @return list<UserEntity> */
-    public function listAll(): array
-    {
-        /** @var list<UserEntity> $entities */
-        $entities = $this->baseQuery()
-            ->orderBy(self::ALIAS.'.'.UserEntity::FIELD_CREATED_AT, 'DESC')
-            ->getQuery()
-            ->getResult();
-
-        return $entities;
-    }
-
     /**
      * @return list<UserEntity>
      */

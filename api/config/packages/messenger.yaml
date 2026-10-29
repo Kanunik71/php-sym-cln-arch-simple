@@ -1,7 +1,16 @@
 framework:
     messenger:
+        failure_transport: failed
+
         transports:
-            async: '%env(MESSENGER_TRANSPORT_DSN)%'
+            async:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    max_retries: 3
+                    delay: 1000
+                    multiplier: 2
+            # Dead-letter after retries. Queue name is the DSN path; the worker does not consume it.
+            failed: '%env(MESSENGER_FAILURE_TRANSPORT_DSN)%'
             sync: 'sync://'
 
         routing:
@@ -15,3 +24,4 @@ when@test:
         messenger:
             transports:
                 async: 'in-memory://'
+                failed: 'in-memory://'

@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace App\Infrastructure\Persistence\Doctrine\Repository;
 
 use App\Application\Enum\User\UserSortFieldEnum;
+use App\Application\Exception\User\UserNotFoundException;
 use App\Application\Model\Common\PaginationModel;
 use App\Application\Model\Common\SortModel;
 use App\Application\Model\User\Read\UserPaginatedModel;
 use App\Application\Model\User\UserFilterCriterionModel;
+use App\Application\Model\User\UserModel;
 use App\Application\Port\User\UserRepositoryInterface;
 use App\Application\ValueObject\Common\Email;
-use App\Application\Exception\User\UserNotFoundException;
-use App\Application\Model\User\UserModel;
 use App\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use App\Infrastructure\Persistence\Doctrine\Mapper\UserMapper;
 use App\Infrastructure\Persistence\Doctrine\Query\Common\DoctrinePaginationApplier;
@@ -65,11 +65,6 @@ final readonly class DoctrineUserRepository implements UserRepositoryInterface
     public function existsByEmail(Email $email): bool
     {
         return $this->findByEmail($email) !== null;
-    }
-
-    public function listAll(): array
-    {
-        return $this->userMapper->toModelArray($this->userEntityFetcher->listAll());
     }
 
     public function listBatch(int $offset, int $limit): array

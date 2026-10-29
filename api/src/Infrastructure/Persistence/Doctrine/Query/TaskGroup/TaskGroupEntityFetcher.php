@@ -64,18 +64,6 @@ final readonly class TaskGroupEntityFetcher
         return $entities;
     }
 
-    /** @return list<TaskGroupEntity> */
-    public function listAll(): array
-    {
-        /** @var list<TaskGroupEntity> $entities */
-        $entities = $this->baseQuery()
-            ->orderBy(self::ALIAS.'.'.TaskGroupEntity::FIELD_CREATED_AT, 'DESC')
-            ->getQuery()
-            ->getResult();
-
-        return $entities;
-    }
-
     /**
      * @return list<TaskGroupEntity>
      */

@@ -228,7 +228,7 @@
 | `USER_ALREADY_EXISTS` | 409 | email занят (precheck) |
 | `INVALID_CREDENTIALS` | 401 | пользователь не найден или пароль неверный |
 | `INVALID_REFRESH_TOKEN` | 401 | refresh-токен неизвестен, истёк или отозван |
-| — | 401 | нет/невалиден JWT (Symfony Security) |
+| `INVALID_CREDENTIALS` | 401 | нет или невалиден JWT |
 
 ## Нефункциональные требования
 

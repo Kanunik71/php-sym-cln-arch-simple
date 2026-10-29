@@ -118,3 +118,7 @@ services:
     App\Application\Service\File\Lifecycle\FileCleanupTmpService:
         arguments:
             $tmpTtlHours: '%app.file.tmp_ttl_hours%'
+
+    App\Infrastructure\Http\ApiExceptionSubscriber:
+        arguments:
+            $debug: '%kernel.debug%'

@@ -147,7 +147,7 @@ hasNonTerminalTask == true -> InProgress
   `listMembershipFactsByIds()`; если статус не изменился — без `save` и события.
 - `recalculateByTaskId()`: `listByTaskId()` + `BatchUtils::each(..., 1000)`.
 - `recalculateByGroupIds()`: `BatchUtils::each(ids, listByIds)`.
-- `listBatch()` реализован, но не используется; `listAll()` используется в summary.
+- Summary читает группы через `listBatch` (по 1000) и отдаёт весь список.
 
 Триггеры пересчёта:
 
@@ -213,7 +213,7 @@ hasNonTerminalTask == true -> InProgress
 
 | Где | Факт | Ожидание/документация | Ссылка |
 |-----|------|-----------------------|--------|
-| Summary | `listAll()` всех групп без пагинации и фильтра по владельцу | масштаб | `TaskGroupSummarizeQueryService` |
+| Summary | все группы без пагинации и фильтра по владельцу | масштаб | `TaskGroupSummarizeQueryService` |
 | `POST` в задаче | `taskIds` валидируются, но игнорируются | предсказуемый контракт | `TaskTaskGroupController` |
 | Тесты | нет `400/404` и части проверок `codeId` | полнота | `tests/Integration/TaskGroup` |
 

@@ -179,11 +179,11 @@ Entity **не** выходит наружу. По роли метода:
 
 | Можно | Нельзя |
 |-------|--------|
-| `find*` / `listByIds` / `search` с pagination | `listAll()` как полный scan миллиона моделей |
-| chunk id → `listByIds($chunk)` → обработка | `foreach ($repo->listAll() as …)` в Console / Service / MessageHandler |
-| `BatchUtils::each` / `BatchUtils::chunk` (`Shared/Utils`, default 1000) | держать весь набор моделей в памяти |
+| `find*` / `listByIds` / `search` с pagination | полный scan миллиона моделей одним запросом |
+| chunk id → `listByIds($chunk)` → обработка | копить весь набор моделей, если ответ этого не требует |
+| `BatchUtils::each` / `BatchUtils::chunk` (`Shared/Utils`, default 1000) | `listAll()` — метода нет |
 
-`listAll()` — только для **заведомо малых** выборок (тесты, узкий admin-list без гарантии роста). Для перебора «всех пользователей / тасок / групп»:
+Для перебора «всех пользователей / тасок / групп»:
 
 1. Порциями — `listBatch($offset, $limit)` (полный scan) или chunk известных id → `listByIds($chunk)`.
 2. Обработать chunk; не копить результат всего прогона в одном массиве.
@@ -306,6 +306,6 @@ $this->deleteUser->execute(userId: $id, currentUserId: $this->getCurrentUserId()
 7. `list` без criteria; фильтры только в `query`
 8. Policy: метод с I/O — суффикс `Io`; без I/O — без суффикса
 9. Delete: межагрегатные дети и side effects — явно в `*DeleteService` / Lifecycle, не через DB/ORM cascade
-10. Полный перебор User/Task/(связанных) — `listBatch` / `BatchUtils` + `listByIds`, не `listAll`; см. «Масштаб и batch-переборы»
+10. Полный перебор User/Task/(связанных) — `listBatch` / `BatchUtils` + `listByIds`; см. «Масштаб и batch-переборы»
 11. Async-постановка — `*Dispatcher`; эффект после commit — Lifecycle или `*MessageHandler`
 12. `CacheInterface` — только в `*Cache`

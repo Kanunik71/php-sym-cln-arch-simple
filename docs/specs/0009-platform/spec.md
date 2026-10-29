@@ -51,7 +51,8 @@ access_control:
   `LogicException` (500).
 - `#[IsGranted('ROLE_USER')]` на всех защищённых контроллерах.
 - Пароли — `PasswordHasherInterface` (в тестах cost 4).
-- `401` формирует Symfony Security (тело не `ErrorResponseModel`).
+- `401` без своего `codeId` (нет или битый JWT) — `ErrorResponseModel` с
+  `INVALID_CREDENTIALS`. Логин и refresh оставляют свои `codeId`.
 
 JWT (`lexik_jwt_authentication.yaml`):
 
@@ -102,10 +103,12 @@ JWT (`lexik_jwt_authentication.yaml`):
 - HTTP-статус задаёт контроллер; `codeId` не определяет статус.
 - `BaseController::requestPayload()` бросает `InvalidArgumentException` на
   невалидный JSON; контроллеры, которые его ловят, возвращают `400`.
-- Глобального `kernel.exception` listener нет: необработанные исключения →
-  стандартный Symfony `500` (HTML/JSON без `codeId`).
-- Невалидный 36-символьный id, прошедший regex `[0-9a-fA-F-]{36}`, может дать
-  `500` на `Uuid::fromString()`.
+- `ApiExceptionSubscriber` на `/api`: необработанное исключение →
+  `ErrorResponseModel`. `InvalidArgumentException` (в том числе битый UUID) →
+  `400`; остальное без кода → `500` и `VALIDATION_ERROR` (в prod без текста
+  исключения).
+- `401` от firewall, если тело ещё не `ErrorResponseModel`, переписывается в
+  `{error, codeId: INVALID_CREDENTIALS}`.
 
 ## Query-механика
 
@@ -152,8 +155,10 @@ GET /api/users/query?page=2&perPage=50&sort=-createdAt
 ## Async / Messenger
 
 ```yaml
+failure_transport: failed
 transports:
-  async: '%env(MESSENGER_TRANSPORT_DSN)%'
+  async: '%env(MESSENGER_TRANSPORT_DSN)%'   # queue messages
+  failed: '%env(MESSENGER_FAILURE_TRANSPORT_DSN)%'  # queue failed
   sync: 'sync://'
 routing:
   TaskCreated: async
@@ -162,10 +167,12 @@ routing:
   UserUpdatedEvent: async
 ```
 
-- В тестах `async: in-memory://`.
+- `async` retry: `max_retries: 3`, `delay: 1000`, `multiplier: 2`.
+- `failure_transport: failed` — очередь `failed` на том же брокере. Worker её не
+  читает; разбор — `messenger:failed:show` / `messenger:failed:retry`.
+- В тестах `async` и `failed`: `in-memory://`.
 - Worker: `messenger:consume async scheduler_default -vv --time-limit=3600`
   (docker-профиль `workers`, `restart: unless-stopped`).
-- Retry/failure transport явно не настроены (используются дефолты Messenger).
 
 ## Кэш
 
@@ -189,8 +196,9 @@ routing:
 - Ориентир: ~10⁶ `User` и ~10⁶ `Task`.
 - `BatchUtils`: `DEFAULT_SIZE = 1000`; `chunk(list, size)`, `each(list, cb, size)`.
 - Эталон: `TaskGroupRecalculationService` (`listByIds` + `BatchUtils::each`).
-- `listAll()` допускается только для заведомо малых выборок.
-- Фактически `listAll()` используется в `TaskGroupSummarizeQueryService` (расхождение).
+- `listAll()` нет. Полный перебор — `listBatch` (по 1000).
+- Summary групп читает `listBatch`, в ответе по-прежнему весь список
+  (`createdAt` desc). Пагинации и фильтра по владельцу нет.
 
 ## Данные и миграции
 
@@ -217,7 +225,8 @@ routing:
 | messenger-worker | build `docker/php` | — (profile `workers`) |
 
 Переменные: `APP_SECRET`, `JWT_SECRET`, `DATABASE_URL`, `REDIS_URL`,
-`MESSENGER_TRANSPORT_DSN`, `MAILER_FROM`, `SCHEDULER_FILE_CLEANUP_CRON`.
+`MESSENGER_TRANSPORT_DSN`, `MESSENGER_FAILURE_TRANSPORT_DSN`, `MAILER_FROM`,
+`SCHEDULER_FILE_CLEANUP_CRON`.
 
 ## Тесты
 
@@ -226,7 +235,7 @@ routing:
   (`tests/Integration`).
 - `DatabaseTestCase` / `DatabaseWebTestCase` пересоздают схему на `setUp`.
 - `AuthenticatedWebTestCase` создаёт demo-пользователя и логинится.
-- В тестах: `async = in-memory://`, cache = array, password cost 4.
+- В тестах: `async` и `failed` = `in-memory://`, cache = array, password cost 4.
 - Проверки: статус + `codeId`; для ответов — decode в typed `*Model`.
 - Команды (из `api/`): `php bin/phpunit`, `composer phpstan`,
   `composer cs-check`.
@@ -237,11 +246,6 @@ routing:
 |-----|------|-----------------------|--------|
 | Слои | нет `src/Domain`, нет `Application/Command|Query|Handler` | `api/CLAUDE.md` | ADR 0001 |
 | Конфиг | `services.yaml` исключает `../src/Domain/`, которого нет | удалить/создать слой | `config/services.yaml` |
-| Ошибки | нет глобального обработчика; `500` без `codeId` | единый формат ошибок | `config/packages/framework.yaml` |
-| `401` | тело формирует Symfony Security, не `ErrorResponseModel` | единый контракт | `security.yaml` |
-| Async | нет retry/failure transport; потеря сообщения не компенсируется | надёжность | `messenger.yaml` |
-| Масштаб | `listAll()` в group summary | `listBatch`/batch | 0005 |
-| UUID | regex `[0-9a-fA-F-]{36}` пропускает невалидные id → `500` | `400` | контроллеры |
 | Состояние | `GET /api/tasks` кэш 60 секунд может отдавать устаревший список | инвалидация | 0004 |
 
 ## Первоисточники
@@ -261,10 +265,4 @@ routing:
 - `api/phpunit.xml.dist`, `api/tests/{DatabaseTestCase,DatabaseWebTestCase,AuthenticatedWebTestCase}.php`
 - `docker/docker-compose.yml`, `docker/php/**`, `docker/nginx/**`
 - `api/composer.json`
-
-## Открытые вопросы
-
-- [ ] Ввести единый exception listener и `401` в формате `ErrorResponseModel`?
-- [ ] Настроить retry/failure transport и dead-letter для async?
-- [ ] Убрать оставшиеся `listAll()` или заменить на `listBatch`?
-- [ ] Нужна ли отдельная baseline-спека по Docker/CI?
+- `api/src/Infrastructure/Http/ApiExceptionSubscriber.php`

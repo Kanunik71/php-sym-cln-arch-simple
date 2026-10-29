@@ -21,7 +21,7 @@ api/src/
 
 **Application** — use cases и все application-структуры вокруг них.
 
-**Масштаб:** ориентир — до ~10⁶ `User` и ~10⁶ `Task` (и связанные агрегаты). Полный перебор через `listAll()` запрещён для job’ов / Service / Console; только `listBatch` / `BatchUtils` + `listByIds`. Подробно: `Application/CLAUDE.md` → «Масштаб и batch-переборы»; эталон — `TaskGroupRecalculationService`.
+**Масштаб:** ориентир — до ~10⁶ `User` и ~10⁶ `Task` (и связанные агрегаты). Полный перебор — `listBatch` / `BatchUtils` + `listByIds`. Подробно: `Application/CLAUDE.md` → «Масштаб и batch-переборы»; эталон — `TaskGroupRecalculationService`.
 
 ---
 
@@ -347,7 +347,7 @@ Console: CLI
 11. DQL / CriteriaApplier — Infrastructure
 12. `array` / `mixed` — только wire-граница; внутри — Model / VO; в Application tests — `new *Model(...)`, не `fromArray` и не `array $overrides`
 13. Закрытое множество в поле Model — Domain enum или Application `*Enum`, не `string`
-14. Перебор больших коллекций (User/Task ~10⁶) — `listBatch` / batch, не `listAll` (см. `Application/CLAUDE.md` → Масштаб)
+14. Перебор больших коллекций (User/Task ~10⁶) — `listBatch` / batch (см. `Application/CLAUDE.md` → Масштаб)
 
 ---
 

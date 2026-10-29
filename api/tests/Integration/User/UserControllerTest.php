@@ -60,6 +60,17 @@ final class UserControllerTest extends AuthenticatedWebTestCase
         $client->request('GET', '/api/users');
 
         $this->assertSame(Response::HTTP_UNAUTHORIZED, $client->getResponse()->getStatusCode());
+        $this->assertSame(ErrorCodeEnum::InvalidCredentials, $this->decodeErrorModel($client)->codeId);
+    }
+
+    public function testInvalidTokenReturnsErrorModel(): void
+    {
+        $client = $this->createClientAndResetDatabase();
+
+        $client->request('GET', '/api/users', server: ['HTTP_AUTHORIZATION' => 'Bearer not-a-jwt']);
+
+        $this->assertSame(Response::HTTP_UNAUTHORIZED, $client->getResponse()->getStatusCode());
+        $this->assertSame(ErrorCodeEnum::InvalidCredentials, $this->decodeErrorModel($client)->codeId);
     }
 
     public function testListRejectsInvalidPerPage(): void
