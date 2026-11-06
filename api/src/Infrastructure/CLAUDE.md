@@ -43,7 +43,7 @@ Persistence/Doctrine/
 ├── Entity/                          # модели таблиц
 ├── Mapper/                          # Application *Model ↔ Entity
 ├── Repository/                      # реализации Application *RepositoryInterface
-├── Utils/                           # Doctrine-specific static helpers
+├── Utils/                           # статические хелперы под Doctrine
 └── Query/
     ├── Common/                      # DoctrineFilterApplier, DoctrinePaginationApplier
     └── {Entity}/                    # fetcher, criteria applier, *DoctrineMap
@@ -96,7 +96,7 @@ Application `*FilterFieldEnum` — whitelist API filter-полей (value, type)
 
 Application Model (criteria, pagination) читается в Infrastructure только в search/query path (`*CriteriaApplier`, search repository).
 
-#### Cascade deletes
+#### Каскадные удаления
 
 Удаление и побочные эффекты **между агрегатами** — ответственность Application `*Service`, не FK и не молчаливый ORM cascade. Infrastructure отражает уже принятое решение и чистит **внутренности** одного агрегата.
 

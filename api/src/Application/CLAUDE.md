@@ -11,7 +11,7 @@ Application/
 ├── Mapper/        # persistence *Model → response *ViewModel
 ├── Cache/         # политика ключей; единственный потребитель CacheInterface
 ├── Dispatcher/    # async intent: дедуп, lock, dispatch Event
-├── Policy/        # preconditions use case + shared access
+├── Policy/        # предусловия use case + общие правила доступа
 ├── Port/          # контракты к Infrastructure
 ├── Event/         # факты для Messenger
 └── Exception/     # coded-исключения use case
@@ -207,8 +207,8 @@ Presentation Console только парсит CLI и вызывает `*Service
 ### Policy
 
 ```
-Policy/User/UpdateUserPolicy.php       # per use case
-Policy/Task/TaskAccessPolicy.php       # shared access rule
+Policy/User/UpdateUserPolicy.php       # под конкретный use case
+Policy/Task/TaskAccessPolicy.php       # общее правило доступа
 ```
 
 | Тип | Именование | Пример |
@@ -264,7 +264,7 @@ Exception/User/UserNotFoundException.php
 ```
 
 - Event диспатчит Lifecycle или Dispatcher. Обработчик очереди — Infrastructure `*MessageHandler`, не Action.
-- Exception use case — `Application/Exception/{Entity}/`, `extends DomainException`, `CodedExceptionInterface::getCodeId()` → `ErrorCodeEnum`.
+- Исключение use case — `Application/Exception/{Entity}/`, `extends DomainException`, `CodedExceptionInterface::getCodeId()` → `ErrorCodeEnum`.
 - Ошибки контракта payload (тип, whitelist) — `InvalidArgumentException` на `fromArray` / сборке входа Service. Их ловит контроллер как 400.
 
 ---
@@ -288,8 +288,8 @@ $this->deleteUser->execute(userId: $id, currentUserId: $this->getCurrentUserId()
 
 - `*Model::fromArray` — wire → typed (типы / минимальный shape). Use-case contract без IO — в Service до записи (whitelist sort/filter). С IO — в `*Policy`.
 - Инварианты поля — VO / persistence `*Model`, не повторная проверка типов в Service.
-- Single wire Model — `ArrayableModelInterface`; criteria list — `ArrayableModelListInterface` (`fromArrayList` / `toArrayList`).
-- Response Model — `ArrayableModelInterface` (`fromArray` для decode в тестах; наружу — public props). Page из port (`UserPaginatedModel`) — не arrayable.
+- Единый wire Model — `ArrayableModelInterface`; список criteria — `ArrayableModelListInterface` (`fromArrayList` / `toArrayList`).
+- Response Model — `ArrayableModelInterface` (`fromArray` для декодирования в тестах; наружу — public props). Page из port (`UserPaginatedModel`) — не arrayable.
 - `toArray()` / `toArrayList()` — Integration и serde (wire-ключи).
 - `array` / `mixed` — только на границе wire. В Service, Policy, Lifecycle и тестах Application — `new *Model(...)`, не `fromArray` и не `array $overrides`.
 

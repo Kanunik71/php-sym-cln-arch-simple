@@ -14,7 +14,7 @@ tests/
 ├── fixtures/       # бинарные файлы (avatar.jpg)
 ├── DatabaseTestCase.php          # Kernel + TestBed, схема на setUp
 ├── DatabaseWebTestCase.php       # HTTP без заранее залогиненного пользователя
-└── AuthenticatedWebTestCase.php  # demo user + login
+└── AuthenticatedWebTestCase.php  # демо-пользователь + логин
 ```
 
 **Не создавать `tests/Unit/`** — слои лежат в корне `tests/`, как в `src/`. Слоя `Domain/` нет: персистентная модель — Application `*Model`, VO — `Application/ValueObject`.
@@ -35,7 +35,7 @@ Application/
 ├── Service/{Asset,File,Notification,Task,TaskGroup,User}/
 │   ├── Action/      # write use case, execute()
 │   ├── Query/       # read use case, execute()
-│   └── Lifecycle/   # side effects после persist, пересчёт, cleanup
+│   └── Lifecycle/   # побочные эффекты после persist, пересчёт, cleanup
 ├── Model/{Asset,File,Task,TaskGroup,User}/   # + SortModelTest в корне Model/
 └── ValueObject/Common/                       # Email, Phone
 

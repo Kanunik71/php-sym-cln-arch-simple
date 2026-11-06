@@ -1,0 +1,55 @@
+schema: spec-driven
+
+context: |
+  Language: Russian — write all artifacts in Russian; keep OpenSpec structural
+  headings (`## Purpose`, `### Requirement:`, `#### Scenario:`, GIVEN/WHEN/THEN)
+  and SHALL/MUST keywords in English.
+
+  Project: `cln-arch-sym-simple` — monorepo: `api/` (Symfony 7 API, MySQL, JWT,
+  RabbitMQ, Redis, local file storage), `docker/` (nginx, php, workers),
+  `openspec/` (specs, changes). Scale target ~10^6 users/tasks.
+
+  Architecture: Clean Architecture layers — Presentation (Controller/Console)
+  → Application (Model → Service::execute, Action/Query, Policy, ViewModelMapper,
+  Dispatcher) → Port (interfaces) → Infrastructure (Doctrine, adapters).
+  Target architecture rules live in `api/CLAUDE.md` (+ `api/src/Application/CLAUDE.md`,
+  `api/src/Infrastructure/CLAUDE.md`, `api/tests/CLAUDE.md`) — read relevant
+  sections before writing designs/tasks; specs must not duplicate them, only reference.
+  Specs describe the ACTUAL behavior of the code and tests (source of truth);
+  `api/CLAUDE.md` describes the TARGET state. Known gaps between CLAUDE.md and
+  code are recorded in the `## Notes` section of the affected specs.
+
+  specs are behavior-only: observable contracts (HTTP method/path, JSON in/out,
+  status and error codes with `codeId`, CLI commands, async events, cache/locks).
+  Implementation details (classes, tables, libraries) go to design.md, not specs.
+
+  Verification commands (run from `api/`; in Docker:
+  `docker compose -f ../docker/docker-compose.yml exec php <cmd>`):
+  `composer cs-check`, `composer phpstan`, `php bin/phpunit`.
+  A change is done only when all three pass, tasks.md is fully checked, and
+  behavior changes update the affected `openspec/specs/` docs.
+
+rules:
+  proposal:
+    - Keep proposal under 500 words; always state what is out of scope
+    - Name affected domains (openspec/specs/<capability>/) and whether migration/async/security is touched
+  specs:
+    - HTTP contract only as GIVEN/WHEN/THEN scenarios — no route tables
+    - Errors must be named with their `codeId` and HTTP status
+    - Every requirement needs at least one scenario that exercises it
+  design:
+    - "Map design to layers: Domain (VO/enum) → Application (Service/Action/Query/Model/Policy) → Port → Infrastructure (Doctrine/adapter)"
+    - Reference concrete sections of api/CLAUDE.md instead of restating architecture
+    - List file changes, DB migrations, async messages, cache keys, and tests
+  tasks:
+    - "Group tasks by phase: Application → Infrastructure → Presentation → Tests → Checks"
+    - Every task names the file(s) it touches and how it is verified
+
+operations:
+  apply:
+    guidance:
+      - Run `composer cs-check`, `composer phpstan` and `php bin/phpunit` from api/ (via docker) before marking a group complete
+      - Check off tasks.md checkboxes as work lands; update openspec specs when behavior changes
+  archive:
+    guidance:
+      - Summarize what shipped and which spec files were updated before finishing

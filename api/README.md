@@ -6,7 +6,7 @@ API-сервер на Symfony 7: чистая архитектура, JWT, MySQL
 
 Локальный Docker-стек: [`docker/README.md`](../docker/README.md) (`up -d --build` сам делает `composer install` + migrate).
 
-## Console
+## Консоль
 
 Из каталога `api/` (после `up`; migrate уже в entrypoint — см. [`docker/README.md`](../docker/README.md)):
 
@@ -27,7 +27,7 @@ docker compose -f ../docker/docker-compose.yml exec php php bin/phpunit tests/Ap
 docker compose -f ../docker/docker-compose.yml exec php php bin/phpunit tests/Integration
 ```
 
-### Code style / static analysis
+### Стиль кода и статический анализ
 
 ```bash
 docker compose -f ../docker/docker-compose.yml exec php composer cs-check

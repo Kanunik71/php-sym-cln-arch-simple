@@ -44,7 +44,7 @@ api/src/
 | **ModelMapper** | Domain → response Model | Application | `UserModelMapper` |
 | **Cache** | Политика ключей кэша; единственный потребитель `CacheInterface` в Application | Application | `TaskGroupCache` |
 | **Dispatcher** | Постановка async-работы: дедуп, нормализация, lock, dispatch Domain Event | Application | `TaskGroupRecalculationDispatcher` |
-| **Policy** | Preconditions use case: auth, uniqueness, IO; shared access rules | Application | `UpdateUserPolicy`, `TaskAccessPolicy` |
+| **Policy** | Предусловия use case: auth, uniqueness, IO; общие правила доступа | Application | `UpdateUserPolicy`, `TaskAccessPolicy` |
 | **Repository** | Реализация репозитория | Infrastructure | `DoctrineUserRepository` |
 | **Service** | Оркестрация (Application) или тех. реализация (Infrastructure) | Application, Infrastructure | `TaskGroupRecalculationService`, `RedisCacheService` |
 | **Provider** | Внешний ресурс | Infrastructure | `LexikTokenProvider` |
@@ -116,7 +116,7 @@ Model/User/UserFilterCriterionModel.php
 
 1. Имя = Ubiquitous Language, **без** суффикса (`Email`, `TaskName`, не `EmailValueObject`)
 2. Все class VO — только в папке `ValueObject/`
-3. Shared — `Domain/Common/ValueObject/`; контекстные — `Domain/{Aggregate}/ValueObject/`
+3. Общие — `Domain/Common/ValueObject/`; контекстные — `Domain/{Aggregate}/ValueObject/`
 4. **Запрет дублей и одинаковых коротких имён** по всему Domain (один `Email`, не `User\Email` + `Common\Email`)
 5. Enum **не** класть в `ValueObject/` — отдельно `Enum/`
 6. VO заводить при реальных инвариантах / поведении, не на каждое поле
@@ -309,7 +309,7 @@ Console: CLI
 2. `*FilterCriterionModel::fromArrayList($data)` → `FilterCriteriaUtils::fromArray` + entity builder; поле через `FilterFieldUtils::isAllowed($name, *FilterFieldEnum::class)`  
 3. Common type → filter VO — `FilterFieldTypeEnum::fromOperatorMap()`; entity-specific filters — `match ($field)` в `*FilterCriterionModel`  
 4. Sort: `SortModel::fromArray` только при наличии `sort` в wire; иначе default в `Search*Query`; whitelist — `SortFieldUtils` + `*SortFieldEnum::values()`
-5. Single wire Model — `ArrayableModelInterface`; criteria list — `ArrayableModelListInterface` (`fromArrayList` / `toArrayList`); response decode — `fromArray`  
+5. Единый wire Model — `ArrayableModelInterface`; список criteria — `ArrayableModelListInterface` (`fromArrayList` / `toArrayList`); декодирование ответа — `fromArray`  
 
 6. Filter VO — `Application/Model/Common/Filter/` (+ `toOperatorMap()` для wire)  
 7. Операторы / поля — `Application/Enum/`  

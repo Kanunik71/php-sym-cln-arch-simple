@@ -6,3 +6,7 @@
 
 # IDE
 .idea/
+
+# OpenSpec: генерируется через `openspec update` (см. README.md)
+/.opencode/commands/
+/.opencode/skills/
