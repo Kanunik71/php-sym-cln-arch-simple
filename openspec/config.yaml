@@ -21,7 +21,16 @@ context: |
 
   specs are behavior-only: observable contracts (HTTP method/path, JSON in/out,
   status and error codes with `codeId`, CLI commands, async events, cache/locks).
-  Implementation details (classes, tables, libraries) go to design.md, not specs.
+  Implementation details (classes, tables, libraries) of a change go to that
+  change's design.md, not specs.
+
+  Domain layout: a domain folder `openspec/specs/<domain>/` holds the umbrella
+  `spec.md` (domain fields and their validation + map of subsections) and one
+  subsection per use case — `openspec/specs/<domain>/<action>/spec.md`
+  (capability id `<domain>/<action>`). Delta specs for such a domain live in
+  `openspec/changes/<change>/specs/<domain>/<action>/spec.md`. The umbrella
+  `spec.md` stays a valid capability: it needs its own `## Purpose` and
+  `## Requirements`.
 
   Verification commands (run from `api/`; in Docker:
   `docker compose -f ../docker/docker-compose.yml exec php <cmd>`):
@@ -37,10 +46,13 @@ rules:
     - HTTP contract only as GIVEN/WHEN/THEN scenarios — no route tables
     - Errors must be named with their `codeId` and HTTP status
     - Every requirement needs at least one scenario that exercises it
+    - Action-specific behavior belongs to `openspec/specs/<domain>/<action>/spec.md`; the umbrella `spec.md` keeps only the domain fields and their validation
+    - No implementation details in specs: no class names, layer layout, or framework artifacts; reference other domains (auth, files, notifications) instead of duplicating their rules
   design:
     - "Map design to layers: Domain (VO/enum) → Application (Service/Action/Query/Model/Policy) → Port → Infrastructure (Doctrine/adapter)"
     - Reference concrete sections of api/CLAUDE.md instead of restating architecture
     - List file changes, DB migrations, async messages, cache keys, and tests
+    - design.md describes the delta of a change only; the standing contracts of a domain stay in its umbrella spec.md
   tasks:
     - "Group tasks by phase: Application → Infrastructure → Presentation → Tests → Checks"
     - Every task names the file(s) it touches and how it is verified
