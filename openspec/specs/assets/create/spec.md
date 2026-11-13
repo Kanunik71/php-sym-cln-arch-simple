@@ -30,6 +30,7 @@ The API SHALL создавать ассет через `POST /api/assets` (`name
 - **GIVEN** в `imageFileIds` передан файл, который не удалось прикрепить
 - **WHEN** создание ассета
 - **THEN** ассет уже сохранён и остаётся в БД; ошибка прикрепления не откатывает сохранение
+- **Covers:** `tests/Application/Service/Asset/Action/AssetCreateServiceTest::testKeepsAssetSavedWhenFileAttachFails`
 
 ## Notes
 

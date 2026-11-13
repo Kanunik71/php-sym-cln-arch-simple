@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Application\Service\Asset\Action;
 
 use App\Application\Enum\Asset\AssetTypeEnum;
+use App\Application\Exception\File\UnauthorizedFileAccessException;
 use App\Application\Model\Asset\Action\AssetCreateModel;
 use App\Application\Service\Asset\Action\AssetCreateService;
 use App\Tests\DatabaseTestCase;
@@ -62,5 +63,34 @@ final class AssetCreateServiceTest extends DatabaseTestCase
         );
 
         $this->assertSame([$task->getId()], $result->taskIds);
+    }
+
+    public function testKeepsAssetSavedWhenFileAttachFails(): void
+    {
+        $user = $this->bed->seedDefaultUser();
+        $otherUser = $this->bed->createUser(email: 'other@example.com');
+        $foreignFile = $this->bed->uploadTmpImage($otherUser->getId());
+
+        $createAsset = $this->bed->get(AssetCreateService::class);
+
+        try {
+            $createAsset->execute(
+                new AssetCreateModel(
+                    name: 'Laptop',
+                    price: 999.99,
+                    type: AssetTypeEnum::Physical,
+                    imageFileIds: [$foreignFile->id],
+                ),
+                userId: $user->getId(),
+            );
+            self::fail('Attach of a foreign file must fail.');
+        } catch (UnauthorizedFileAccessException) {
+            // ожидаемая ошибка прикрепления — ассет к этому моменту уже сохранён
+        }
+
+        $assets = $this->bed->assetRepository();
+        $persisted = $assets->listByOwnerId($user->getId());
+        $this->assertCount(1, $persisted);
+        $this->assertSame('Laptop', $persisted[0]->name);
     }
 }

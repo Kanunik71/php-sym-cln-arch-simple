@@ -60,6 +60,42 @@ final class AuthControllerTest extends DatabaseWebTestCase
         $this->assertSame(ErrorCodeEnum::ValidationError, $error->codeId);
     }
 
+    public function testLoginRejectsWrongPassword(): void
+    {
+        $client = $this->createClientAndResetDatabase();
+
+        $this->requestJson($client, 'POST', '/api/auth/register', [
+            'email' => 'john@example.com',
+            'password' => 'secret123',
+        ]);
+        $this->assertSame(Response::HTTP_CREATED, $client->getResponse()->getStatusCode());
+
+        $this->requestJson($client, 'POST', '/api/auth/login', [
+            'email' => 'john@example.com',
+            'password' => 'wrong-password',
+        ]);
+
+        $this->assertSame(Response::HTTP_UNAUTHORIZED, $client->getResponse()->getStatusCode());
+
+        $error = $this->decodeErrorModel($client);
+        $this->assertSame(ErrorCodeEnum::InvalidCredentials, $error->codeId);
+    }
+
+    public function testLoginRejectsUnknownEmail(): void
+    {
+        $client = $this->createClientAndResetDatabase();
+
+        $this->requestJson($client, 'POST', '/api/auth/login', [
+            'email' => 'nobody@example.com',
+            'password' => 'secret123',
+        ]);
+
+        $this->assertSame(Response::HTTP_UNAUTHORIZED, $client->getResponse()->getStatusCode());
+
+        $error = $this->decodeErrorModel($client);
+        $this->assertSame(ErrorCodeEnum::InvalidCredentials, $error->codeId);
+    }
+
     public function testRefreshRotatesToken(): void
     {
         $client = $this->createClientAndResetDatabase();

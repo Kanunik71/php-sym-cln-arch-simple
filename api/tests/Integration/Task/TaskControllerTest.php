@@ -9,6 +9,7 @@ use App\Application\Exception\ErrorCodeEnum;
 use App\Application\Model\Task\Action\TaskChangeStatusModel;
 use App\Application\Model\Task\Action\TaskCreateModel;
 use App\Application\Model\Task\Read\TaskPageModel;
+use App\Application\Model\Task\Read\TaskViewModel;
 use App\Shared\Utils\UidUtils;
 use App\Tests\AuthenticatedWebTestCase;
 use Symfony\Component\HttpFoundation\Response;
@@ -52,6 +53,26 @@ final class TaskControllerTest extends AuthenticatedWebTestCase
         );
 
         $this->assertSame(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
+
+        $view = $this->decodeModel($this->client, TaskViewModel::class);
+        $this->assertSame($task->getId(), $view->id);
+        $this->assertSame('Learn Symfony', $view->name);
+        $this->assertSame(TaskStatusEnum::Initial, $view->status);
+        $this->assertSame($this->demoUser->getId(), $view->ownerId);
+    }
+
+    public function testGetUnknownTaskReturnsNotFound(): void
+    {
+        $this->createAuthenticatedClient();
+
+        $this->client->request(
+            'GET',
+            '/api/tasks/'.UidUtils::nil(),
+            server: $this->demoAuthorizedServer(),
+        );
+
+        $this->assertSame(Response::HTTP_NOT_FOUND, $this->client->getResponse()->getStatusCode());
+        $this->assertSame(ErrorCodeEnum::TaskNotFound, $this->decodeErrorModel($this->client)->codeId);
     }
 
     public function testTasksRequireAuthentication(): void
@@ -76,6 +97,30 @@ final class TaskControllerTest extends AuthenticatedWebTestCase
         );
 
         $this->assertSame(Response::HTTP_CREATED, $this->client->getResponse()->getStatusCode());
+
+        $created = $this->decodeModel($this->client, TaskViewModel::class);
+        $this->assertSame('Learn Symfony', $created->name);
+        $this->assertSame(TaskStatusEnum::Initial, $created->status);
+        $this->assertSame($this->demoUser->getId(), $created->ownerId);
+        $this->assertSame([], $created->users);
+        $this->assertNull($created->parentId);
+        $this->assertNull($created->estimateTime);
+    }
+
+    public function testCreateTaskRejectsEmptyName(): void
+    {
+        $this->createAuthenticatedClient();
+
+        $this->requestJson(
+            $this->client,
+            'POST',
+            '/api/tasks',
+            ['name' => ''],
+            server: $this->demoAuthorizedServer(),
+        );
+
+        $this->assertSame(Response::HTTP_BAD_REQUEST, $this->client->getResponse()->getStatusCode());
+        $this->assertSame(ErrorCodeEnum::ValidationError, $this->decodeErrorModel($this->client)->codeId);
     }
 
     public function testCreateChildTaskWithUnknownParentReturnsNotFound(): void
@@ -111,6 +156,27 @@ final class TaskControllerTest extends AuthenticatedWebTestCase
         );
 
         $this->assertSame(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
+
+        $view = $this->decodeModel($this->client, TaskViewModel::class);
+        $this->assertSame(TaskStatusEnum::Active, $view->status);
+        $this->assertSame(120, $view->estimateTime);
+    }
+
+    public function testChangeStatusRejectsSelfTransition(): void
+    {
+        $this->createAuthenticatedClient();
+        $task = $this->bed->createTask(ownerId: $this->demoUser->getId(), name: 'Learn Symfony');
+
+        $this->requestJson(
+            $this->client,
+            'PATCH',
+            '/api/tasks/'.$task->getId().'/status',
+            (new TaskChangeStatusModel(status: TaskStatusEnum::Initial))->toArray(),
+            server: $this->demoAuthorizedServer(),
+        );
+
+        $this->assertSame(Response::HTTP_BAD_REQUEST, $this->client->getResponse()->getStatusCode());
+        $this->assertSame(ErrorCodeEnum::ValidationError, $this->decodeErrorModel($this->client)->codeId);
     }
 
     public function testInvalidStatusTransitionReturnsConflict(): void

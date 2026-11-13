@@ -1,4 +1,4 @@
-﻿# Platform Specification
+# Platform Specification
 
 ## Purpose
 Сквозные механизмы API: аутентификация и access-правила, формат ошибок, query-механики, асинхронность и планировщик, кэш, батчирование, хранение файлов и тестовая инфраструктура.
@@ -52,11 +52,13 @@ The API SHALL принимать в path-параметре `{id}` 36-симво
 - **GIVEN** в `{id}` передана строка, не совпадающая с 36 hex-символами и дефисами
 - **WHEN** клиент запрашивает ресурс по этому идентификатору
 - **THEN** `404` с `codeId = VALIDATION_ERROR` (маршрут не совпал)
+- **Covers:** `tests/Integration/Platform/PathIdentifierTest::testRejectsIdentifierNotMatchingRouteFormat`
 
 #### Scenario: Идентификатор не разбирается как UUID
 - **GIVEN** в `{id}` передана 36-символьная hex-строка без корректного расположения дефисов
 - **WHEN** клиент запрашивает ресурс по этому идентификатору
 - **THEN** `400` с `codeId = VALIDATION_ERROR` и текстом `Invalid UUID.`
+- **Covers:** `tests/Integration/Platform/PathIdentifierTest::testRejectsIdentifierNotParsableAsUuid`
 
 ### Requirement: Query-контракт листинг/поиска
 The API SHALL поддерживать на листинговых/поисковых эндпоинтах пагинацию, сортировку и фильтры в едином формате (см. сценарии и Notes); whitelist полей и операторов задаётся на бэкенде.
@@ -148,7 +150,3 @@ The API SHALL в тестах использовать `in-memory://` транс
 - `codeId` whitelist (`ErrorCodeEnum`): `VALIDATION_ERROR` (400), `INVALID_CREDENTIALS` (401), `UNAUTHORIZED_USER_ACCESS`, `UNAUTHORIZED_TASK_ACCESS`, `UNAUTHORIZED_ASSET_ACCESS`, `UNAUTHORIZED_FILE_ACCESS`, `UNAUTHORIZED_TASK_GROUP_ACCESS` (403), `USER_NOT_FOUND`, `TASK_NOT_FOUND`, `ASSET_NOT_FOUND`, `FILE_NOT_FOUND`, `TASK_GROUP_NOT_FOUND` (404), `USER_ALREADY_EXISTS`, `INVALID_TASK_STATUS_TRANSITION` (409).
 - Таблицы: `users`, `files`, `assets`, `asset_file`, `asset_task`, `tasks`, `task_users`, `task_groups`, `task_group_task`, `user_notification_preferences`, `refresh_tokens`. FK: `asset_task`, `task_group_task` — CASCADE; `tasks.parent_id`, `users.avatar_file_id` — SET NULL; остальные — default/RESTRICT.
 - Источники: `api/config/packages/**`, `api/src/Presentation/Controller/BaseController.php`, `api/src/Application/Exception/**`, `api/src/Shared/Utils/**`, `api/src/Infrastructure/**`, `api/migrations/**`, `docker/**`.
-
-## Покрытие тестами
-
-- Не покрыты: сценарии «Идентификатор не по формату» и «Идентификатор не разбирается как UUID».

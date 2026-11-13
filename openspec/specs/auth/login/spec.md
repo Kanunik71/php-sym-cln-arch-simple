@@ -19,6 +19,7 @@ The API SHALL при верных credentials на `POST /api/auth/login` воз
 - **GIVEN** пользователь существует
 - **WHEN** `POST /api/auth/login` с неверным паролем (или email не найден)
 - **THEN** `401`, `codeId = INVALID_CREDENTIALS` без раскрытия причины
+- **Covers:** `tests/Application/Service/User/Action/UserLoginServiceTest::testThrowsWhenPasswordIsWrong`, `testThrowsWhenEmailIsUnknown`, `tests/Integration/Auth/AuthControllerTest::testLoginRejectsWrongPassword`, `testLoginRejectsUnknownEmail`
 
 ### Requirement: JWT-claims
 The API SHALL выдавать access JWT (HS256, TTL 900) с claims `roles = ["ROLE_USER"]`, `username = userId`, `email`; при bearer-аутентификации по id загружается пользователь через `DoctrineUserProvider`.
@@ -32,7 +33,3 @@ The API SHALL выдавать access JWT (HS256, TTL 900) с claims `roles = ["
 
 - Формат refresh-токена и семейства сессии — в [auth](../spec.md); правила ролей и доступа — в [platform](../../platform/spec.md).
 - Источники: `api/src/Presentation/Controller/Auth/AuthController.php`, `api/src/Application/Service/User/Action/UserLoginService.php`, `api/src/Application/Service/Auth/UserTokenPairService.php`, `api/src/Infrastructure/Security/LexikTokenProvider.php`, `api/src/Infrastructure/Security/DoctrineUserProvider.php`, `api/tests/Integration/Auth/AuthControllerTest.php`.
-
-## Покрытие тестами
-
-- Не покрыт: сценарий «Неверный пароль».

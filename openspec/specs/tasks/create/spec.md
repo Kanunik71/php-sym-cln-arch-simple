@@ -25,11 +25,19 @@ The API SHALL создавать задачу через `POST /api/tasks` (`nam
 - **GIVEN** `parentId` указывает на несуществующую задачу
 - **WHEN** `POST /api/tasks`
 - **THEN** `404 TASK_NOT_FOUND`
+- **Covers:** `tests/Application/Service/Task/Action/TaskCreateServiceTest::testThrowsWhenParentUnknown`, `tests/Integration/Task/TaskControllerTest::testCreateChildTaskWithUnknownParentReturnsNotFound`
 
 #### Scenario: Родитель другого пользователя
 - **GIVEN** `parentId` указывает на задачу, принадлежащую другому пользователю
 - **WHEN** `POST /api/tasks`
 - **THEN** `201`, подзадача создана с указанным `parentId` — доступ к родителю не проверяется
+- **Covers:** `tests/Application/Service/Task/Action/TaskCreateServiceTest::testCreatesChildTaskWithParentOwnedByAnotherUser`
+
+#### Scenario: Пустое имя
+- **GIVEN** в запросе `name` отсутствует или пуст
+- **WHEN** `POST /api/tasks`
+- **THEN** `400 VALIDATION_ERROR`, задача не создана
+- **Covers:** `tests/Integration/Task/TaskControllerTest::testCreateTaskRejectsEmptyName`
 
 ## Notes
 

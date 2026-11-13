@@ -6,8 +6,11 @@ namespace App\Tests\Application\Service\TaskGroup\Action;
 
 use App\Application\Dispatcher\TaskGroup\TaskGroupRecalculationDispatcher;
 use App\Application\Event\TaskGroup\TaskGroupsRecalculationRequestedEvent;
+use App\Application\Exception\Task\TaskNotFoundException;
+use App\Application\Exception\TaskGroup\TaskGroupNotFoundException;
 use App\Application\Exception\TaskGroup\UnauthorizedTaskGroupAccessException;
 use App\Application\Service\TaskGroup\Action\TaskGroupAttachTaskService;
+use App\Shared\Utils\UidUtils;
 use App\Tests\DatabaseTestCase;
 use App\Tests\Support\Trait\Common\AssertMessengerTrait;
 
@@ -77,5 +80,34 @@ final class TaskGroupAttachTaskServiceTest extends DatabaseTestCase
 
         $this->assertSame($group->getId(), $result->id);
         $this->assertDispatched(TaskGroupsRecalculationRequestedEvent::class, times: 0);
+    }
+
+    public function testThrowsWhenTaskGroupUnknown(): void
+    {
+        $user = $this->bed->seedDefaultUser();
+        $task = $this->bed->createTask(ownerId: $user->getId(), name: 'Build feature');
+
+        $this->expectException(TaskGroupNotFoundException::class);
+
+        $this->bed->get(TaskGroupAttachTaskService::class)->execute(
+            userId: $user->getId(),
+            taskId: $task->getId(),
+            taskGroupId: UidUtils::nil(),
+        );
+    }
+
+    public function testThrowsWhenTaskUnknown(): void
+    {
+        $user = $this->bed->seedDefaultUser();
+        $task = $this->bed->createTask(ownerId: $user->getId(), name: 'Build feature');
+        $group = $this->bed->createTaskGroupForTask($task->getId(), $user->getId(), 'Release 1.0');
+
+        $this->expectException(TaskNotFoundException::class);
+
+        $this->bed->get(TaskGroupAttachTaskService::class)->execute(
+            userId: $user->getId(),
+            taskId: UidUtils::nil(),
+            taskGroupId: $group->getId(),
+        );
     }
 }

@@ -15,6 +15,12 @@ The API SHALL привязывать задачу к группе (`POST /api/ta
 - **THEN** `200` без дубликата связи и без пересчёта
 - **Covers:** `TaskGroupAttachTaskServiceTest::testAttachIsIdempotent`
 
+#### Scenario: Несуществующая группа или задача
+- **GIVEN** в пути несуществующая группа или задача
+- **WHEN** `POST .../{id}/attach`
+- **THEN** `404 TASK_GROUP_NOT_FOUND` или `404 TASK_NOT_FOUND`
+- **Covers:** `tests/Application/Service/TaskGroup/Action/TaskGroupAttachTaskServiceTest::testThrowsWhenTaskGroupUnknown`, `testThrowsWhenTaskUnknown`
+
 #### Scenario: Отвязка задачи
 - **GIVEN** задача входит в группу
 - **WHEN** `DELETE /api/tasks/{taskId}/task-groups/{id}/tasks/{removeTaskId}`

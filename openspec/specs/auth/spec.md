@@ -1,4 +1,4 @@
-﻿# Auth Specification
+# Auth Specification
 
 ## Purpose
 
@@ -31,7 +31,3 @@ The API SHALL выдавать refresh-токен в формате `rt_` + 32 �
 - Access-токен после logout остаётся валиден до истечения TTL (≤900 с).
 - Отзыв refresh-сессий при смене пароля — в [users/update](../users/update/spec.md).
 - Источники: `api/src/Presentation/Controller/Auth/AuthController.php`, `api/src/Application/Service/Auth/**`, `api/src/Application/Service/User/Action/UserRegisterService.php`, `api/tests/Integration/Auth/AuthControllerTest.php`.
-
-## Покрытие тестами
-
-- Не покрыты: логин с неверным паролем (`401 INVALID_CREDENTIALS`) — нет ни `UserLoginServiceTest`, ни интеграционного теста; ветка `401` покрыта только для отсутствующего и битого JWT.

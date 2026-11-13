@@ -15,6 +15,12 @@ The API SHALL возвращать: `GET /api/assets` — страницу **с�
 - **THEN** `200`; список — `AssetPageModel`, деталь — `AssetDetailModel` (`tasks`, `images`, `inProgress`)
 - **Covers:** `testListAssetsReturnsOk`, `testListRejectsInvalidPerPage`, `testGetAssetReturnsOk`, `AssetListQueryServiceTest::testPaginatesByCreatedAtThenId`
 
+#### Scenario: Состав детального ответа
+- **GIVEN** у пользователя есть ассет с задачами и изображениями
+- **WHEN** `GET /api/assets/{id}`
+- **THEN** `200`, деталь содержит `tasks` и `images` помимо полей ассета
+- **Covers:** `tests/Integration/Asset/AssetControllerTest::testGetAssetReturnsOk`
+
 #### Scenario: Ассеты задачи
 - **GIVEN** доступ к задаче, к ней привязаны ассеты разных владельцев
 - **WHEN** `GET /api/tasks/{taskId}/assets`

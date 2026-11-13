@@ -1,4 +1,4 @@
-﻿# Notifications Specification
+# Notifications Specification
 
 ## Purpose
 
@@ -33,7 +33,3 @@ The API SHALL возвращать для типа без строки пере�
 - Реализация: письма отправляются в HTML без text-альтернативы.
 - Решения (из старой спеки): новые типы (задачи, дедлайны) не добавляем.
 - Источники: `api/src/Presentation/Controller/Notification/NotificationPreferenceController.php`, `api/src/Application/Service/Notification/**`, `api/src/Enum/Notification/**`, `api/src/Infrastructure/Messaging/User/Handler/**`, `api/tests/Integration/Notification/**`.
-
-## Покрытие тестами
-
-- Не покрыты: обработчики событий и повторная отправка уведомления.

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\TaskGroup\Action;
 
+use App\Application\Exception\TaskGroup\TaskGroupNotFoundException;
 use App\Application\Exception\TaskGroup\UnauthorizedTaskGroupAccessException;
 use App\Application\Service\TaskGroup\Action\TaskGroupDeleteService;
 use App\Tests\DatabaseTestCase;
@@ -43,6 +44,22 @@ final class TaskGroupDeleteServiceTest extends DatabaseTestCase
         $deleteTaskGroup->execute(
             userId: $otherUser->getId(),
             taskId: $task->getId(),
+            taskGroupId: $group->getId(),
+        );
+    }
+
+    public function testThrowsWhenTaskIsNotInGroup(): void
+    {
+        $owner = $this->bed->seedDefaultUser();
+        $groupedTask = $this->bed->createTask(ownerId: $owner->getId(), name: 'Grouped task');
+        $otherTask = $this->bed->createTask(ownerId: $owner->getId(), name: 'Other task');
+        $group = $this->bed->createTaskGroupForTask($groupedTask->getId(), $owner->getId(), 'Release 1.0');
+
+        $this->expectException(TaskGroupNotFoundException::class);
+
+        $this->bed->get(TaskGroupDeleteService::class)->execute(
+            userId: $owner->getId(),
+            taskId: $otherTask->getId(),
             taskGroupId: $group->getId(),
         );
     }

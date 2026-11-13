@@ -13,6 +13,7 @@ The API SHALL возвращать `GET /api/tasks` как страницу (1 �
 - **GIVEN** у пользователя есть свои и открытые задачи
 - **WHEN** `GET /api/tasks?page=1&perPage=20`
 - **THEN** `200`, `TaskPageModel` (`items`, `total`, `page`, `perPage`), сортировка `createdAt DESC, id DESC`
+- **Covers:** `tests/Integration/Task/TaskControllerTest::testListTasksReturnsOk`
 
 ## Notes
 

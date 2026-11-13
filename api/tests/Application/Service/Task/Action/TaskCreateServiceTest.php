@@ -109,4 +109,21 @@ final class TaskCreateServiceTest extends DatabaseTestCase
             userId: $user->getId(),
         );
     }
+
+    public function testCreatesChildTaskWithParentOwnedByAnotherUser(): void
+    {
+        $user = $this->bed->seedDefaultUser();
+        $otherUser = $this->bed->createUser(email: 'other@example.com');
+        $parentTask = $this->bed->createTask(ownerId: $otherUser->getId(), name: 'Foreign parent');
+
+        $createTask = $this->bed->get(TaskCreateService::class);
+
+        $result = $createTask->execute(
+            new TaskCreateModel(name: 'Child task', parentId: $parentTask->getId()),
+            userId: $user->getId(),
+        );
+
+        $this->assertSame($parentTask->getId(), $result->parentId);
+        $this->assertSame($user->getId(), $result->ownerId);
+    }
 }

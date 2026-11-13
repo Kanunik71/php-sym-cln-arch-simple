@@ -1,4 +1,4 @@
-﻿# Task Groups Specification
+# Task Groups Specification
 
 ## Purpose
 
@@ -34,7 +34,3 @@ The API SHALL возвращать группу в JSON-объекте с пол
 - Debounce-lock: `task_group_recalc.task.{taskId}` и `task_group_recalc.groups.{sha256(sorted ids)}`, TTL 30 с; при исключении в обработчике lock живёт до истечения TTL.
 - `codeId`: `VALIDATION_ERROR` (400), `UNAUTHORIZED_TASK_ACCESS`/`UNAUTHORIZED_TASK_GROUP_ACCESS` (403), `TASK_NOT_FOUND`/`TASK_GROUP_NOT_FOUND` (404).
 - Источники: `api/src/Presentation/Controller/TaskGroup/**`, `api/src/Presentation/Controller/Task/TaskTaskGroupController.php`, `api/src/Application/Service/TaskGroup/**`, `api/src/Application/Policy/TaskGroup/TaskGroupAccessPolicy.php`, `api/src/Infrastructure/Messaging/TaskGroup/Handler/RecalculateTaskGroupsMessageHandler.php`.
-
-## Покрытие тестами
-
-- Не покрыты: ошибки `400` и `404` в сценариях создания, привязки и отвязки группы.

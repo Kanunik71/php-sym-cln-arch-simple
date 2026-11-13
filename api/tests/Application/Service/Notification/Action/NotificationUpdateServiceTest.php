@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\Notification\Action;
 
-use App\Application\Service\Notification\Action\NotificationUpdateService;
-use App\Application\Model\Notification\Read\NotificationPreferenceViewModel;
-use App\Application\Model\Notification\Action\UpdateNotificationPreferencesModel;
 use App\Application\Enum\Notification\NotificationChannelEnum;
 use App\Application\Enum\Notification\NotificationTypeEnum;
+use App\Application\Model\Notification\Action\UpdateNotificationPreferencesModel;
+use App\Application\Model\Notification\Read\NotificationPreferenceViewModel;
+use App\Application\Service\Notification\Action\NotificationUpdateService;
 use App\Tests\DatabaseTestCase;
 use InvalidArgumentException;
 
@@ -88,5 +88,41 @@ final class NotificationUpdateServiceTest extends DatabaseTestCase
             ]),
             currentUserId: $user->getId(),
         );
+    }
+
+    public function testAppliesLastEntryWhenTypeRepeats(): void
+    {
+        $user = $this->bed->createUser(
+            email: 'john@example.com',
+            withDefaultNotificationPreferences: false,
+        );
+        $updateNotificationPreferences = $this->bed->get(NotificationUpdateService::class);
+
+        $result = $updateNotificationPreferences->execute(
+            model: new UpdateNotificationPreferencesModel([
+                new NotificationPreferenceViewModel(
+                    type: NotificationTypeEnum::UserUpdated,
+                    enabled: false,
+                    channels: [NotificationChannelEnum::Email],
+                ),
+                new NotificationPreferenceViewModel(
+                    type: NotificationTypeEnum::UserUpdated,
+                    enabled: true,
+                    channels: [NotificationChannelEnum::Email, NotificationChannelEnum::Sms],
+                ),
+            ]),
+            currentUserId: $user->getId(),
+        );
+
+        $this->assertCount(1, $result);
+        $this->assertSame(NotificationTypeEnum::UserUpdated, $result[0]->type);
+        $this->assertTrue($result[0]->enabled);
+        $this->assertSame([NotificationChannelEnum::Email, NotificationChannelEnum::Sms], $result[0]->channels);
+
+        $persisted = $this->bed->findNotificationPreference($user->getId(), NotificationTypeEnum::UserUpdated);
+        $this->assertNotNull($persisted);
+        $this->assertTrue($persisted->isEnabled());
+        $this->assertTrue($persisted->isEmailEnabled());
+        $this->assertTrue($persisted->isSmsEnabled());
     }
 }

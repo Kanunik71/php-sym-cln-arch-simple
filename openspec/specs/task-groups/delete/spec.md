@@ -15,6 +15,12 @@ The API SHALL удалять группу через `DELETE /api/tasks/{taskId}
 - **THEN** `204`; группа и связи удалены
 - **Covers:** `TaskTaskGroupControllerTest::testDeleteTaskGroupReturnsNoContent`
 
+#### Scenario: Задача не входит в группу
+- **GIVEN** `taskId` из пути не входит в группу
+- **WHEN** `DELETE /api/tasks/{taskId}/task-groups/{id}`
+- **THEN** `404 TASK_GROUP_NOT_FOUND`
+- **Covers:** `tests/Application/Service/TaskGroup/Action/TaskGroupDeleteServiceTest::testThrowsWhenTaskIsNotInGroup`
+
 ## Notes
 
 - Права на изменение группы — в [access](../access/spec.md); состав группы — в [task-groups](../spec.md).

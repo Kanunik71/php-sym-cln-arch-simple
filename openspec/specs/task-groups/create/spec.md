@@ -15,6 +15,18 @@ The API SHALL создавать группу через `POST /api/task-groups`
 - **THEN** `201`, `TaskGroupViewModel` (статус `Initial`), запрошен пересчёт
 - **Covers:** `tests/Integration/TaskGroup/TaskGroupControllerTest::testCreateTaskGroupReturnsCreated`, `TaskGroupCreateServiceTest::testCreatesTaskGroupWithTaskIds`
 
+#### Scenario: Несуществующая задача в составе
+- **GIVEN** `taskIds` содержит несуществующую задачу
+- **WHEN** создание группы
+- **THEN** `404 TASK_NOT_FOUND`
+- **Covers:** `tests/Application/Service/TaskGroup/Action/TaskGroupCreateServiceTest::testThrowsWhenTaskUnknown`
+
+#### Scenario: Задача без доступа
+- **GIVEN** `taskIds` содержит задачу с участниками, к которой у пользователя нет доступа
+- **WHEN** создание группы
+- **THEN** `403 UNAUTHORIZED_TASK_ACCESS`
+- **Covers:** `tests/Application/Service/TaskGroup/Action/TaskGroupCreateServiceTest::testThrowsWhenTaskIsNotAccessible`
+
 #### Scenario: Пустая группа
 - **GIVEN** `taskIds` пуст
 - **WHEN** создание группы

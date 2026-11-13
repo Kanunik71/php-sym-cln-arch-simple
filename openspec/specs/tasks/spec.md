@@ -1,4 +1,4 @@
-﻿# Tasks Specification
+# Tasks Specification
 
 ## Purpose
 
@@ -37,7 +37,3 @@ The API SHALL возвращать задачу в JSON-объекте с пол
 - Участники меняются только при переходе в `Active` с `userId` (существующий → принудительно `Active`, новый создаётся `Active`; `UNIQUE(task_id, user_id)`); создатель в участники не добавляется.
 - `codeId`: `VALIDATION_ERROR` (400), `UNAUTHORIZED_TASK_ACCESS` (403), `TASK_NOT_FOUND` (404), `INVALID_TASK_STATUS_TRANSITION` (409).
 - Источники: `api/src/Presentation/Controller/Task/TaskController.php`, `api/src/Application/Service/Task/**`, `api/src/Application/Enum/Task/**`, `api/tests/Integration/Task/TaskControllerTest.php`.
-
-## Покрытие тестами
-
-- Не покрыты: тела успешных ответов и часть сценариев `400`/`404`.

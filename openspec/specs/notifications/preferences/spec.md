@@ -34,6 +34,7 @@ The API SHALL принимать `PUT /api/users/me/notification-preferences` (`
 - **GIVEN** запрос содержит два пункта с одним и тем же `type`
 - **WHEN** `PUT /api/users/me/notification-preferences`
 - **THEN** `200`, сохранено значение последнего пункта; в ответе тип присутствует один раз
+- **Covers:** `tests/Application/Service/Notification/Action/NotificationUpdateServiceTest::testAppliesLastEntryWhenTypeRepeats`
 
 ### Requirement: Транзакционные типы не настраиваются
 The API SHALL отклонять `PUT` с транзакционным типом (`user_registered`) кодом `400 VALIDATION_ERROR`.
@@ -49,7 +50,3 @@ The API SHALL отклонять `PUT` с транзакционным типо�
 - Типы, каналы и каталог дефолтов — в [notifications](../spec.md); отправка — в [delivery](../delivery/spec.md).
 - Реализация: `PUT` сохраняет каждый пункт отдельной записью без общей транзакции — при сбое на середине ранее сохранённые пункты остаются применёнными.
 - Источники: `api/src/Presentation/Controller/Notification/NotificationPreferenceController.php`, `api/src/Application/Service/Notification/Action/NotificationUpdateService.php`, `api/src/Application/Service/Notification/Query/NotificationQueryService.php`, `api/src/Application/Policy/Notification/UpdateNotificationPreferencesPolicy.php`, `api/tests/Integration/Notification/NotificationPreferenceControllerTest.php`.
-
-## Покрытие тестами
-
-- Не покрыт: сценарий «Повтор типа в запросе».

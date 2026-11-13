@@ -13,7 +13,13 @@ The API SHALL по событию `UserRegisteredEvent` (публикуется 
 - **GIVEN** успешная регистрация
 - **WHEN** worker обрабатывает `UserRegisteredEvent`
 - **THEN** email-уведомление отправлено
-- **Covers:** `NotificationServiceTest::testUserRegisteredAlwaysSendsEmail`
+- **Covers:** `NotificationServiceTest::testUserRegisteredAlwaysSendsEmail`, `tests/Infrastructure/Messaging/User/Handler/UserMessageHandlerTest::testRegisteredHandlerSendsTransactionalEmail`
+
+#### Scenario: Повторная доставка события
+- **GIVEN** обработчик уже отправлял уведомление по этому событию
+- **WHEN** событие доставляется повторно
+- **THEN** уведомление отправляется снова — обработчик не дедуплицирует
+- **Covers:** `tests/Infrastructure/Messaging/User/Handler/UserMessageHandlerTest::testRepeatedDeliverySendsAgain`
 
 ### Requirement: Оп-ин отправка с уважением настроек и телефона
 The API SHALL по событию `UserUpdatedEvent` (публикуется после успешного `PUT` профиля) отправлять уведомление `user_updated` по эффективным настройкам: `enabled=false` → ничего; каналы берутся из строки переопределения или дефолта каталога; SMS опускается при отсутствии телефона (warning в лог), email остаётся. При `DELETE` аккаунта событие не публикуется.
@@ -22,7 +28,13 @@ The API SHALL по событию `UserUpdatedEvent` (публикуется п�
 - **GIVEN** `user_updated` включён, у пользователя есть телефон
 - **WHEN** обработан `UserUpdatedEvent`
 - **THEN** отправлены email и SMS
-- **Covers:** `testUserUpdatedSendsSmsWhenPhonePresent`
+- **Covers:** `testUserUpdatedSendsSmsWhenPhonePresent`, `tests/Infrastructure/Messaging/User/Handler/UserMessageHandlerTest::testUpdatedHandlerSendsNotification`
+
+#### Scenario: Тип отключён
+- **GIVEN** для `user_updated` задан `enabled=false`
+- **WHEN** обработан `UserUpdatedEvent`
+- **THEN** уведомление не отправлено
+- **Covers:** `tests/Infrastructure/Messaging/User/Handler/UserMessageHandlerTest::testUpdatedHandlerSkipsNotificationWhenTypeDisabled`
 
 #### Scenario: Без телефона
 - **GIVEN** телефона нет
@@ -41,7 +53,3 @@ The API SHALL по событию `UserUpdatedEvent` (публикуется п�
 - Реализация: SMS отправляется заглушкой — сообщение пишется в лог вместо вызова провайдера.
 - Реализация: письма отправляются в HTML без text-альтернативы.
 - Источники: `api/src/Application/Service/Notification/Lifecycle/NotificationService.php`, `api/src/Infrastructure/Messaging/User/Handler/UserRegisteredMessageHandler.php`, `api/src/Infrastructure/Messaging/User/Handler/UserUpdatedMessageHandler.php`, `api/tests/Application/Service/Notification/Lifecycle/NotificationServiceTest.php`.
-
-## Покрытие тестами
-
-- Не покрыты: обработчики событий и повторная отправка уведомления.
