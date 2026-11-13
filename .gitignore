@@ -3,6 +3,7 @@
 /api/var/
 /api/vendor/
 /api/config/jwt/*.pem
+/api/config/reference.php
 
 # IDE
 .idea/
