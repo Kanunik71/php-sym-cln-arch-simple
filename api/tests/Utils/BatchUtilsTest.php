@@ -56,4 +56,67 @@ final class BatchUtilsTest extends TestCase
 
         $this->assertFalse($called);
     }
+
+    public function testStreamWalksBatchesUntilEmptyOne(): void
+    {
+        // Курсор = смещение следующей выборки; строки нумеруются с 1.
+        $rows = range(1, 25);
+        $seen = [];
+        $cursors = [];
+
+        BatchUtils::stream(
+            fetch: function (string $cursor) use ($rows, &$cursors): array {
+                $cursors[] = $cursor;
+
+                $offset = (int) $cursor;
+
+                return array_slice($rows, $offset, 10);
+            },
+            cursorOf: static fn (array $batch): string => (string) ($batch[0] + 9),
+            handle: static function (array $batch) use (&$seen): void {
+                $seen = array_merge($seen, $batch);
+            },
+        );
+
+        $this->assertSame(range(1, 25), $seen);
+        // курсоры: стартовый, затем по одному на каждый полный батч и на последний неполный
+        $this->assertSame([BatchUtils::FIRST_CURSOR, '10', '20', '30'], $cursors);
+    }
+
+    public function testStreamStopsOnEmptyBatch(): void
+    {
+        $calls = 0;
+
+        BatchUtils::stream(
+            fetch: static function () use (&$calls): array {
+                ++$calls;
+
+                return [];
+            },
+            cursorOf: static fn (array $batch): string => 'next',
+            handle: static function (array $batch): void {
+            },
+        );
+
+        $this->assertSame(1, $calls);
+    }
+
+    public function testStreamStartsFromGivenCursor(): void
+    {
+        $cursors = [];
+
+        BatchUtils::stream(
+            fetch: function (string $cursor) use (&$cursors): array {
+                $cursors[] = $cursor;
+
+                return [];
+            },
+            cursorOf: static fn (array $batch): string => 'next',
+            handle: static function (array $batch): void {
+            },
+            startCursor: BatchUtils::LAST_CURSOR,
+        );
+
+        $this->assertSame([BatchUtils::LAST_CURSOR], $cursors);
+    }
 }

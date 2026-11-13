@@ -65,22 +65,28 @@ final readonly class TaskGroupEntityFetcher
     }
 
     /**
+     * Reads a batch before the given cursor, ordered by id descending.
+     *
+     * Keyset (seek) pagination: the cursor is the id of the first row of the
+     * previous batch. Unlike OFFSET it does not re-scan and discard the
+     * skipped rows, so a full traversal stays linear in the number of rows.
+     *
+     * Ids are UUID v7 and therefore grow with creation time, so descending
+     * order by id is descending order by creation time.
+     *
      * @return list<TaskGroupEntity>
      */
-    public function listBatch(int $offset, int $limit): array
+    public function listBatchBefore(string $beforeId, int $limit): array
     {
-        if ($offset < 0) {
-            throw new InvalidArgumentException('Offset must be >= 0.');
-        }
-
         if ($limit < 1) {
             throw new InvalidArgumentException('Limit must be at least 1.');
         }
 
         /** @var list<TaskGroupEntity> $entities */
         $entities = $this->baseQuery()
-            ->orderBy(self::ALIAS.'.'.TaskGroupEntity::FIELD_ID, 'ASC')
-            ->setFirstResult($offset)
+            ->where(self::ALIAS.'.'.TaskGroupEntity::FIELD_ID.' < :beforeId')
+            ->setParameter('beforeId', Uuid::fromString($beforeId), 'uuid')
+            ->orderBy(self::ALIAS.'.'.TaskGroupEntity::FIELD_ID, 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();

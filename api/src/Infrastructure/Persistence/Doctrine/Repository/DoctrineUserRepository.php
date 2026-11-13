@@ -67,11 +67,6 @@ final readonly class DoctrineUserRepository implements UserRepositoryInterface
         return $this->findByEmail($email) !== null;
     }
 
-    public function listBatch(int $offset, int $limit): array
-    {
-        return $this->userMapper->toModelArray($this->userEntityFetcher->listBatch($offset, $limit));
-    }
-
     public function listByIds(array $ids): array
     {
         return $this->userMapper->toModelArray($this->userEntityFetcher->listByIds($ids));

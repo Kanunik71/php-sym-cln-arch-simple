@@ -50,9 +50,9 @@ final readonly class DoctrineTaskGroupRepository implements TaskGroupRepositoryI
         return $this->findById($id) ?? throw TaskGroupNotFoundException::withId($id);
     }
 
-    public function listBatch(int $offset, int $limit): array
+    public function listBatchBefore(string $beforeId, int $limit): array
     {
-        return $this->taskGroupMapper->toModelArray($this->taskGroupEntityFetcher->listBatch($offset, $limit));
+        return $this->taskGroupMapper->toModelArray($this->taskGroupEntityFetcher->listBatchBefore($beforeId, $limit));
     }
 
     public function listTaskStatusCountsByIds(array $taskGroupIds): array

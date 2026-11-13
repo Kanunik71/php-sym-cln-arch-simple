@@ -7,7 +7,6 @@ namespace App\Infrastructure\Persistence\Doctrine\Query\User;
 use App\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
-use InvalidArgumentException;
 use Symfony\Component\Uid\Uuid;
 
 /**
@@ -45,30 +44,6 @@ final readonly class UserEntityFetcher
             ->getOneOrNullResult();
 
         return $entity;
-    }
-
-    /**
-     * @return list<UserEntity>
-     */
-    public function listBatch(int $offset, int $limit): array
-    {
-        if ($offset < 0) {
-            throw new InvalidArgumentException('Offset must be >= 0.');
-        }
-
-        if ($limit < 1) {
-            throw new InvalidArgumentException('Limit must be at least 1.');
-        }
-
-        /** @var list<UserEntity> $entities */
-        $entities = $this->baseQuery()
-            ->orderBy(self::ALIAS.'.'.UserEntity::FIELD_ID, 'ASC')
-            ->setFirstResult($offset)
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
-
-        return $entities;
     }
 
     /**

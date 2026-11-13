@@ -221,8 +221,12 @@ wire-границы; «магические» ключи массива там, 
 
 ## Масштаб
 
-Ориентир — до ~10⁶ `User` и ~10⁶ `Task`. Полный перебор — `listBatch` /
-`BatchUtils` + `listByIds`, без `listAll()`. Эталон — `TaskGroupRecalculationService`.
+Ориентир — до ~10⁶ `User` и ~10⁶ `Task`. Без `listAll()`.
+
+- **HTTP-эндпоинт** — полный перебор запрещён: ответ пагинирован (`search` с `PaginationModel`) или работает по известным id (`listByIds`).
+- **Фоновая задача** — полный перебор разрешён, но только keyset-обходом и стримингом: `BatchUtils::stream` + `listBatchBefore` / `listByIds`. `OFFSET`-пагинация для обхода квадратична и недопустима.
+
+Эталон полного обхода — `TaskGroupSummarizeQueryService`; эталон по известным id — `TaskGroupRecalculationService`.
 Подробно — в [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md) → «Масштаб и batch-переборы».
 
 ---
@@ -242,7 +246,7 @@ wire-границы; «магические» ключи массива там, 
 11. Preconditions с IO / auth — `*Policy`; метод с I/O — суффикс `Io`
 12. DQL / CriteriaApplier — только в Infrastructure
 13. Межагрегатный `onDelete: CASCADE` — нет; `cascade remove` — только внутри одного агрегата
-14. Перебор больших коллекций — `listBatch` / `BatchUtils` + `listByIds`
+14. Перебор больших коллекций — только в фоновых задачах, keyset-обходом (`BatchUtils::stream` + `listBatchBefore` / `listByIds`); в HTTP-эндпоинтах — только пагинация или `listByIds`
 
 ---
 

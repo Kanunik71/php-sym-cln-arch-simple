@@ -182,14 +182,35 @@ Entity **не** выходит наружу. По роли метода:
 | `find*` / `listByIds` / `search` с pagination | полный scan миллиона моделей одним запросом |
 | chunk id → `listByIds($chunk)` → обработка | копить весь набор моделей, если ответ этого не требует |
 | `BatchUtils::each` / `BatchUtils::chunk` (`Shared/Utils`, default 1000) | `listAll()` — метода нет |
+| `BatchUtils::stream` — обход батчами по курсору | `OFFSET`-пагинация для полного обхода — квадратична |
 
-Для перебора «всех пользователей / тасок / групп»:
+#### Где перебор разрешён, а где нет
 
-1. Порциями — `listBatch($offset, $limit)` (полный scan) или chunk известных id → `listByIds($chunk)`.
-2. Обработать chunk; не копить результат всего прогона в одном массиве.
+| Контекст | Правило |
+|----------|---------|
+| **HTTP-эндпоинт** | Полный перебор **запрещён**. Ответ всегда пагинирован (`search` с `PaginationModel`) либо работает по известным id (`listByIds`). |
+| **Фоновая задача** (Console / worker / scheduler) | Полный перебор **разрешён**, обязан быть keyset-обходом и стримингом. |
 
+Исключение — эндпоинт, чей контракт требует всех строк (сейчас `GET /api/task-groups/summary`): он обязан возвращать `TaskGroupSummaryModel` по всем группам, поэтому идёт keyset-обходом, но это осознанная плата за контракт, а не образец для новых эндпоинтов.
+
+#### Как делать перебор в фоновой задаче
+
+1. **Keyset-курсор, а не OFFSET.** `OFFSET` заставляет БД каждый раз перечитывать и выбрасывать пропущенные строки — суммарно ≈ N²/2 строк на полном обходе. Курсор по `id` идёт по `PRIMARY KEY` и держит обход линейным. Идентификаторы — UUID v7, они растут со временем, поэтому курсор по `id` совпадает с порядком по времени создания.
+2. **Стриминг, а не накопление.** `BatchUtils::stream` обрабатывает батч сразу и не держит всю коллекцию в памяти: расход памяти O(размер батча), а не O(число строк).
+3. **Сортировка — в SQL.** Не `usort` по собранному массиву.
+
+```php
+// Обход всех групп, свежие сверху, без накопления в памяти.
+BatchUtils::stream(
+    fetch: fn (string $beforeId): array => $repo->listBatchBefore($beforeId, 1000),
+    cursorOf: static fn (array $batch): string => $batch[count($batch) - 1]->getId(),
+    handle: function (array $batch): void { /* … */ },
+    startCursor: BatchUtils::LAST_CURSOR,
+);
+```
+
+Эталон полного обхода: `TaskGroupSummarizeQueryService::execute` — keyset + `BatchUtils::stream`.
 Эталон по известным id: `TaskGroupRecalculationService::recalculateByGroupIds` — `BatchUtils::each($ids, …)` + `listByIds`.
-Эталон полного scan: `listBatch($offset, $limit)` в цикле (offset += limit, пока batch не пустой).
 
 Presentation Console только парсит CLI и вызывает `*Service`; batch-оркестрация — в Lifecycle `*Service`.
 

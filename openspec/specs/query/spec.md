@@ -50,9 +50,23 @@ The API SHALL принимать фильтры в форме `filter[field][op]
 - **THEN** `400` с `codeId = VALIDATION_ERROR`
 - **Covers:** `tests/Integration/User/UserControllerTest::testQueryInvalidFilterReturnsBadRequest`
 
+### Requirement: Полный перебор в HTTP-эндпоинте запрещён
+The API SHALL NOT обходить коллекцию целиком в HTTP-эндпоинте: ответ строится либо постранично, либо по известным идентификаторам. Полный перебор допустим только в фоновых задачах и SHALL выполняться keyset-обходом с постраничной обработкой.
+
+#### Scenario: Листинг отдаёт страницу
+- **GIVEN** в таблице больше строк, чем помещается в одну страницу
+- **WHEN** клиент запрашивает листинг или поиск
+- **THEN** ответ содержит только запрошенную страницу, а не все строки таблицы
+
+#### Scenario: Фоновая задача обходит коллекцию
+- **GIVEN** фоновая задача обрабатывает все строки коллекции
+- **WHEN** она обходит таблицу
+- **THEN** обход идёт батчами по курсору идентификатора, без повторного перечитывания уже пройденных строк, и не требует загрузки всей коллекции в память
+
 ## Notes
 
 - Пример: `GET /api/users/query?page=2&perPage=50&sort=-createdAt&filter[email][eq]=a@b.c&filter[city][in][]=Moscow`.
 - Операторы: `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `like`, `in`, `isNull`, `isNotNull`. Строковые поля — `eq`/`ne`/`like`/`in`/`isNull`/`isNotNull`; int и даты — сравнения + `in` (int)/`isNull`/`isNotNull`.
 - Наборы фильтруемых и сортируемых полей по доменам: [users/query](../users/query/spec.md), [tasks/list](../tasks/list/spec.md), [assets/view](../assets/view/spec.md), [task-groups/summary](../task-groups/summary/spec.md). Мета-описание поддерживаемых полей — [users/query-meta](../users/query-meta/spec.md).
-- Источники: `api/src/Application/Model/Common/SortModel.php`, `api/src/Application/Enum/Common/FilterOperatorEnum.php`, `api/src/Shared/Utils/Filter/**`, `api/src/Infrastructure/Persistence/Doctrine/Query/**`.
+- Идентификаторы — UUID v7 и растут со временем, поэтому порядок по идентификатору совпадает с порядком по времени создания: keyset-курсор по `id` даёт корректный обход без `OFFSET`-пагинации.
+- Источники: `api/src/Application/Model/Common/SortModel.php`, `api/src/Application/Enum/Common/FilterOperatorEnum.php`, `api/src/Shared/Utils/Filter/**`, `api/src/Shared/Utils/BatchUtils.php`, `api/src/Infrastructure/Persistence/Doctrine/Query/**`.

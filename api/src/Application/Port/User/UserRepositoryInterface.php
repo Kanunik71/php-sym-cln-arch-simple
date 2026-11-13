@@ -24,13 +24,6 @@ interface UserRepositoryInterface
     public function existsByEmail(Email $email): bool;
 
     /**
-     * Stable page for full-table batch scans (not API pagination).
-     *
-     * @return list<UserModel>
-     */
-    public function listBatch(int $offset, int $limit): array;
-
-    /**
      * @param list<string> $ids
      *
      * @return list<UserModel>

@@ -17,11 +17,16 @@ interface TaskGroupRepositoryInterface
     public function findOrFail(string $id): TaskGroupModel;
 
     /**
-     * Stable page for full-table batch scans (not API pagination).
+     * Batch of rows before the given cursor, ordered by id descending — for full-table scans.
+     *
+     * The cursor is the id of the first row of the previous batch; the first
+     * call passes the highest possible id. Keyset pagination keeps a full
+     * traversal linear: each batch continues where the previous one stopped,
+     * without re-reading and discarding the skipped rows the way OFFSET does.
      *
      * @return list<TaskGroupModel>
      */
-    public function listBatch(int $offset, int $limit): array;
+    public function listBatchBefore(string $beforeId, int $limit): array;
 
     /** @return list<TaskGroupModel> */
     public function listByTaskId(string $taskId): array;
