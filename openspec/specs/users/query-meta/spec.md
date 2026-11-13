@@ -15,6 +15,15 @@ The API SHALL для аутентифицированного пользоват
 - **THEN** `200` с `filters`, `sortFields`, `sortDirections`, `defaultSort`, `pagination`
 - **Covers:** `tests/Integration/User/UserControllerTest::testQueryMetaReturnsOk`, `tests/Application/Service/User/Query/UserSearchMetaQueryServiceTest::testReturnsSearchUsersQueryMeta`
 
+### Requirement: Структура мета-описания поиска
+The API SHALL отдавать мета-описание поиска как JSON-объект, где `filters` — массив объектов `{field, type, operators}` (поле, тип `string`|`dateTime`, список допустимых операторов), `sortFields` — массив имён сортируемых полей, `sortDirections` — массив `asc`/`desc`, `defaultSort` — объект `{field, direction}`, `pagination` — объект `{defaultPage, defaultPerPage, maxPerPage}`.
+
+#### Scenario: Вложенная структура мета-описания
+- **GIVEN** пользователь аутентифицирован
+- **WHEN** `GET /api/users/query/meta`
+- **THEN** `filters[]` содержит `field`, `type` и непустой `operators`; `defaultSort` содержит `field` и `direction`; `pagination` содержит `defaultPage`, `defaultPerPage`, `maxPerPage`
+- **Covers:** `tests/Application/Service/User/Query/UserSearchMetaQueryServiceTest::testReturnsSearchUsersQueryMeta`
+
 ## Notes
 
 - Фильтруемые поля: `email`, `fname`, `lname`, `city`, `createdAt`, `taskId`; сортируемые — `email`, `fname`, `lname`, `city`, `createdAt`.

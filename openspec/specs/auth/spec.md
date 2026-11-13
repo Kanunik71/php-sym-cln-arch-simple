@@ -11,7 +11,7 @@ The API SHALL создавать пользователя по `POST /api/auth/r
 #### Scenario: Успешная регистрация
 - **GIVEN** email свободен
 - **WHEN** `POST /api/auth/register` с валидными `email` и `password`
-- **THEN** ответ `201`, поля `UserRegisterResponseModel`, без `token` и `refreshToken`
+- **THEN** ответ `201` с данными пользователя, без `token` и `refreshToken`
 - **Covers:** `tests/Integration/Auth/AuthControllerTest::testRegisterAndLoginFlow`
 
 #### Scenario: Дубликат email
@@ -25,6 +25,15 @@ The API SHALL создавать пользователя по `POST /api/auth/r
 - **WHEN** регистрация
 - **THEN** `201`, соответствующие поля `null`
 - **Covers:** `testRegisterWithoutNames`, `testRegisterWithCity`
+
+### Requirement: Состав ответа регистрации
+The API SHALL возвращать на `POST /api/auth/register` JSON-объект с полями: `id` (uuid-строка), `fname` (string|null), `lname` (string|null), `email` (string), `location` (объект `{city}`|null), `phone` (string|null); `createdAt`, `avatar` и токены в ответе SHALL отсутствовать.
+
+#### Scenario: Поля ответа регистрации
+- **GIVEN** email свободен
+- **WHEN** `POST /api/auth/register` с валидными `email` и `password`
+- **THEN** ответ содержит поля `id`, `fname`, `lname`, `email`, `location`, `phone`; полей `createdAt`, `avatar`, `token`, `refreshToken` нет
+- **Covers:** `tests/Integration/Auth/AuthControllerTest::testRegisterAndLoginFlow`
 
 ### Requirement: Политика пароля
 The API SHALL требовать пароль длиной 6–72 байта (непустой; пробелы по краям сохраняются) при регистрации и при смене пароля, иначе `400`, `codeId = VALIDATION_ERROR`.

@@ -47,7 +47,8 @@ rules:
     - Errors must be named with their `codeId` and HTTP status
     - Every requirement needs at least one scenario that exercises it
     - Action-specific behavior belongs to `openspec/specs/<domain>/<action>/spec.md`; the umbrella `spec.md` keeps only the domain fields and their validation
-    - No implementation details in specs: no class names, layer layout, or framework artifacts; reference other domains (auth, files, notifications) instead of duplicating their rules
+    - Requirements SHALL describe the observable contract through JSON field names, HTTP statuses, `codeId` values, event names, CLI commands and cache/lock keys — not through PHP class names; `## Notes` MAY cite implementation classes and source paths as traceability pointers
+    - Reference other domains (auth, files, notifications) instead of duplicating their rules
   design:
     - "Map design to layers: Domain (VO/enum) → Application (Service/Action/Query/Model/Policy) → Port → Infrastructure (Doctrine/adapter)"
     - Reference concrete sections of api/CLAUDE.md instead of restating architecture

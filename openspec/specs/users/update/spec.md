@@ -7,12 +7,12 @@
 ## Requirements
 
 ### Requirement: Обновление своего профиля
-The API SHALL разрешать `PUT /api/users/{id}` только самому пользователю и выполнять полную замену профиля по валидному `UserUpdateModel`; успех — `200` с обновлённым `UserViewModel` и публикация `UserUpdatedEvent`; попытка изменить чужой профиль — `403` с `codeId = UNAUTHORIZED_USER_ACCESS`.
+The API SHALL разрешать `PUT /api/users/{id}` только самому пользователю и выполнять полную замену профиля по валидному payload'у профиля; успех — `200` с JSON-объектом обновлённого профиля (состав — в требовании «Состав профиля в ответе» в [users](../spec.md)) и публикация события обновления пользователя; попытка изменить чужой профиль — `403` с `codeId = UNAUTHORIZED_USER_ACCESS`.
 
 #### Scenario: Обновление self
 - **GIVEN** пользователь обновляет свой профиль
-- **WHEN** `PUT /api/users/{id}` с валидным `UserUpdateModel`
-- **THEN** `200`, обновлённый `UserViewModel`, опубликовано `UserUpdatedEvent`
+- **WHEN** `PUT /api/users/{id}` с валидным payload'ом профиля
+- **THEN** `200`, обновлённый профиль, опубликовано событие обновления пользователя
 - **Covers:** `tests/Integration/User/UserControllerTest::testUpdateUserReturnsOk`, `tests/Application/Service/User/Action/UserUpdateServiceTest::testUpdatesOwnProfile`
 
 #### Scenario: Чужой профиль
@@ -22,7 +22,7 @@ The API SHALL разрешать `PUT /api/users/{id}` только самому
 - **Covers:** `tests/Integration/User/UserControllerTest::testCannotUpdateAnotherUser`, `tests/Application/Service/User/Action/UserUpdateServiceTest::testThrowsWhenUpdatingAnotherUser`
 
 ### Requirement: Поля запроса профиля
-The API SHALL принимать на `PUT /api/users/{id}` payload в виде `UserUpdateModel` с полями: `email` (обязателен), `fname`, `lname`, `password`, `location` (`{city}`), `avatarFileId`, `phone`; все поля кроме `email` опциональны.
+The API SHALL принимать на `PUT /api/users/{id}` payload профиля с полями: `email` (обязателен), `fname`, `lname`, `password`, `location` (`{city}`), `avatarFileId`, `phone`; все поля кроме `email` опциональны.
 
 #### Scenario: Обязательный email
 - **GIVEN** запрос на обновление профиля без `email`
@@ -36,6 +36,14 @@ The API SHALL при записи профиля нормализовать и �
 - **GIVEN** в запросе на запись профиля передано некорректное значение поля
 - **WHEN** API принимает payload
 - **THEN** `400` с `codeId = VALIDATION_ERROR`, профиль не изменён
+
+### Requirement: Незаполненные необязательные поля
+The API SHALL сохранять незаполненные необязательные поля профиля (`fname`, `lname`, `location.city`, `phone`) как `null`, а обязательные (`id`, `email`, `createdAt`) — заполненными.
+
+#### Scenario: Пустые необязательные поля
+- **GIVEN** пользователь создан без `fname`, `lname`, `city`, `phone`
+- **WHEN** профиль сохранён
+- **THEN** `fname`, `lname`, `city`, `phone` равны `null`, а `id`, `email`, `createdAt` заполнены
 
 ### Requirement: Полная замена профиля
 The API SHALL обнулять отсутствующие или пустые `fname`, `lname`, `location`, `phone` при `PUT`; `email` обязателен; ограничения и нормализация полей — по правилам валидации профиля (см. требование «Нормализация и валидация полей профиля» в этом разделе).
@@ -71,7 +79,7 @@ The API SHALL при непустом `password` в `PUT /api/users/{id}` зам
 - **Covers:** `tests/Integration/User/UserControllerTest::testUpdateRejectsShortPassword`
 
 ### Requirement: Аватар только из своих файлов
-The API SHALL при установке `avatarFileId` требовать, чтобы файл принадлежал текущему пользователю (`403` с `codeId = UNAUTHORIZED_FILE_ACCESS` иначе) и существовал (`404` с `codeId = FILE_NOT_FOUND`).
+The API SHALL при установке `avatarFileId` требовать, чтобы файл принадлежал текущему пользователю (`403` с `codeId = UNAUTHORIZED_FILE_ACCESS` иначе) и существовал (`404` с `codeId = FILE_NOT_FOUND`); в ответе `avatarFileId` представлен полем `avatar` — объектом `{id, url}` (см. требование «Состав профиля в ответе» в [users](../spec.md)).
 
 #### Scenario: Чужой файл
 - **GIVEN** `avatarFileId` — файл другого пользователя

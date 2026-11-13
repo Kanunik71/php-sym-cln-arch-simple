@@ -6,45 +6,43 @@
 
 ## Requirements
 
-### Requirement: Идентификационные поля пользователя
-The API SHALL хранить идентификационные поля пользователя: `id` — uuid (UUID v7, 36 символов, уникальный, генерируется сервером), `email` — string (≤ 255 символов, trim + lower-case, корректный адрес, уникальный, обязателен), `password` — string (≤ 255 символов, хэш; входной пароль 6..72 байта).
+### Requirement: Поля пользователя
+The API SHALL хранить пользователя со следующими наблюдаемыми полями:
 
-#### Scenario: Идентификационные поля профиля
-- **GIVEN** профиль пользователя прочитан
-- **WHEN** клиент читает ответ
-- **THEN** присутствуют `id` и `email`; `password` не отдаётся
+- `id` — uuid, 36 симв., уникальный
+- `fname` — string ≤100, nullable
+- `lname` — string ≤100, nullable
+- `email` — string ≤255, trim+lower, уникальный
+- `city` — string ≤100, nullable
+- `phone` — string ≤20, E.164
+- `createdAt` — date-time ATOM
 
-### Requirement: Поля профиля пользователя
-The API SHALL хранить поля профиля пользователя: `fname` — string (≤ 100 символов, trim, пусто → `null`, nullable), `lname` — string (≤ 100 символов, trim, пусто → `null`, nullable), `city` — string (≤ 100 символов, trim, пусто → `null`, nullable), `phone` — string (≤ 20 символов, формат E.164 `+79001234567`, nullable).
+Пароль хранится только в виде хэша; его длина и правила задаются в [auth](../auth/spec.md).
 
-#### Scenario: Незаполненные поля профиля
-- **GIVEN** у пользователя не заданы `fname`, `lname`, `city`, `phone`
-- **WHEN** клиент читает профиль
-- **THEN** эти поля равны `null`
+#### Scenario: Формат идентификационных полей
+- **GIVEN** существует пользователь
+- **WHEN** проверяются его идентификационные поля
+- **THEN** `id` — 36-символьный UUID v7, `email` — корректный адрес длиной ≤255 символов, уникальный среди пользователей
 
-### Requirement: Служебные поля пользователя
-The API SHALL хранить служебные поля пользователя: `createdAt` — date-time (ATOM, проставляется сервером, обязателен), `updatedAt` — date-time (ATOM, обновляется при каждой записи, обязателен), `avatarFileId` — uuid (ссылка на файл-аватар, nullable).
-
-#### Scenario: Служебные поля профиля
-- **GIVEN** профиль пользователя прочитан
-- **WHEN** клиент читает ответ
-- **THEN** присутствуют `createdAt`; `avatarFileId` — `null`, если аватар не задан
-
-### Requirement: Представление пользователя в API
-The API SHALL представлять пользователя в ответах в виде: `id`, `fname`, `lname`, `email`, `createdAt`, `location` (`{city}` | `null`), `avatar` (`{id, url}` | `null`), `phone`.
+### Requirement: Состав профиля в ответе
+The API SHALL возвращать профиль пользователя в JSON-объекте с полями: `id` (uuid-строка), `fname` (string|null), `lname` (string|null), `email` (string), `createdAt` (date-time ATOM), `location` (объект `{city}`|null), `avatar` (объект `{id, url}`|null), `phone` (string|null); хэш пароля, `updatedAt` и идентификатор файла аватара в ответе SHALL отсутствовать.
 
 #### Scenario: Форма профиля в ответе
-- **GIVEN** профиль пользователя прочитан
-- **WHEN** клиент читает ответ
-- **THEN** в ответе присутствуют `id`, `email`, `createdAt`; `fname`, `lname`, `location`, `phone` — `null`, если не заданы
+- **GIVEN** существует пользователь
+- **WHEN** клиент читает профиль
+- **THEN** JSON содержит поля `id`, `fname`, `lname`, `email`, `createdAt`, `location`, `avatar`, `phone`; `location.city` — город пользователя или `null`; хэша пароля, `updatedAt` и `avatarFileId` в ответе нет
+
+#### Scenario: Аватар в профиле
+- **GIVEN** у пользователя задан аватар
+- **WHEN** клиент читает профиль
+- **THEN** `avatar` — объект `{id, url}`, где `id` — идентификатор файла, `url` — подписанный URL скачивания с `exp` и `sig` (TTL 3600 с, см. [files](../files/spec.md))
+- **Covers:** `tests/Application/Service/User/Query/UserQueryServiceTest::testReturnsMappedUser`
 
 ## Notes
 
 - Карта разделов: [list](list/spec.md) (`GET /api/users`), [get](get/spec.md) (`GET /api/users/{id}`), [query](query/spec.md) (`GET /api/users/query`), [query-meta](query-meta/spec.md) (`GET /api/users/query/meta`), [update](update/spec.md) (`PUT /api/users/{id}`), [delete](delete/spec.md) (`DELETE /api/users/{id}`).
-- Правила нормализации и валидации полей при записи профиля — в [update](update/spec.md).
-- Модели домена: `UserViewModel` — `id`, `fname`, `lname`, `email`, `createdAt`, `location`, `avatar`, `phone`; `UserPageModel` — `items`, `total`, `page`, `perPage`; `UserUpdateModel` — `email` (обязателен), `fname`, `lname`, `password`, `location`, `avatarFileId`, `phone`.
-- Реестр `codeId` домена: `VALIDATION_ERROR` (400), `UNAUTHORIZED_USER_ACCESS` и `UNAUTHORIZED_FILE_ACCESS` (403), `USER_NOT_FOUND` и `FILE_NOT_FOUND` (404), `USER_ALREADY_EXISTS` (409).
 - Аутентификация и `401` — см. [auth](../auth/spec.md); файлы и аватары — [files](../files/spec.md); уведомления — [notifications](../notifications/spec.md).
+- Хранимые, но не наблюдаемые в ответе поля: `password` (хэш, ≤255 симв.), `updatedAt` (date-time ATOM), `avatarFileId` (uuid, nullable).
 - Домен `users` не содержит операции создания: регистрация живёт в [auth](../auth/spec.md).
 - Маршрут `/api/users/me/notification-preferences` относится к домену [notifications](../notifications/spec.md), а не к `users`.
 - Источники: `api/src/Presentation/Controller/User/UserController.php`, `api/src/Application/Service/User/**`, `api/src/Infrastructure/Persistence/Doctrine/Query/User/**`, `api/tests/Integration/User/UserControllerTest.php`.

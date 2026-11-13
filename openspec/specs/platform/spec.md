@@ -58,6 +58,14 @@ The API SHALL поддерживать на листинговых/поиско�
 - **WHEN** запрос
 - **THEN** фильтр применён (`like` → `%value%`, пустой `in` → `400 VALIDATION_ERROR`, недопустимый оператор/proto — `400`)
 
+### Requirement: Конверт постраничного ответа
+The API SHALL отдавать постраничные ответы (листинг и поиск) единым JSON-конвертом `{items, total, page, perPage}`: `items` — массив элементов домена, `total` — общее число элементов по фильтру, `page` — номер текущей страницы (≥ 1), `perPage` — размер страницы (1..100, по умолчанию 20).
+
+#### Scenario: Форма конверта страницы
+- **GIVEN** запрошена страница результатов
+- **WHEN** клиент читает ответ
+- **THEN** JSON содержит `items` (массив), `total` (int), `page` (int), `perPage` (int)
+
 ### Requirement: Асинхронные события через RabbitMQ
 The API SHALL доставлять доменные события (`TaskCreated`, `TaskGroupsRecalculationRequestedEvent`, `UserRegisteredEvent`, `UserUpdatedEvent`) через транспорт `async` (RabbitMQ); в тестах — `in-memory://`. Retry-политика `async`: 3 попытки, delay 1000 мс, multiplier 2, затем в `failed`; очередь `failed` worker не читает (разбор вручную: `messenger:failed:show`/`retry`). Worker: `messenger:consume async scheduler_default`.
 
