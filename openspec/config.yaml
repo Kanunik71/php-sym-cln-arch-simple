@@ -33,7 +33,8 @@ context: |
   (capability id `<domain>/<action>`). Delta specs for such a domain live in
   `openspec/changes/<change>/specs/<domain>/<action>/spec.md`. The umbrella
   `spec.md` stays a valid capability: it needs its own `## Purpose` and
-  `## Requirements`.
+  `## Requirements`. `platform` and `overview` are cross-cutting and stay
+  single-file — they describe contracts shared by several domains.
 
   Verification commands (run from `api/`; in Docker:
   `docker compose -f ../docker/docker-compose.yml exec php <cmd>`):

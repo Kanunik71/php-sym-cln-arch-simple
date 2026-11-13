@@ -1,71 +1,26 @@
 ﻿# Notifications Specification
 
 ## Purpose
-Уведомления по событиям пользователя: `user_registered` — транзакционное (всегда email), `user_updated` — настраиваемое (email/SMS). Настройки хранятся как переопределения над каталогом дефолтов; отправка асинхронная через Messenger.
+
+Домен уведомлений: типы и каналы, каталог настроек по умолчанию, переопределения пользователя, транзакционная и оп-ин отправка. Поведение разложено по use-case'ам на подразделы: [preferences](preferences/spec.md), [delivery](delivery/spec.md).
 
 ## Requirements
 
-### Requirement: Чтение настроек
-The API SHALL возвращать `GET /api/users/me/notification-preferences` как каталог типов с учётом переопределений в БД; пункт без строки — дефолт каталога (`user_updated` включён, каналы email и sms).
+### Requirement: Типы и каналы уведомлений
+The API SHALL поддерживать типы уведомлений `user_registered` и `user_updated` и каналы `email` и `sms`; тип `user_registered` — транзакционный (отправляется всегда, не настраивается), тип `user_updated` — настраиваемый.
 
-#### Scenario: Чтение настроек
-- **GIVEN** пользователь без строки переопределения
-- **WHEN** `GET /api/users/me/notification-preferences`
-- **THEN** `200`, каталог; `user_updated` — enabled, `[email, sms]`
-- **Covers:** `tests/Integration/Notification/NotificationPreferenceControllerTest::testGetPreferencesReturnsOk`
+#### Scenario: Набор типов и каналов
+- **GIVEN** клиент читает настройки уведомлений
+- **WHEN** запрошен каталог
+- **THEN** в каталоге присутствуют типы `user_registered` и `user_updated`; допустимые каналы — `email` и `sms`
 
-### Requirement: Обновление переопределений
-The API SHALL принимать `PUT /api/users/me/notification-preferences` (`preferences[]`: `type`, `enabled`, `channels` ⊆ `{email, sms}`, пустой список каналов допустим), перезаписывая только присланные пункты и создавая отсутствующие строки; неприсланные пункты каталога не меняются; ответ — каталог с переопределениями (`{type, enabled, channels}`; `id`/`ownerId` не возвращаются). Повтор одного типа в запросе не отклоняется — применяется последнее вхождение.
+### Requirement: Каталог настроек по умолчанию
+The API SHALL возвращать для типа без строки переопределения дефолт каталога: `user_updated` — включён, каналы `email` и `sms`; тип `user_registered` — транзакционный, каналы `email`. Строка в БД хранит только переопределение и создаётся при первой записи; сама регистрация пользователя строки не создаёт.
 
-#### Scenario: Обновление переопределения
-- **GIVEN** пользователь присылает `{"preferences":[{"type":"user_updated","enabled":false,"channels":["email"]}]}`
-- **WHEN** `PUT /api/users/me/notification-preferences`
-- **THEN** `200`, настройка сохранена; при отключённом типе отправок не будет
-- **Covers:** `testUpdatePreferencesReturnsOk`, `NotificationUpdateServiceTest::testUpdatesPreferences`
-
-#### Scenario: Создание строки при отсутствии
-- **GIVEN** записи для типа нет
-- **WHEN** `PUT` с `user_updated`
-- **THEN** `200`, строка создана и заменяет дефолт каталога, остальные пункты не меняются
-- **Covers:** `NotificationUpdateServiceTest::testCreatesOverrideWhenPreferenceMissing`
-
-#### Scenario: Повтор типа в запросе
-- **GIVEN** запрос содержит два пункта с одним и тем же `type`
-- **WHEN** `PUT /api/users/me/notification-preferences`
-- **THEN** `200`, сохранено значение последнего пункта; в ответе тип присутствует один раз
-
-### Requirement: Транзакционные типы не настраиваются
-The API SHALL отклонять `PUT` с транзакционным типом (`user_registered`) кодом `400 VALIDATION_ERROR`.
-
-#### Scenario: Попытка настроить user_registered
-- **GIVEN** запрос содержит `user_registered`
-- **WHEN** `PUT /api/users/me/notification-preferences`
-- **THEN** `400 VALIDATION_ERROR`
-- **Covers:** `testUpdatePreferencesRejectsTransactionalType`, `NotificationUpdateServiceTest::testThrowsWhenTypeIsTransactional`
-
-### Requirement: Транзакционная отправка
-The API SHALL по событию `UserRegisteredEvent` (публикуется после регистрации) отправлять email `user_registered` **независимо от настроек** — handler `UserRegisteredMessageHandler` вызывает `NotificationService::notify(user_registered)`.
-
-#### Scenario: Письмо после регистрации
-- **GIVEN** успешная регистрация
-- **WHEN** worker обрабатывает `UserRegisteredEvent`
-- **THEN** email-уведомление отправлено
-- **Covers:** `NotificationServiceTest::testUserRegisteredAlwaysSendsEmail`
-
-### Requirement: Оп-ин отправка с уважением настроек и телефона
-The API SHALL по событию `UserUpdatedEvent` (публикуется после успешного `PUT` профиля) отправлять уведомление `user_updated` по эффективным настройкам: `enabled=false` → ничего; каналы берутся из строки переопределения или дефолта каталога; SMS опускается при отсутствии телефона (warning в лог), email остаётся. При `DELETE` аккаунта событие не публикуется.
-
-#### Scenario: Отправка с телефоном
-- **GIVEN** `user_updated` включён, у пользователя есть телефон
-- **WHEN** обработан `UserUpdatedEvent`
-- **THEN** отправлены email и SMS
-- **Covers:** `testUserUpdatedSendsSmsWhenPhonePresent`
-
-#### Scenario: Без телефона
-- **GIVEN** телефона нет
-- **WHEN** обработан `UserUpdatedEvent` (тип включён)
-- **THEN** только email; SMS пропущен с warning в логах
-- **Covers:** `testUserUpdatedRespectsPreferencesAndSkipsSmsWithoutPhone`
+#### Scenario: Дефолт без переопределения
+- **GIVEN** у пользователя нет строки переопределения для `user_updated`
+- **WHEN** запрошены настройки
+- **THEN** `user_updated` — включён, каналы `[email, sms]`
 
 ## Notes
 
@@ -82,4 +37,3 @@ The API SHALL по событию `UserUpdatedEvent` (публикуется п�
 ## Покрытие тестами
 
 - Не покрыты: обработчики событий и повторная отправка уведомления.
-- Не покрыт: сценарий «Повтор типа в запросе».
