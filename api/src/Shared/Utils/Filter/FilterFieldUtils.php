@@ -28,10 +28,6 @@ final class FilterFieldUtils
             return $case;
         }
 
-        throw new InvalidArgumentException(sprintf(
-            'Unknown filter field "%s". Allowed: %s.',
-            $name,
-            implode(', ', array_map(strval(...), EnumUtils::caseValues($enumClass))),
-        ));
+        throw new InvalidArgumentException(sprintf('Unknown filter field "%s". Allowed: %s.', $name, implode(', ', array_map(strval(...), EnumUtils::caseValues($enumClass)))));
     }
 }

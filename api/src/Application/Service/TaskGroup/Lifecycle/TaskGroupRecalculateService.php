@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Application\Service\TaskGroup\Lifecycle;
 
 use App\Application\Port\TaskGroup\TaskGroupRepositoryInterface;
-use App\Application\Service\TaskGroup\Lifecycle\TaskGroupRecalculationService;
 
 final readonly class TaskGroupRecalculateService
 {

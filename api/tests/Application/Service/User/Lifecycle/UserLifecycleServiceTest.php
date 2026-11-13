@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\User\Lifecycle;
 
-use App\Application\Service\User\Lifecycle\UserLifecycleService;
 use App\Application\Event\User\UserRegisteredEvent;
 use App\Application\Event\User\UserUpdatedEvent;
+use App\Application\Service\User\Lifecycle\UserLifecycleService;
 use App\Tests\DatabaseTestCase;
 use App\Tests\Support\Trait\Common\AssertMessengerTrait;
 

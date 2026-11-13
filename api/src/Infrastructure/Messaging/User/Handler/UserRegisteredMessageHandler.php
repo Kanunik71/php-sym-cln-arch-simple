@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Messaging\User\Handler;
 
-use App\Application\Service\Notification\Lifecycle\NotificationService;
 use App\Application\Enum\Notification\NotificationTypeEnum;
 use App\Application\Event\User\UserRegisteredEvent;
+use App\Application\Service\Notification\Lifecycle\NotificationService;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler]

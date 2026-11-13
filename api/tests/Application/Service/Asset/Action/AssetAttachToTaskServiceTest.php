@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\Asset\Action;
 
-use App\Application\Service\Asset\Action\AssetAttachToTaskService;
-use App\Application\Service\Task\Action\TaskChangeStatusService;
-use App\Application\Model\Task\Action\TaskChangeStatusModel;
-use App\Application\Service\Asset\Query\AssetQueryService;
 use App\Application\Enum\Asset\AssetTypeEnum;
 use App\Application\Enum\Task\TaskStatusEnum;
+use App\Application\Model\Task\Action\TaskChangeStatusModel;
+use App\Application\Service\Asset\Action\AssetAttachToTaskService;
+use App\Application\Service\Asset\Query\AssetQueryService;
+use App\Application\Service\Task\Action\TaskChangeStatusService;
 use App\Tests\DatabaseTestCase;
 use App\Tests\Support\Trait\Model\AssertsAssetModelTrait;
 

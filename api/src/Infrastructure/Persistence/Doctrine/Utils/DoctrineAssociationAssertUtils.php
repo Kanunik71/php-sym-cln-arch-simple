@@ -16,10 +16,7 @@ final class DoctrineAssociationAssertUtils
     public static function assertInitialized(?object $association, string $relation): void
     {
         if ($association instanceof Proxy && !$association->__isInitialized()) {
-            throw new LogicException(sprintf(
-                'Doctrine relation "%s" must be loaded before mapping to Domain; use an EntityFetcher / fetch-join.',
-                $relation,
-            ));
+            throw new LogicException(sprintf('Doctrine relation "%s" must be loaded before mapping to Domain; use an EntityFetcher / fetch-join.', $relation));
         }
     }
 }

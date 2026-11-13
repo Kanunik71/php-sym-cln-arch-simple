@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Support\Trait\Model;
 
-use App\Application\Model\TaskGroup\TaskGroupModel;
 use App\Application\Model\TaskGroup\Read\TaskGroupViewModel;
+use App\Application\Model\TaskGroup\TaskGroupModel;
 use App\Shared\Utils\DateUtils;
 
 trait AssertsTaskGroupModelTrait

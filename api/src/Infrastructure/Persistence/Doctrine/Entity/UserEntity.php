@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Persistence\Doctrine\Entity;
 
+use App\Application\Model\User\UserModel;
 use App\Application\ValueObject\Common\Email;
 use App\Application\ValueObject\Common\Phone;
-use App\Application\Model\User\UserModel;
 use App\Shared\Utils\UidUtils;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;

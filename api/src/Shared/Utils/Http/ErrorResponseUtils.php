@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Shared\Utils\Http;
 
-use App\Application\Model\Http\ErrorResponseModel;
 use App\Application\Exception\CodedExceptionInterface;
 use App\Application\Exception\ErrorCodeEnum;
+use App\Application\Model\Http\ErrorResponseModel;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Throwable;
 

@@ -60,11 +60,7 @@ final readonly class TaskUserModel implements ArrayableModelInterface
     public function withStatus(TaskUserStatusEnum $status): self
     {
         if (!$this->status->canTransitionTo($status)) {
-            throw new InvalidArgumentException(sprintf(
-                'Cannot change task user status from "%s" to "%s".',
-                $this->status->value,
-                $status->value,
-            ));
+            throw new InvalidArgumentException(sprintf('Cannot change task user status from "%s" to "%s".', $this->status->value, $status->value));
         }
 
         return new self($this->userId, $status);

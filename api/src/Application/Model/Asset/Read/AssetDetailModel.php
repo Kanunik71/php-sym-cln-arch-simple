@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Application\Model\Asset\Read;
 
+use App\Application\Enum\Asset\AssetTypeEnum;
 use App\Application\Model\Common\ArrayableModelInterface;
 use App\Application\Model\Common\FileItemModel;
 use App\Application\Model\Task\Read\TaskLightModel;
-use App\Application\Enum\Asset\AssetTypeEnum;
 use App\Shared\Utils\Asserts\InputAssertUtils;
 
 final readonly class AssetDetailModel implements ArrayableModelInterface

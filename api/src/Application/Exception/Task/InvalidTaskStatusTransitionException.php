@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Application\Exception\Task;
 
+use App\Application\Enum\Task\TaskStatusEnum;
 use App\Application\Exception\CodedExceptionInterface;
 use App\Application\Exception\ErrorCodeEnum;
-use App\Application\Enum\Task\TaskStatusEnum;
 use DomainException;
 
 final class InvalidTaskStatusTransitionException extends DomainException implements CodedExceptionInterface

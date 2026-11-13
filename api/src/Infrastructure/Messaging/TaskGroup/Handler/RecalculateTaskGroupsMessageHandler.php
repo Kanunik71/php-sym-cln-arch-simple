@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Infrastructure\Messaging\TaskGroup\Handler;
 
 use App\Application\Dispatcher\TaskGroup\TaskGroupRecalculationDispatcher;
-use App\Application\Service\TaskGroup\Lifecycle\TaskGroupRecalculationService;
 use App\Application\Event\TaskGroup\TaskGroupsRecalculationRequestedEvent;
+use App\Application\Service\TaskGroup\Lifecycle\TaskGroupRecalculationService;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler]

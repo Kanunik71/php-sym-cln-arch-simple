@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Application\Port\Notification;
 
-use App\Application\Model\Notification\RenderedNotificationModel;
 use App\Application\Enum\Notification\NotificationChannelEnum;
 use App\Application\Enum\Notification\NotificationTypeEnum;
+use App\Application\Model\Notification\RenderedNotificationModel;
 
 interface NotificationTemplateRendererInterface
 {

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Task;
 
-use App\Application\Model\Asset\Action\AssetCreateModel;
 use App\Application\Enum\Asset\AssetTypeEnum;
+use App\Application\Model\Asset\Action\AssetCreateModel;
 use App\Shared\Utils\UidUtils;
 use App\Tests\AuthenticatedWebTestCase;
 use Symfony\Component\HttpFoundation\Response;

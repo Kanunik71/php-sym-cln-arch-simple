@@ -12,7 +12,7 @@ final class ArrayUtils
      * @template TIn
      * @template TOut
      *
-     * @param array<TIn>           $items
+     * @param array<TIn>          $items
      * @param callable(TIn): TOut $mapper
      *
      * @return list<TOut>

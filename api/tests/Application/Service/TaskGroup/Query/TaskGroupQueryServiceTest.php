@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\TaskGroup\Query;
 
-use App\Application\Service\TaskGroup\Query\TaskGroupQueryService;
 use App\Application\Enum\TaskGroup\TaskGroupStatusEnum;
+use App\Application\Service\TaskGroup\Query\TaskGroupQueryService;
 use App\Tests\DatabaseTestCase;
 use App\Tests\Support\Trait\Model\AssertsTaskGroupModelTrait;
 

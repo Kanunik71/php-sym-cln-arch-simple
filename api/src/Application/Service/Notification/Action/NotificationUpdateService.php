@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Application\Service\Notification\Action;
 
 use App\Application\Mapper\Notification\NotificationPreferenceViewModelMapper;
+use App\Application\Model\Notification\Action\UpdateNotificationPreferencesModel;
 use App\Application\Model\Notification\NotificationPreferenceModel;
 use App\Application\Model\Notification\Read\NotificationPreferenceViewModel;
-use App\Application\Model\Notification\Action\UpdateNotificationPreferencesModel;
 use App\Application\Policy\Notification\UpdateNotificationPreferencesPolicy;
 use App\Application\Port\Notification\NotificationPreferenceRepositoryInterface;
 

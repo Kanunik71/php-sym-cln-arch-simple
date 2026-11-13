@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\User\Query;
 
-use App\Application\Model\User\Read\UserPageModel;
-use App\Application\Model\User\Read\UserViewModel;
 use App\Application\Enum\Common\FilterOperatorEnum;
 use App\Application\Enum\Common\SortDirectionEnum;
 use App\Application\Enum\User\UserFilterFieldEnum;
@@ -15,6 +13,8 @@ use App\Application\Model\Common\Filter\StringFilterModel;
 use App\Application\Model\Common\PaginationModel;
 use App\Application\Model\Common\SortModel;
 use App\Application\Model\User\Action\UserSearchModel;
+use App\Application\Model\User\Read\UserPageModel;
+use App\Application\Model\User\Read\UserViewModel;
 use App\Application\Model\User\UserFilterCriterionModel;
 use App\Application\Service\User\Query\UserSearchQueryService;
 use App\Tests\DatabaseTestCase;

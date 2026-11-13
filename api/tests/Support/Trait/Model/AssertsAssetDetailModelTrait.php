@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Support\Trait\Model;
 
-use App\Application\Model\Asset\Read\AssetDetailModel;
 use App\Application\Model\Asset\AssetModel;
+use App\Application\Model\Asset\Read\AssetDetailModel;
 use App\Application\Model\Task\TaskModel;
 use App\Shared\Utils\DateUtils;
 use App\Tests\Support\TestBed;

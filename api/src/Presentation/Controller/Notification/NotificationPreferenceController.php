@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Presentation\Controller\Notification;
 
-use App\Application\Service\Notification\Action\NotificationUpdateService;
 use App\Application\Model\Notification\Action\UpdateNotificationPreferencesModel;
+use App\Application\Service\Notification\Action\NotificationUpdateService;
 use App\Application\Service\Notification\Query\NotificationQueryService;
 use App\Presentation\Controller\BaseController;
 use App\Shared\Utils\Http\ErrorResponseUtils;

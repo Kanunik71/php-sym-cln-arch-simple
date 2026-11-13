@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Notification\Template;
 
-use App\Application\Model\Notification\RenderedNotificationModel;
-use App\Application\Port\Notification\NotificationTemplateRendererInterface;
 use App\Application\Enum\Notification\NotificationChannelEnum;
 use App\Application\Enum\Notification\NotificationTypeEnum;
+use App\Application\Model\Notification\RenderedNotificationModel;
+use App\Application\Port\Notification\NotificationTemplateRendererInterface;
 use InvalidArgumentException;
 use Twig\Environment;
 

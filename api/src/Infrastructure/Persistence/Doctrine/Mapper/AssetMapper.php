@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Infrastructure\Persistence\Doctrine\Mapper;
 
 use App\Application\Mapper\Common\FileItemModelMapper;
-use App\Application\Model\Asset\Read\AssetDetailModel;
 use App\Application\Model\Asset\AssetModel;
+use App\Application\Model\Asset\Read\AssetDetailModel;
 use App\Application\Model\Asset\Read\AssetViewModel;
 use App\Application\Port\File\FileDownloadUrlProviderInterface;
 use App\Infrastructure\Persistence\Doctrine\Entity\AssetEntity;

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Application\Model\Http;
 
-use App\Application\Model\Common\ArrayableModelInterface;
 use App\Application\Exception\ErrorCodeEnum;
+use App\Application\Model\Common\ArrayableModelInterface;
 use App\Shared\Utils\Asserts\InputAssertUtils;
 use InvalidArgumentException;
 

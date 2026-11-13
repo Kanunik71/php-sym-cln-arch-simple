@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Application\Policy\Notification;
 
-use App\Application\Model\Notification\Read\NotificationPreferenceViewModel;
 use App\Application\Model\Notification\Action\UpdateNotificationPreferencesModel;
+use App\Application\Model\Notification\Read\NotificationPreferenceViewModel;
 use InvalidArgumentException;
 
 final readonly class UpdateNotificationPreferencesPolicy
@@ -20,10 +20,7 @@ final readonly class UpdateNotificationPreferencesPolicy
     private function assertItemConfigurable(NotificationPreferenceViewModel $item): void
     {
         if ($item->type->isTransactional()) {
-            throw new InvalidArgumentException(sprintf(
-                'Notification type "%s" is transactional and cannot be configured.',
-                $item->type->value,
-            ));
+            throw new InvalidArgumentException(sprintf('Notification type "%s" is transactional and cannot be configured.', $item->type->value));
         }
     }
 }

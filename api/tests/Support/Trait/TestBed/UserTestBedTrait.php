@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Support\Trait\TestBed;
 
+use App\Application\Enum\Notification\NotificationTypeEnum;
+use App\Application\Model\Notification\NotificationPreferenceModel;
+use App\Application\Model\User\UserModel;
 use App\Application\Port\Notification\NotificationPreferenceRepositoryInterface;
 use App\Application\Port\User\UserRepositoryInterface;
 use App\Application\ValueObject\Common\Email;
-use App\Application\Enum\Notification\NotificationTypeEnum;
-use App\Application\Model\User\UserModel;
-use App\Application\Model\Notification\NotificationPreferenceModel;
 use App\Shared\Utils\UidUtils;
 use App\Tests\Support\TestBed;
 use DateTimeImmutable;

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Notification;
 
-use App\Application\Model\Notification\Read\NotificationPreferenceViewModel;
-use App\Application\Model\Notification\Action\UpdateNotificationPreferencesModel;
 use App\Application\Enum\Notification\NotificationChannelEnum;
 use App\Application\Enum\Notification\NotificationTypeEnum;
+use App\Application\Model\Notification\Action\UpdateNotificationPreferencesModel;
+use App\Application\Model\Notification\Read\NotificationPreferenceViewModel;
 use App\Tests\AuthenticatedWebTestCase;
 use Symfony\Component\HttpFoundation\Response;
 

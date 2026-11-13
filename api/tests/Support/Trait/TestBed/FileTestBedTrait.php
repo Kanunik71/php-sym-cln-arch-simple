@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Support\Trait\TestBed;
 
-use App\Application\Service\File\Action\FileUploadTmpService;
 use App\Application\Model\File\FileModel;
 use App\Application\Port\File\FileRepositoryInterface;
+use App\Application\Service\File\Action\FileUploadTmpService;
 
 trait FileTestBedTrait
 {

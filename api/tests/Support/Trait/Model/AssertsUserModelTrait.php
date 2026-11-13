@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Support\Trait\Model;
 
-use App\Application\Model\User\UserModel;
 use App\Application\Model\User\Read\UserViewModel;
+use App\Application\Model\User\UserModel;
 use App\Shared\Utils\DateUtils;
 
 trait AssertsUserModelTrait

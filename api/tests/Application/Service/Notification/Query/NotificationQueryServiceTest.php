@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\Notification\Query;
 
-use App\Application\Service\Notification\Query\NotificationQueryService;
 use App\Application\Enum\Notification\NotificationChannelEnum;
 use App\Application\Enum\Notification\NotificationTypeEnum;
+use App\Application\Service\Notification\Query\NotificationQueryService;
 use App\Tests\DatabaseTestCase;
 
 final class NotificationQueryServiceTest extends DatabaseTestCase

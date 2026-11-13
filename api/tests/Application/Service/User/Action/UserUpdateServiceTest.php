@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\User\Action;
 
-use App\Application\Service\Auth\RefreshTokenService;
-use App\Application\Service\User\Action\UserLoginService;
-use App\Application\Service\User\Action\UserRefreshService;
-use App\Application\Service\User\Action\UserUpdateService;
-use App\Application\Model\User\Action\UserLoginModel;
-use App\Application\Model\User\Action\UserRefreshModel;
-use App\Application\Model\User\Action\UserUpdateModel;
-use App\Application\Model\User\UserLocationModel;
-use App\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use App\Application\Event\User\UserUpdatedEvent;
 use App\Application\Exception\User\UnauthorizedUserAccessException;
 use App\Application\Exception\User\UserAlreadyExistsException;
 use App\Application\Exception\User\UserNotFoundException;
+use App\Application\Model\User\Action\UserLoginModel;
+use App\Application\Model\User\Action\UserRefreshModel;
+use App\Application\Model\User\Action\UserUpdateModel;
+use App\Application\Model\User\UserLocationModel;
+use App\Application\Service\Auth\RefreshTokenService;
+use App\Application\Service\User\Action\UserLoginService;
+use App\Application\Service\User\Action\UserRefreshService;
+use App\Application\Service\User\Action\UserUpdateService;
+use App\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use App\Shared\Utils\UidUtils;
 use App\Tests\DatabaseTestCase;
 use App\Tests\Support\TestBed;
@@ -150,7 +150,7 @@ final class UserUpdateServiceTest extends DatabaseTestCase
 
             public function postFlush(PostFlushEventArgs $args): void
             {
-                $this->flushes++;
+                ++$this->flushes;
 
                 if ($this->flushes >= 2) {
                     throw new RuntimeException('forced rollback');

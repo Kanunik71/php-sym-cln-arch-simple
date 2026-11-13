@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\User\Action;
 
-use App\Application\Service\User\Action\UserRegisterService;
-use App\Application\Model\User\Action\UserRegisterModel;
-use App\Application\Model\User\UserLocationModel;
 use App\Application\Enum\Notification\NotificationTypeEnum;
 use App\Application\Event\User\UserRegisteredEvent;
 use App\Application\Exception\User\UserAlreadyExistsException;
+use App\Application\Model\User\Action\UserRegisterModel;
+use App\Application\Model\User\UserLocationModel;
+use App\Application\Service\User\Action\UserRegisterService;
 use App\Tests\DatabaseTestCase;
 use App\Tests\Support\Trait\Common\AssertMessengerTrait;
 

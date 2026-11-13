@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Application\Model\Task\Read;
 
-use App\Application\Model\Common\ArrayableModelInterface;
 use App\Application\Enum\Task\TaskStatusEnum;
+use App\Application\Model\Common\ArrayableModelInterface;
 use App\Shared\Utils\Asserts\InputAssertUtils;
 
 final readonly class TaskLightModel implements ArrayableModelInterface

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Application\Mapper\TaskGroup;
 
-use App\Application\Model\TaskGroup\TaskGroupModel;
 use App\Application\Model\TaskGroup\Read\TaskGroupViewModel;
+use App\Application\Model\TaskGroup\TaskGroupModel;
 use App\Shared\Utils\ArrayUtils;
 use App\Shared\Utils\DateUtils;
 

@@ -53,10 +53,7 @@ final readonly class NotificationPreferenceModel
             }
         }
 
-        throw new InvalidArgumentException(sprintf(
-            'Notification type "%s" is transactional and cannot be configured.',
-            $type->value,
-        ));
+        throw new InvalidArgumentException(sprintf('Notification type "%s" is transactional and cannot be configured.', $type->value));
     }
 
     /**

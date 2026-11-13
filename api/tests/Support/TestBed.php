@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Support;
 
+use App\Application\Model\User\UserModel;
 use App\Application\Port\Asset\AssetRepositoryInterface;
 use App\Application\Port\File\FileRepositoryInterface;
 use App\Application\Port\Notification\NotificationPreferenceRepositoryInterface;
@@ -12,7 +13,6 @@ use App\Application\Port\Task\TaskRepositoryInterface;
 use App\Application\Port\TaskGroup\TaskGroupRepositoryInterface;
 use App\Application\Port\User\UserRepositoryInterface;
 use App\Application\ValueObject\Common\Email;
-use App\Application\Model\User\UserModel;
 use App\Shared\Utils\ContainerUtils;
 use App\Tests\Support\Trait\TestBed\AssetTestBedTrait;
 use App\Tests\Support\Trait\TestBed\FileTestBedTrait;

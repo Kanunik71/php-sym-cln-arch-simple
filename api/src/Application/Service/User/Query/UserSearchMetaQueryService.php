@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Application\Service\User\Query;
 
-use App\Application\Model\Common\Query\SearchQueryMetaModel;
 use App\Application\Enum\Common\SortDirectionEnum;
 use App\Application\Enum\User\UserFilterFieldEnum;
 use App\Application\Enum\User\UserSortFieldEnum;
+use App\Application\Model\Common\Query\SearchQueryMetaModel;
 use App\Application\Service\Common\SearchQueryMetaService;
 
 final readonly class UserSearchMetaQueryService

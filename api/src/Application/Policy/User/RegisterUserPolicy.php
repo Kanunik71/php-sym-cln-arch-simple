@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Application\Policy\User;
 
+use App\Application\Exception\User\UserAlreadyExistsException;
 use App\Application\Port\User\UserRepositoryInterface;
 use App\Application\ValueObject\Common\Email;
-use App\Application\Exception\User\UserAlreadyExistsException;
 
 final readonly class RegisterUserPolicy
 {

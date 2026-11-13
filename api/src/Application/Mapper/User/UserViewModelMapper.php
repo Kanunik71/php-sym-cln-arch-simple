@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Application\Mapper\User;
 
 use App\Application\Mapper\Common\FileItemModelMapper;
+use App\Application\Model\User\Read\UserViewModel;
 use App\Application\Model\User\UserLocationModel;
 use App\Application\Model\User\UserModel;
-use App\Application\Model\User\Read\UserViewModel;
 use App\Application\Port\File\FileDownloadUrlProviderInterface;
 use App\Shared\Utils\ArrayUtils;
 use App\Shared\Utils\DateUtils;

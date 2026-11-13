@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\Notification\Lifecycle;
 
+use App\Application\Enum\Notification\NotificationChannelEnum;
+use App\Application\Enum\Notification\NotificationTypeEnum;
 use App\Application\Port\Notification\MailerInterface;
 use App\Application\Port\Notification\NotificationTemplateRendererInterface;
 use App\Application\Port\Notification\SmsSenderInterface;
 use App\Application\Service\Notification\Lifecycle\NotificationService;
-use App\Application\Enum\Notification\NotificationChannelEnum;
-use App\Application\Enum\Notification\NotificationTypeEnum;
 use App\Tests\DatabaseTestCase;
 use Psr\Log\LoggerInterface;
 use ReflectionClass;

@@ -25,10 +25,7 @@ final class DoctrineCollectionAssertUtils
     public static function assertInitialized(Collection $collection, string $relation): void
     {
         if ($collection instanceof PersistentCollection && !$collection->isInitialized()) {
-            throw new LogicException(sprintf(
-                'Doctrine relation "%s" must be loaded before mapping to Domain; use an EntityFetcher / fetch-join.',
-                $relation,
-            ));
+            throw new LogicException(sprintf('Doctrine relation "%s" must be loaded before mapping to Domain; use an EntityFetcher / fetch-join.', $relation));
         }
     }
 }

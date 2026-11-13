@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Application\Service\Common;
 
+use App\Application\Enum\Common\SortDirectionEnum;
+use App\Application\Model\Common\PaginationModel;
+use App\Application\Model\Common\Query\FilterFieldMetaInterface;
 use App\Application\Model\Common\Query\QueryDefaultSortMetaModel;
 use App\Application\Model\Common\Query\QueryFilterFieldMetaModel;
 use App\Application\Model\Common\Query\QueryPaginationMetaModel;
 use App\Application\Model\Common\Query\SearchQueryMetaModel;
-use App\Application\Enum\Common\SortDirectionEnum;
-use App\Application\Model\Common\Query\FilterFieldMetaInterface;
-use App\Application\Model\Common\PaginationModel;
 use App\Shared\Utils\EnumUtils;
 use BackedEnum;
 use LogicException;

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\User\Query;
 
-use App\Application\Service\User\Query\UserQueryService;
 use App\Application\Exception\User\UserNotFoundException;
+use App\Application\Service\User\Query\UserQueryService;
 use App\Shared\Utils\UidUtils;
 use App\Tests\DatabaseTestCase;
 use App\Tests\Support\Trait\Model\AssertsUserModelTrait;

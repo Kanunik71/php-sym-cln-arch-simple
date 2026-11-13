@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Application\Policy\Task;
 
-use App\Application\Port\Task\TaskRepositoryInterface;
 use App\Application\Exception\Task\TaskNotFoundException;
+use App\Application\Port\Task\TaskRepositoryInterface;
 
 final readonly class CreateTaskPolicy
 {

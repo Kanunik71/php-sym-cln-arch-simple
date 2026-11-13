@@ -31,10 +31,7 @@ final readonly class DoctrineNotificationPreferenceRepository implements Notific
 
         $reloaded = $this->entityFetcher->findById($preference->id);
         if ($reloaded === null) {
-            throw new LogicException(sprintf(
-                'NotificationPreference "%s" missing after save.',
-                $preference->id,
-            ));
+            throw new LogicException(sprintf('NotificationPreference "%s" missing after save.', $preference->id));
         }
 
         return $this->mapper->toModel($reloaded);

@@ -25,10 +25,7 @@ final class MoneyUtils
         $normalized = round($amount, self::SCALE);
 
         if ($normalized > self::MAX_AMOUNT) {
-            throw new InvalidArgumentException(sprintf(
-                'Price must not exceed %s.',
-                number_format(self::MAX_AMOUNT, self::SCALE, '.', ''),
-            ));
+            throw new InvalidArgumentException(sprintf('Price must not exceed %s.', number_format(self::MAX_AMOUNT, self::SCALE, '.', '')));
         }
 
         return $normalized;

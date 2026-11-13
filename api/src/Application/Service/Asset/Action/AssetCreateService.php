@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Application\Service\Asset\Action;
 
+use App\Application\Model\Asset\Action\AssetCreateModel;
 use App\Application\Model\Asset\AssetModel;
 use App\Application\Model\Asset\Read\AssetViewModel;
-use App\Application\Model\Asset\Action\AssetCreateModel;
 use App\Application\Policy\Task\TaskAccessPolicy;
 use App\Application\Port\Asset\AssetRepositoryInterface;
 use App\Application\Port\Task\TaskRepositoryInterface;
@@ -35,7 +35,6 @@ final readonly class AssetCreateService
 
     private function createWithoutTask(AssetCreateModel $model, string $userId): AssetViewModel
     {
-
         foreach ($model->taskIds as $relatedTaskId) {
             $task = $this->taskRepository->findOrFail($relatedTaskId);
             $this->taskAccessPolicy->assertUserCanAccessIo($task, $userId);
@@ -48,7 +47,7 @@ final readonly class AssetCreateService
     {
         $task = $this->taskRepository->findOrFail($taskId);
 
-        $this->taskAccessPolicy->assertUserCanAccessIo($task, $userId);        
+        $this->taskAccessPolicy->assertUserCanAccessIo($task, $userId);
 
         return $this->process($model, [$taskId], $model->imageFileIds, $userId);
     }

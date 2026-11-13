@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Application\Service\Notification\Lifecycle;
 
+use App\Application\Enum\Notification\NotificationChannelEnum;
+use App\Application\Enum\Notification\NotificationTypeEnum;
+use App\Application\Model\Notification\NotificationPreferenceModel;
+use App\Application\Model\User\UserModel;
 use App\Application\Port\Notification\MailerInterface;
 use App\Application\Port\Notification\NotificationPreferenceRepositoryInterface;
 use App\Application\Port\Notification\NotificationTemplateRendererInterface;
 use App\Application\Port\Notification\SmsSenderInterface;
 use App\Application\Port\User\UserRepositoryInterface;
-use App\Application\Enum\Notification\NotificationChannelEnum;
-use App\Application\Enum\Notification\NotificationTypeEnum;
-use App\Application\Model\Notification\NotificationPreferenceModel;
-use App\Application\Model\User\UserModel;
 use Psr\Log\LoggerInterface;
 
 final readonly class NotificationService

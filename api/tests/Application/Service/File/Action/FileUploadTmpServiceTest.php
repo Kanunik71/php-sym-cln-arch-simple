@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\File\Action;
 
-use App\Application\Service\User\Action\UserUpdateService;
 use App\Application\Enum\File\FileStatusEnum;
 use App\Application\Model\User\Action\UserUpdateModel;
+use App\Application\Service\User\Action\UserUpdateService;
 use App\Tests\DatabaseTestCase;
 
 final class FileUploadTmpServiceTest extends DatabaseTestCase

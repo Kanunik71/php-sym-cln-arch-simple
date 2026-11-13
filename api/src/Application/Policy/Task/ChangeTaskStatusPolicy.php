@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Application\Policy\Task;
 
-use App\Application\Model\Task\Action\TaskChangeStatusModel;
 use App\Application\Enum\Task\TaskStatusEnum;
+use App\Application\Model\Task\Action\TaskChangeStatusModel;
 use InvalidArgumentException;
 
 final readonly class ChangeTaskStatusPolicy

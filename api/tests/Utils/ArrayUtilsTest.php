@@ -43,7 +43,7 @@ final class ArrayUtilsTest extends TestCase
 
     private function identifiable(string $id): IdentifiableInterface
     {
-        return new class ($id) implements IdentifiableInterface {
+        return new class($id) implements IdentifiableInterface {
             public function __construct(private readonly string $id)
             {
             }
