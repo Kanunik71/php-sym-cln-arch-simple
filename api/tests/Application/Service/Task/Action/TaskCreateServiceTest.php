@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Application\Service\Task\Action;
 
 use App\Application\Enum\Task\TaskStatusEnum;
-use App\Application\Event\Task\TaskCreated;
+use App\Application\Event\Task\TaskCreatedEvent;
 use App\Application\Exception\Task\TaskNotFoundException;
 use App\Application\Model\Common\PaginationModel;
 use App\Application\Model\Task\Action\TaskCreateModel;
@@ -39,8 +39,8 @@ final class TaskCreateServiceTest extends DatabaseTestCase
         $this->assertNotEmpty($result->id);
 
         $this->assertDispatched(
-            TaskCreated::class,
-            predicate: fn (TaskCreated $event): bool => $event->taskId === $result->id
+            TaskCreatedEvent::class,
+            predicate: fn (TaskCreatedEvent $event): bool => $event->taskId === $result->id
                 && $event->name === $create->name
                 && $event->estimateTime === $create->estimateTime
                 && $event->parentId === $create->parentId,
@@ -91,8 +91,8 @@ final class TaskCreateServiceTest extends DatabaseTestCase
         $this->assertSame($create->parentId, $result->parentId);
 
         $this->assertDispatched(
-            TaskCreated::class,
-            predicate: fn (TaskCreated $event): bool => $event->taskId === $result->id
+            TaskCreatedEvent::class,
+            predicate: fn (TaskCreatedEvent $event): bool => $event->taskId === $result->id
                 && $event->parentId === $parentTask->getId(),
         );
     }

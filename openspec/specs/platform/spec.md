@@ -82,7 +82,7 @@ The API SHALL отдавать постраничные ответы (листи
 - **THEN** JSON содержит `items` (массив), `total` (int), `page` (int), `perPage` (int)
 
 ### Requirement: Асинхронные события через RabbitMQ
-The API SHALL доставлять доменные события (`TaskCreated`, `TaskGroupsRecalculationRequestedEvent`, `UserRegisteredEvent`, `UserUpdatedEvent`) через транспорт `async` (RabbitMQ); в тестах — `in-memory://`. Retry-политика `async`: 3 попытки, delay 1000 мс, multiplier 2, затем в `failed`; очередь `failed` worker не читает (разбор вручную: `messenger:failed:show`/`retry`). Worker: `messenger:consume async scheduler_default`.
+The API SHALL доставлять доменные события (`TaskCreatedEvent`, `TaskGroupsRecalculationRequestedEvent`, `UserRegisteredEvent`, `UserUpdatedEvent`) через транспорт `async` (RabbitMQ); в тестах — `in-memory://`. Retry-политика `async`: 3 попытки, delay 1000 мс, multiplier 2, затем в `failed`; очередь `failed` worker не читает (разбор вручную: `messenger:failed:show`/`retry`). Worker: `messenger:consume async scheduler_default`.
 
 #### Scenario: Доставка после рестарта приложения
 - **GIVEN** публикация события при доступном broker

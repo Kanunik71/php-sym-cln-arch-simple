@@ -150,7 +150,7 @@ Messaging/
 
 | Класс | Роль |
 |-------|------|
-| `TaskCreatedMessageHandler` | Логирует `TaskCreated` |
+| `TaskCreatedMessageHandler` | Логирует `TaskCreatedEvent` |
 | `RecalculateTaskGroupsMessageHandler` | `TaskGroupRecalculationService`, затем `releaseTaskLock` / `releaseGroupIdsLock` |
 | `UserRegisteredMessageHandler` | `NotificationService::notify` (`UserRegistered`) |
 | `UserUpdatedMessageHandler` | `NotificationService::notify` (`UserUpdated`) |

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Application\Service\Task\Lifecycle;
 
 use App\Application\Dispatcher\TaskGroup\TaskGroupRecalculationDispatcher;
-use App\Application\Event\Task\TaskCreated;
+use App\Application\Event\Task\TaskCreatedEvent;
 use App\Application\Model\Task\TaskModel;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -20,7 +20,7 @@ final readonly class TaskLifecycleService
     public function afterTaskPersisted(TaskModel $task, bool $created = false): void
     {
         if ($created) {
-            $this->messageBus->dispatch(new TaskCreated(
+            $this->messageBus->dispatch(new TaskCreatedEvent(
                 taskId: $task->id,
                 name: $task->name,
                 estimateTime: $task->estimateTime,

@@ -252,7 +252,7 @@ $this->assetLifecycleService->delete($asset);
 ## Event / Exception
 
 ```
-Event/Task/TaskCreated.php
+Event/Task/TaskCreatedEvent.php
 Event/User/UserRegisteredEvent.php
 Event/User/UserUpdatedEvent.php
 Event/TaskGroup/TaskGroupsRecalculationRequestedEvent.php

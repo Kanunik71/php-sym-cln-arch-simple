@@ -88,14 +88,12 @@ Presentation  ──►  Application  ──►  Port  ◄──  Infrastructure
 | Слой | Что | Пример |
 |------|-----|--------|
 | Application | Value Object — имя = Ubiquitous Language | `Email`, `Phone` |
-| Application | Событие без суффикса `Event` (отклонение, см. ниже) | `TaskCreated` |
 | Infrastructure | Framework-coupled имена | `SymfonyPasswordHasher`, `TwigEnvironmentFactory`, `SecurityUser` |
 | Infrastructure | Вспомогательные семейства Doctrine | `*EntityFetcher`, `*Applier`, `*DoctrineMap`, `Doctrine*Utils` |
 
 **Отклонения от правила в текущем коде** (не чинить здесь — фиксируются как
 change, если понадобится):
 
-- `TaskCreated` — событие без суффикса `Event`, в отличие от `UserUpdatedEvent`.
 - `SymfonyPasswordHasher` — обёртка над библиотекой без суффикса `Adapter`.
 
 ---

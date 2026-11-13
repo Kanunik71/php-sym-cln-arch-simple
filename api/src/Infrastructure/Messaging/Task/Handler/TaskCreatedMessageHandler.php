@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Messaging\Task\Handler;
 
-use App\Application\Event\Task\TaskCreated;
+use App\Application\Event\Task\TaskCreatedEvent;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
@@ -16,7 +16,7 @@ final readonly class TaskCreatedMessageHandler
     ) {
     }
 
-    public function __invoke(TaskCreated $event): void
+    public function __invoke(TaskCreatedEvent $event): void
     {
         $this->logger->info('Task created asynchronously.', [
             'taskId' => $event->taskId,

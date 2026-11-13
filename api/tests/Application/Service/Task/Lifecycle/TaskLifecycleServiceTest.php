@@ -6,7 +6,7 @@ namespace App\Tests\Application\Service\Task\Lifecycle;
 
 use App\Application\Dispatcher\TaskGroup\TaskGroupRecalculationDispatcher;
 use App\Application\Enum\Task\TaskStatusEnum;
-use App\Application\Event\Task\TaskCreated;
+use App\Application\Event\Task\TaskCreatedEvent;
 use App\Application\Event\TaskGroup\TaskGroupsRecalculationRequestedEvent;
 use App\Application\Service\Task\Lifecycle\TaskLifecycleService;
 use App\Tests\DatabaseTestCase;
@@ -16,7 +16,7 @@ final class TaskLifecycleServiceTest extends DatabaseTestCase
 {
     use AssertMessengerTrait;
 
-    public function testAfterTaskPersistedOnCreateDispatchesTaskCreated(): void
+    public function testAfterTaskPersistedOnCreateDispatchesTaskCreatedEvent(): void
     {
         $user = $this->bed->seedDefaultUser();
         $service = $this->bed->get(TaskLifecycleService::class);
@@ -25,8 +25,8 @@ final class TaskLifecycleServiceTest extends DatabaseTestCase
         $service->afterTaskPersisted(task: $task, created: true);
 
         $this->assertDispatched(
-            TaskCreated::class,
-            predicate: fn (TaskCreated $event): bool => $event->taskId === $task->getId()
+            TaskCreatedEvent::class,
+            predicate: fn (TaskCreatedEvent $event): bool => $event->taskId === $task->getId()
                 && $event->name === $task->getName()
                 && $event->estimateTime === $task->getEstimateTime()
                 && $event->parentId === $task->getParentId(),
