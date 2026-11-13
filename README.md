@@ -6,7 +6,7 @@
 |---------|-----------|
 | [`api/`](api/README.md) | Основной Symfony API (MySQL, JWT, бизнес-логика) |
 | [`docker/`](docker/README.md) | Docker Compose для локальной разработки (nginx, PHP, база, воркеры) |
-| [`openspec/`](openspec/specs/overview/spec.md) | Спеки, changes и процесс Spec-Driven Development |
+| [`openspec/`](openspec/README.md) | Спеки, changes и процесс Spec-Driven Development |
 
 ## Разработка по SDD (OpenSpec)
 
@@ -19,6 +19,8 @@ openspec/changes/<change-id>/proposal.md + specs/ + design.md + tasks.md → к�
 ```
 
 Итоговое поведение системы — в `openspec/specs/` (источник истины).
+Карта доменов, связи схемы данных и глоссарий — в
+[`openspec/README.md`](openspec/README.md).
 
 Спеки пишутся на русском; структурные заголовки (`## Purpose`,
 `### Requirement:`, `#### Scenario:`, GIVEN/WHEN/THEN) и ключевые слова
@@ -35,9 +37,10 @@ SHALL/MUST — на английском.
 ```
 openspec/
 ├── config.yaml      # контекст проекта и правила для артефактов
+├── README.md        # индекс: карта доменов, схема данных, глоссарий
 ├── specs/           # источник истины: как система работает СЕЙЧАС
 │   ├── auth/ users/ tasks/ task-groups/ assets/ files/
-│   ├── notifications/ platform/ overview/   (spec.md в каждой)
+│   ├── notifications/ platform/   (spec.md в каждой)
 └── changes/         # изменения в работе + archive/ (история)
 ```
 
