@@ -1,75 +1,76 @@
 schema: spec-driven
 
 context: |
-  Language: Russian — write all artifacts in Russian; keep OpenSpec structural
-  headings (`## Purpose`, `### Requirement:`, `#### Scenario:`, GIVEN/WHEN/THEN)
-  and SHALL/MUST keywords in English.
+  Язык: русский — все артефакты пишутся по-русски; структурные заголовки
+  (`## Purpose`, `### Requirement:`, `#### Scenario:`, GIVEN/WHEN/THEN) и
+  ключевые слова SHALL/MUST остаются на английском.
 
-  Project: `cln-arch-sym-simple` — monorepo: `api/` (Symfony 7 API, MySQL, JWT,
-  RabbitMQ, Redis, local file storage), `docker/` (nginx, php, workers),
-  `openspec/` (specs, changes). Scale target ~10^6 users/tasks.
+  Проект: `cln-arch-sym-simple` — монорепозиторий: `api/` (Symfony 7 API, MySQL,
+  JWT, RabbitMQ, Redis, локальное файловое хранилище), `docker/` (nginx, php,
+  воркеры), `openspec/` (спеки, changes). Целевой масштаб — ~10^6 пользователей
+  и задач.
 
-  Architecture: Clean Architecture layers — Presentation (Controller/Console)
+  Архитектура: слои Clean Architecture — Presentation (Controller/Console)
   → Application (Model → Service::execute, Action/Query/Lifecycle, Policy,
-  ViewModelMapper, Dispatcher) → Port (interfaces) → Infrastructure (Doctrine,
-  adapters). There is no `Domain/` layer: persistent model, VO, enum, events and
-  exceptions live in `Application/`.
-  Architecture rules live in `api/CLAUDE.md` (+ `api/src/Application/CLAUDE.md`,
-  `api/src/Infrastructure/CLAUDE.md`, `api/tests/CLAUDE.md`) — read relevant
-  sections before writing designs/tasks; specs must not duplicate them, only reference.
-  Specs describe the ACTUAL behavior of the code and tests (source of truth);
-  `api/CLAUDE.md` describes the CURRENT architecture. Behavioral gaps between
-  code and the documented contract are recorded in the `## Notes` section of the
-  affected specs.
+  ViewModelMapper, Dispatcher) → Port (интерфейсы) → Infrastructure (Doctrine,
+  адаптеры). Слоя `Domain/` нет: персистентная модель, VO, enum, события и
+  исключения живут в `Application/`.
+  Архитектурные правила — в `api/CLAUDE.md` (+ `api/src/Application/CLAUDE.md`,
+  `api/src/Infrastructure/CLAUDE.md`, `api/tests/CLAUDE.md`) — читай нужные
+  разделы перед написанием design/tasks; спеки их не дублируют, а ссылаются.
+  Спеки описывают ФАКТИЧЕСКОЕ поведение кода и тестов (источник истины);
+  `api/CLAUDE.md` описывает ТЕКУЩУЮ архитектуру. Расхождения фактического
+  поведения с задокументированным контрактом фиксируются в секции `## Notes`
+  затронутых спек.
 
-  specs are behavior-only: observable contracts (HTTP method/path, JSON in/out,
-  status and error codes with `codeId`, CLI commands, async events, cache/locks).
-  Implementation details (classes, tables, libraries) of a change go to that
-  change's design.md, not specs.
+  Спеки описывают только поведение: наблюдаемые контракты (HTTP method/path,
+  JSON вход/выход, статус и коды ошибок с `codeId`, CLI-команды, async-события,
+  кэш/локи). Детали реализации (классы, таблицы, библиотеки) изменения
+  относятся к его design.md, а не к спекам.
 
-  Domain layout: a domain folder `openspec/specs/<domain>/` holds the umbrella
-  `spec.md` (domain fields and their validation + map of subsections) and one
-  subsection per use case — `openspec/specs/<domain>/<action>/spec.md`
-  (capability id `<domain>/<action>`). Delta specs for such a domain live in
-  `openspec/changes/<change>/specs/<domain>/<action>/spec.md`. The umbrella
-  `spec.md` stays a valid capability: it needs its own `## Purpose` and
-  `## Requirements`. Cross-cutting capabilities `wire` (формат полей), `errors`
-  (формат ошибок), `query` (листинги/поиск) и `async` (RabbitMQ, планировщик)
-  are single-file — they describe contracts shared by several domains. Index
-  documentation (map of domains, schema relations, glossary) lives in
-  `openspec/README.md` and is not a capability.
+  Структура домена: папка домена `openspec/specs/<domain>/` содержит umbrella
+  `spec.md` (поля домена и их валидация + карта подразделов) и по одному
+  подразделу на use-case — `openspec/specs/<domain>/<action>/spec.md`
+  (capability id `<domain>/<action>`). Дельты такого домена живут в
+  `openspec/changes/<change>/specs/<domain>/<action>/spec.md`. Umbrella `spec.md`
+  остаётся валидной capability: у неё должны быть свои `## Purpose` и
+  `## Requirements`. Сквозные capability `wire` (формат полей), `errors`
+  (формат ошибок), `query` (листинги/поиск) и `async` (RabbitMQ, планировщик) —
+  однофайловые: они описывают контракты, общие для нескольких доменов. Индексная
+  документация (карта доменов, связи схемы, глоссарий) живёт в
+  `openspec/README.md` и не является capability.
 
-  Verification commands (run from `api/`; in Docker:
+  Команды проверки (из `api/`; в Docker:
   `docker compose -f ../docker/docker-compose.yml exec php <cmd>`):
   `composer cs-check`, `composer phpstan`, `php bin/phpunit`.
-  A change is done only when all three pass, tasks.md is fully checked, and
-  behavior changes update the affected `openspec/specs/` docs.
+  Изменение считается готовым, только когда все три проходят, tasks.md отмечен
+  полностью, а изменения поведения отражены в `openspec/specs/`.
 
 rules:
   proposal:
-    - Keep proposal under 500 words; always state what is out of scope
-    - Name affected domains (openspec/specs/<capability>/) and whether migration/async/security is touched
+    - Держи proposal до 500 слов; всегда указывай, что вне scope
+    - Называй затронутые домены (openspec/specs/<capability>/) и затронуты ли миграции, async и безопасность
   specs:
-    - HTTP contract only as GIVEN/WHEN/THEN scenarios — no route tables
-    - Errors must be named with their `codeId` and HTTP status
-    - Every requirement needs at least one scenario that exercises it
-    - Action-specific behavior belongs to `openspec/specs/<domain>/<action>/spec.md`; the umbrella `spec.md` keeps only the domain fields and their validation
-    - Requirements SHALL describe the observable contract through JSON field names, HTTP statuses, `codeId` values, event names, CLI commands and cache/lock keys — not through PHP class names; `## Notes` MAY cite implementation classes and source paths as traceability pointers
-    - Reference other domains (auth, files, notifications) instead of duplicating their rules
+    - HTTP-контракт — только в виде сценариев GIVEN/WHEN/THEN, без таблиц маршрутов
+    - Ошибки указывай с их `codeId` и HTTP-статусом
+    - У каждого требования должен быть хотя бы один сценарий, который его проверяет
+    - Поведение конкретного use-case'а — в `openspec/specs/<domain>/<action>/spec.md`; в umbrella `spec.md` остаются только поля домена и их валидация
+    - Требования SHALL описывают наблюдаемый контракт через имена JSON-полей, HTTP-статусы, значения `codeId`, имена событий, CLI-команды и ключи кэша/локи — а не через имена PHP-классов; `## Notes` МОЖЕТ ссылаться на классы реализации и пути в исходниках как указатели трассируемости
+    - Ссылайся на другие домены (auth, files, notifications), а не дублируй их правила
   design:
-    - "Map design to layers: Application (Service/Model/Policy/Mapper, VO/enum) → Port → Infrastructure (Doctrine/adapter); there is no Domain layer"
-    - Reference concrete sections of api/CLAUDE.md instead of restating architecture
-    - List file changes, DB migrations, async messages, cache keys, and tests
-    - design.md describes the delta of a change only; the standing contracts of a domain stay in its umbrella spec.md
+    - "Отобрази дизайн по слоям: Application (Service/Model/Policy/Mapper, VO/enum) → Port → Infrastructure (Doctrine/адаптер); слоя Domain нет"
+    - Ссылайся на конкретные разделы api/CLAUDE.md вместо пересказа архитектуры
+    - Перечисли изменяемые файлы, миграции БД, async-сообщения, ключи кэша и тесты
+    - design.md описывает только дельту изменения; постоянные контракты домена остаются в его umbrella spec.md
   tasks:
-    - "Group tasks by phase: Application → Infrastructure → Presentation → Tests → Checks"
-    - Every task names the file(s) it touches and how it is verified
+    - "Группируй задачи по фазам: Application → Infrastructure → Presentation → Tests → Checks"
+    - Каждая задача называет затрагиваемые файлы и способ проверки
 
 operations:
   apply:
     guidance:
-      - Run `composer cs-check`, `composer phpstan` and `php bin/phpunit` from api/ (via docker) before marking a group complete
-      - Check off tasks.md checkboxes as work lands; update openspec specs when behavior changes
+      - Запускай `composer cs-check`, `composer phpstan` и `php bin/phpunit` из api/ (через docker), прежде чем отмечать группу выполненной
+      - Отмечай чекбоксы tasks.md по мере работы; обновляй спеки openspec при изменении поведения
   archive:
     guidance:
-      - Summarize what shipped and which spec files were updated before finishing
+      - Перед завершением перечисли, что поставляется и какие файлы спек обновлены
