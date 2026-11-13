@@ -21,7 +21,6 @@ services:
     App\:
         resource: '../src/'
         exclude:
-            - '../src/Domain/'
             - '../src/Kernel.php'
 
     App\Application\Port\User\UserRepositoryInterface:

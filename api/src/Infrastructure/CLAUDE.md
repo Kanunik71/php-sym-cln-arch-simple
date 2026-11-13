@@ -123,8 +123,7 @@ private Collection $assetFiles;
 Side effects (object storage, cache, events) **никогда** не делегировать БД-cascade — только Application.
 Эталон: `AssetLifecycleService::delete` → `deleteRecords` (БД) и `FileLifecycleService::purgeStorage` после commit.
 
-Оркестрация delete — `api/src/Application/CLAUDE.md` → Delete orchestration. Cursor rule:
-`.cursor/rules/doctrine-cascade-deletes.mdc`.
+Оркестрация delete — `api/src/Application/CLAUDE.md` → Delete orchestration.
 
 ### Cache
 

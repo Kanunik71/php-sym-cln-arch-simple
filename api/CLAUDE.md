@@ -1,8 +1,13 @@
-# Соглашения об именовании (`api/src`)
+# Архитектура `api/src` — соглашения
 
-Жёсткие правила именования классов в `api/src/`. Каждый класс имеет **ровно один суффикс**, однозначно определяющий его роль.
+Короткий документ: **где что лежит, как называется, как течёт данные**.
+Детали по слоям — в вложенных файлах:
 
-**Исключения:** `Kernel.php` (точка входа Symfony) и **Domain** (агрегаты, Value Object, часть enum) — без суффикса роли, имя = Ubiquitous Language.
+| Файл | Про что |
+|------|---------|
+| [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md) | use case'ы, Model, Port, Policy, Cache, Dispatcher, batch-переборы, delete-оркестрация |
+| [`src/Infrastructure/CLAUDE.md`](src/Infrastructure/CLAUDE.md) | Doctrine, кэш, очереди, security, storage, роутинг, notification |
+| [`tests/CLAUDE.md`](tests/CLAUDE.md) | базы тестов, фикстуры, правила интеграционных проверок |
 
 ---
 
@@ -10,347 +15,243 @@
 
 ```
 api/src/
-├── Domain/          # Агрегаты, ValueObject, Enum, Event, Exception
-├── Application/     # Use cases, Model, Enum, Service, Dispatcher, Cache, Port
-├── Infrastructure/  # Doctrine, Redis, RabbitMQ, JWT, адаптеры
+├── Application/     # use case'ы: Service, Model, Policy, Port, Mapper, Cache, Dispatcher, Event, Exception, Enum, ValueObject
+├── Infrastructure/  # Doctrine, Redis, RabbitMQ, JWT, storage, адаптеры
 ├── Presentation/    # HTTP-контроллеры и консольные команды
-└── Utils/           # Статические утилиты (Shared/Utils)
+└── Shared/Utils/    # статические утилиты (Asserts, Filter, Http)
 ```
 
-**Domain** — максимально чистый: агрегаты, VO, доменные события/исключения/enum. Без репозиториев, pagination, criteria, HTTP.
+Слоя `Domain/` нет. Персистентная модель, Value Object, enum, события и
+исключения живут в `Application/` — это осознанное решение, а не недоработка:
+VO и инварианты отделены от use case'ов папками, а зависимости от внешнего
+мира идут только через `Port/`.
 
-**Application** — use cases и все application-структуры вокруг них.
+### Правило зависимостей
 
-**Масштаб:** ориентир — до ~10⁶ `User` и ~10⁶ `Task` (и связанные агрегаты). Полный перебор — `listBatch` / `BatchUtils` + `listByIds`. Подробно: `Application/CLAUDE.md` → «Масштаб и batch-переборы»; эталон — `TaskGroupRecalculationService`.
+```
+Presentation  ──►  Application  ──►  Port  ◄──  Infrastructure
+                                  └──►  Shared/Utils
+```
+
+- `Application` **не импортирует** `Infrastructure` — только `Port/`.
+- `Infrastructure` реализует `Port/`, наружу отдаёт `Application/Model`.
+- `Presentation` читает `Application` и вызывает `*Service::execute`.
+- `Shared/Utils` — чистые статические хелперы, о доменах не знают.
+
+Проверка: `grep -rn "use App\\Infrastructure" api/src/Application` — пусто.
 
 ---
 
 ## Таблица суффиксов
 
-| Суффикс | Назначение | Слой | Пример |
-|---------|-----------|------|--------|
-| **Model** | Wire VO: request + response (JSON наружу), criteria, pagination, page / facts из port | Application | `UserUpdateModel`, `UserModel`, `UserRegisterResponseModel`, `UserPaginatedModel` |
-| **Entity** | Модель таблицы БД (Doctrine) | Infrastructure | `TaskEntity` |
-| **Enum** | PHP enum (**только Application**; в Domain — без суффикса) | Application | `FilterOperatorEnum` |
-| **Exception** | Доменное исключение | Domain | `TaskNotFoundException` |
-| **Event** | Доменное событие | Domain | `TaskCreatedEvent` |
-| **RepositoryInterface** | Контракт репозитория (Port) | Application | `UserRepositoryInterface` |
-| **Interface** | Любой другой контракт | Domain, Application | `CodedExceptionInterface`, `CacheInterface`, `ArrayableModelInterface` |
-| **Command** | Вход use case на **изменение** | Application | `CreateTaskCommand` |
-| **Query** | Вход use case на **чтение** | Application | `GetTaskQuery`, `SearchUsersQuery` |
-| **CommandHandler** | `Command → Model/void` | Application | `CreateTaskCommandHandler` |
-| **QueryHandler** | `Query → Model/void` | Application | `SearchUsersQueryHandler` |
-| **Mapper** | Domain ↔ Entity | Infrastructure | `UserMapper` |
-| **ModelMapper** | Domain → response Model | Application | `UserModelMapper` |
-| **Cache** | Политика ключей кэша; единственный потребитель `CacheInterface` в Application | Application | `TaskGroupCache` |
-| **Dispatcher** | Постановка async-работы: дедуп, нормализация, lock, dispatch Domain Event | Application | `TaskGroupRecalculationDispatcher` |
-| **Policy** | Предусловия use case: auth, uniqueness, IO; общие правила доступа | Application | `UpdateUserPolicy`, `TaskAccessPolicy` |
-| **Repository** | Реализация репозитория | Infrastructure | `DoctrineUserRepository` |
-| **Service** | Оркестрация (Application) или тех. реализация (Infrastructure) | Application, Infrastructure | `TaskGroupRecalculationService`, `RedisCacheService` |
-| **Provider** | Внешний ресурс | Infrastructure | `LexikTokenProvider` |
-| **Adapter** | Обёртка над библиотекой | Infrastructure | `SymfonyPasswordHasherAdapter` |
-| **MessageHandler** | Асинхронный обработчик Event | Infrastructure | `TaskCreatedMessageHandler` |
-| **Controller** | HTTP | Presentation | `UserController` |
-| **Console** | CLI | Presentation | `RecalculateTaskGroupsConsole` |
-| **Utils** | Статические утилиты | Utils | `UidUtils` |
+Каждый класс **в `Application/` и `Presentation/`** имеет ровно один суффикс,
+однозначно определяющий его роль.
+
+### Application
+
+| Суффикс | Назначение | Пример |
+|---------|-----------|--------|
+| **Model** | Wire VO: persistence, request, response, criteria, pagination, page | `UserModel`, `UserUpdateModel`, `UserPageModel`, `PaginationModel` |
+| **Enum** | Закрытое множество значений | `TaskStatusEnum`, `FilterOperatorEnum` |
+| **Exception** | Исключение use case с `codeId` | `TaskNotFoundException` |
+| **Event** | Факт для Messenger | `UserUpdatedEvent` |
+| **RepositoryInterface** | Контракт репозитория (Port) | `UserRepositoryInterface` |
+| **Interface** | Прочий контракт | `CacheInterface`, `ArrayableModelInterface` |
+| **Service** | Use case: оркестрация | `UserUpdateService` |
+| **Policy** | Предусловия use case (auth, uniqueness, exists) | `UpdateUserPolicy`, `TaskAccessPolicy` |
+| **Cache** | Политика ключей кэша | `TaskGroupCache` |
+| **Dispatcher** | Постановка async-работы: дедуп, lock, dispatch | `TaskGroupRecalculationDispatcher` |
+| **ModelMapper** | Persistence `*Model` → response `*Model` | `UserViewModelMapper`, `FileItemModelMapper` |
+
+### Infrastructure
+
+| Суффикс | Назначение | Пример |
+|---------|-----------|--------|
+| **Entity** | Модель таблицы БД (Doctrine) | `UserEntity` |
+| **Mapper** | `*Model` ↔ Entity | `UserMapper` |
+| **Repository** | Реализация `*RepositoryInterface` | `DoctrineUserRepository` |
+| **Adapter** | Обёртка над библиотекой | `LocalFileStorageAdapter`, `SymfonyMailerAdapter` |
+| **Provider** | Внешний ресурс | `LexikTokenProvider`, `SymfonyFileDownloadUrlProvider` |
+| **MessageHandler** | Асинхронный обработчик Event | `UserUpdatedMessageHandler` |
+| **Service** | Техническая реализация | `RedisCacheService` |
+
+### Presentation / Shared
+
+| Суффикс | Назначение | Пример |
+|---------|-----------|--------|
+| **Controller** | HTTP | `UserController` |
+| **Console** | CLI | `RecalculateTaskGroupsConsole` |
+| **Utils** | Статические утилиты | `UidUtils`, `BatchUtils` |
+
+### Без суффикса
+
+| Слой | Что | Пример |
+|------|-----|--------|
+| Application | Value Object — имя = Ubiquitous Language | `Email`, `Phone` |
+| Application | Событие без суффикса `Event` (отклонение, см. ниже) | `TaskCreated` |
+| Infrastructure | Framework-coupled имена | `SymfonyPasswordHasher`, `TwigEnvironmentFactory`, `SecurityUser` |
+| Infrastructure | Вспомогательные семейства Doctrine | `*EntityFetcher`, `*Applier`, `*DoctrineMap`, `Doctrine*Utils` |
+
+**Отклонения от правила в текущем коде** (не чинить здесь — фиксируются как
+change, если понадобится):
+
+- `TaskCreated` — событие без суффикса `Event`, в отличие от `UserUpdatedEvent`.
+- `SymfonyPasswordHasher` — обёртка над библиотекой без суффикса `Adapter`.
 
 ---
 
 ## Application: вход / выход / внутри
 
 ```
-Model (+ path/security) → Command / Query  →  Handler  →  Model | void
-                              ↕
-                         Domain
+HTTP array → *Model::fromArray → *Service::execute($model, …context) → response Model | void
+CLI        → new *Model(...)    → *Service::execute($model, …context) → response Model | void
 ```
 
-| Слой | Суффикс | Назначение | Выходит из Handler? |
-|------|---------|------------|---------------------|
-| **Command** / **Query** | Command, Query | Intent use case + Model + context | нет (вход) |
-| **Model** | Model | Request / response / pagination / criteria / page из port | **да** (response); request — нет |
-| **Enum** | Enum | Application enum (операторы, whitelist полей) | только как поле Model |
+| Слой | Роль | Выход наружу |
+|------|------|--------------|
+| **Model** | request + response (JSON) | да, response Model |
+| **Enum** | закрытое множество | только как поле Model |
+| **Service** | use case | **только** response Model \| void |
+| **Policy** | предусловия (auth, uniqueness, exists) | ничего (бросает исключение) |
+| **Port** | контракт к Infrastructure | — |
 
-Domain-агрегат / Domain VO (`User`, `Email`) **не** выходит из Handler. Перед возвратом — `*ModelMapper` → Model (примитивы / скаляры).
+`Action`/`Query`/`Lifecycle` — подпапки `Service/{Entity}/`, различаются
+входом, а не типом:
 
-**Enum в Model:** закрытое множество значений в поле Model — **не** `string`, а typed enum:
-- Domain enum (`TaskStatusEnum`, `NotificationTypeEnum`, …) — когда значение из UL / Domain;
-- Application `*Enum` (`FilterOperatorEnum`, …) — когда значение application-контракта (whitelist, meta).
+| Подпапка | HTTP | Вход | Выход |
+|----------|------|------|-------|
+| **Action** | create, update, delete, login | `execute(*Model?, …context)` | `*ViewModel` \| void |
+| **Query** | list / get / query | `execute(…)` | `*ViewModel`, list, page |
+| **Lifecycle** | не вход контроллера | свой метод (`after*Persisted`, `recalculate*`) | void |
 
-Примеры: `TaskModel::$status` → `TaskStatusEnum`; `NotificationPreferenceModel::$type` → `NotificationTypeEnum`; `list` каналов → `list<NotificationChannelEnum>`.
-
-```
-HTTP array → *Model::fromArray(...) → new Command|Query($model, …context) → Handler → Model
-CLI / tests → new *Model(...)        → new Command|Query($model, …context) → Handler → void|Model
-```
+Подробности — в [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md).
 
 ---
 
-## Domain vs Application
+## Model
 
-### Domain (без суффикса роли у UL-типов)
+Три роли в одном суффиксе `Model`, различаются папкой:
 
-```
-User.php                              # агрегат
-Task.php
-Common/ValueObject/Email.php          # shared VO
-Task/ValueObject/TaskName.php         # контекстный VO (когда появится)
-Task/Enum/TaskStatusEnum.php              # enum — не ValueObject/
-TaskGroup/Enum/TaskGroupStatusEnum.php
-```
+| Размещение | Роль | Пример |
+|-----------|------|--------|
+| `Model/{Entity}/` | Persistence — зеркало колонок, вход репозитория | `UserModel`, `TaskModel` |
+| `Model/{Entity}/Action/` | Request (запись) | `UserUpdateModel`, `TaskCreateModel` |
+| `Model/{Entity}/Read/` | Response (чтение) | `UserViewModel`, `TaskPageModel` |
+| `Model/Common/` | Общее: пагинация, сортировка, фильтры, meta | `PaginationModel`, `SearchQueryMetaModel` |
+| `Model/Http/` | Формат ошибки | `ErrorResponseModel` |
 
-### Application Model
-
-```
-Model/User/UserUpdateModel.php              # request write
-Model/User/UserLoginModel.php               # request
-Model/User/UserRegisterResponseModel.php    # response (коллизия с UserRegisterModel)
-Model/User/UserModel.php                    # response
-Model/User/UserPageModel.php                # list<UserModel> + page meta
-Model/User/UserPaginatedModel.php          # list<User> + total (из port)
-Model/Common/PaginationModel.php
-Model/User/UserFilterCriterionModel.php
-```
----
-
-## Domain Value Object
-
-1. Имя = Ubiquitous Language, **без** суффикса (`Email`, `TaskName`, не `EmailValueObject`)
-2. Все class VO — только в папке `ValueObject/`
-3. Общие — `Domain/Common/ValueObject/`; контекстные — `Domain/{Aggregate}/ValueObject/`
-4. **Запрет дублей и одинаковых коротких имён** по всему Domain (один `Email`, не `User\Email` + `Common\Email`)
-5. Enum **не** класть в `ValueObject/` — отдельно `Enum/`
-6. VO заводить при реальных инвариантах / поведении, не на каждое поле
-7. На границе наружу — `toString()` / скаляр в Mapper / ModelMapper
-
-```
-Domain/
-├── Common/
-│   └── ValueObject/
-│       └── Email.php
-├── User/
-│   ├── User.php
-│   └── Exception/
-└── Task/
-    ├── Task.php
-    ├── ValueObject/          # при необходимости
-    └── Enum/
-        └── TaskStatusEnum.php
-```
-
----
-
-## Вход API = Model → Command / Query
-
-Контроллер собирает typed Model из payload, оборачивает в Command/Query (+ path/security) и вызывает Handler. Валидацию полей не делает.
-
-`Presentation\Request` **нет**. Отдельный слой Request **нет** — payload = `*Model`.
-
-| Источник | Тип | Куда |
-|----------|-----|------|
-| body / query string | `array` → `*Model::fromArray` | `Command` / `Query` как `$model` |
-| path / security | уже `string` | отдельные аргументы конструктора Command/Query |
-
-`*Model::fromArray` — только wire → typed (типы / минимальный shape через `InputAssertUtils`), чтобы Model была type-valid.  
-Use-case contract без IO (whitelist sort/filter, cross-field) — при сборке Command/Query.  
-Preconditions с IO (auth, uniqueness, exists) — в `*Policy`; Handler вызывает Policy до domain-логики.  
-Доменные инварианты — в VO / агрегате.  
-Command/Query **не** перепроверяют типы полей Model.
-
-```php
-// только payload
-new RegisterUserCommand(UserRegisterModel::fromArray($this->requestPayload($request)));
-
-// payload + типизированный контекст
-new UpdateUserCommand(
-    UserUpdateModel::fromArray($this->requestPayload($request)),
-    userId: $id,
-    currentUserId: $this->getCurrentUserId(),
-);
-
-// без body — Model не нужен
-new DeleteUserCommand(userId: $id, currentUserId: $this->getCurrentUserId());
-```
-
-Правила Model-payload:
-1. Request: операция + `Model` (`UserUpdateModel`). Response: сущность + `Model` (`UserModel`); при коллизии — `*ResponseModel` (`UserRegisterResponseModel`).
-2. Даже одна Model в Command — ок (единый стиль).
-3. Get / List / Delete без body — без Model.
-4. `toArray()` — wire-ключи (для Integration / serde); array только на краю.
-
-Ключ текущего пользователя в Command — `currentUserId` (или `userId`, если это единственный actor-контекст сущности).
-
----
-
-## Нетипизированные данные
-
-`array` и `mixed` — **только на границе** (HTTP body, JSON decode, wire serde). Внутри Application, Domain, Handler, Policy, Service и тестов — typed **Model**, Domain VO, enum, Command / Query.
-
-| Где | Как |
-|-----|-----|
-| Presentation (контроллер) | `requestPayload()` → `*Model::fromArray` → Command / Query |
-| Application (Handler, Policy, Service) | typed Model, Domain — без `array<string, mixed>` в сигнатурах и полях |
-| CLI / Application tests | `new *Model(...)` — **не** `fromArray`, не хелперы с `array $overrides` |
-| Integration tests | `*Model::toArray()` — только для HTTP request body; assert — по response Model |
-
-**Избегать:**
-- payload / overrides как `array` между слоями и в тестовых хелперах;
-- `fromArray` вне wire-границы (контроллер, serde, тесты парсинга Model);
-- «магические» ключи массива там, где уже есть конструктор Model / Command / Query.
-
-`*Model::fromArray` — parse wire → typed Model, не универсальный способ собрать объект в коде.
-
----
-
-## List vs Query (HTTP)
-
-| Метод | HTTP | Use case | Назначение |
-|-------|------|----------|------------|
-| `list()` | `GET /api/{resource}` | `List*Query` | простой список |
-| `query()` | `GET /api/{resource}/query` | `Search*Query` | pagination + criteria + sort |
-
-`list` фильтрами не расширяем. Criteria — только в `Search*`.
-
-Пилот: `UserController::query()` → `SearchUsersQuery`.
-
----
-
-## Command vs Query
-
-| Тип | Когда | Пример |
-|-----|-------|--------|
-| Command | create, update, delete, … | `CreateTaskCommand` |
-| Query | get, list, search | `GetUserQuery`, `SearchUsersQuery` |
-
-```
-SearchUsersQuery → SearchUsersQueryHandler → UserPageModel
-ListUsersQuery   → ListUsersQueryHandler → UserModel[]
-DeleteUserCommand → DeleteUserCommandHandler → void
-```
-
----
-
-## Enum
-
-| Слой | Папка | Суффикс | Пример |
-|------|-------|---------|--------|
-| Domain | `Domain/{Aggregate}/Enum/` | **нет** | `TaskStatusEnum`, `TaskGroupStatusEnum`, `AssetTypeEnum` |
-| Application | `Application/Enum/` | **Enum** | `FilterOperatorEnum`, `UserFilterFieldEnum`, `UserSortFieldEnum` |
-
-Не класть enum внутрь `Model/` / `ValueObject/`.
-
-В полях **Model** — ссылка на Domain enum или Application `*Enum` (не `string` для закрытого множества). См. «Enum в Model» выше.
+- Persistence `*Model` наружу не сериализуется — только `Read/*ViewModel`.
+- Entity не покидают Infrastructure.
+- Enum в поле Model — typed enum, не `string`.
 
 ---
 
 ## Mapper
 
-| Суффикс | Направление | Слой |
-|---------|-------------|------|
-| **Mapper** | Domain ↔ Entity | Infrastructure |
-| **ModelMapper** | Domain → response Model | Application |
+| Слой | Суффикс | Направление | Пример |
+|------|---------|-------------|--------|
+| Application | `*ModelMapper` | persistence `*Model` → response `*Model` | `UserViewModelMapper` |
+| Infrastructure | `*Mapper` | `*Model` ↔ Entity | `UserMapper` |
+
+`FileItemModelMapper` — особый случай: `fileId` / `fileIds` → `FileItemModel`
+(собирает подписанный URL).
 
 ---
 
-## Cache / Service / Dispatcher / Policy / Port
+## Port
 
-- `CacheInterface` — только в `*Cache`
-- Application `*Service` — синхронная оркестрация без DQL
-- Application `*Dispatcher` — решение «ставить ли async-задачу» (дедуп, нормализация, lock) + `MessageBusInterface::dispatch`; не выполняет работу (`*Service`) и не обрабатывает очередь (`*MessageHandler`)
-- Application `*Policy` — preconditions use case (auth, uniqueness, exists) и shared access rules; бросает Domain Exception; не выполняет persist и не возвращает response Model
-- Публичный метод `*Policy` с обращением к Repository, Port (кроме pure config), filesystem, HTTP или cache — суффикс **`Io`** (`assertEmailAvailableIo`); без внешних вызовов — без суффикса (`assertSelfAccess`)
-- Criteria applier / QueryBuilder — Infrastructure
-- Persist / lookup / search — **Application Port** (`*RepositoryInterface`); Domain не содержит репозиториев
+Контракты к Infrastructure — в `Application/Port/`, реализации — в
+`Infrastructure/`. Persist / lookup / search — один `*RepositoryInterface`
+на сущность.
 
----
+Возврат из репозитория — по роли метода:
 
-## Правила по слоям
+| Возврат | Когда | Пример |
+|---------|-------|--------|
+| persistence `*Model` | write / load для изменения | `findOrFail` → `UserModel` |
+| response / facts Model | результат чтения, не равный строке таблицы | `search` → `UserPaginatedModel` |
+| скаляр / void | факт, мутация связи | `existsByEmail`, `attachTask` |
 
-### Application
-
-```
-Application/
-├── Command/
-├── Query/
-├── Model/          # request + response + pagination/criteria + page из port
-│   ├── Common/
-│   ├── Http/
-│   ├── User/       # UserUpdateModel, UserModel, UserRegisterResponseModel, …
-│   └── Task/
-├── Enum/           # отдельно от Model
-│   ├── Common/
-│   └── User/
-├── Mapper/
-├── Cache/
-├── Dispatcher/
-├── Policy/
-├── Service/
-└── Port/
-    ├── User/
-    │   └── UserRepositoryInterface.php
-    ├── Task/
-    ├── TaskGroup/
-    ├── Asset/
-    └── File/
-```
-
-### Presentation
-
-```
-Controller: list / query / get / mutations
-Console: CLI
-# нет Presentation/Request — вход через Command|Query::fromArray
-```
+Entity наружу не выходит.
 
 ---
 
-## Search / criteria
+## Cache / Dispatcher / Policy
 
-1. `Search{Entity}Query` — pagination + criteria (+ sort) + security context  
-2. `*FilterCriterionModel::fromArrayList($data)` → `FilterCriteriaUtils::fromArray` + entity builder; поле через `FilterFieldUtils::isAllowed($name, *FilterFieldEnum::class)`  
-3. Common type → filter VO — `FilterFieldTypeEnum::fromOperatorMap()`; entity-specific filters — `match ($field)` в `*FilterCriterionModel`  
-4. Sort: `SortModel::fromArray` только при наличии `sort` в wire; иначе default в `Search*Query`; whitelist — `SortFieldUtils` + `*SortFieldEnum::values()`
-5. Единый wire Model — `ArrayableModelInterface`; список criteria — `ArrayableModelListInterface` (`fromArrayList` / `toArrayList`); декодирование ответа — `fromArray`  
-
-6. Filter VO — `Application/Model/Common/Filter/` (+ `toOperatorMap()` для wire)  
-7. Операторы / поля — `Application/Enum/`  
-8. Port `*RepositoryInterface::search` принимает list criteria → page `*Model`  
-9. Infrastructure: `*CriteriaApplier` (цикл по list) + Doctrine map  
+- `CacheInterface` — только в `*Cache` (`TaskGroupCache`). `*Dispatcher` берёт
+  lock через `*Cache`, а не через `CacheInterface` напрямую.
+- `*Dispatcher` — решает «ставить ли async-задачу» (дедуп, нормализация,
+  lock) и делает `MessageBusInterface::dispatch`. Работу не выполняет
+  (`*Service`), очередь не обрабатывает (`*MessageHandler`).
+- `*Policy` — предусловия use case: auth, uniqueness, exists, use-case
+  contract. Бросает `Application/Exception`. Не персистит и не возвращает
+  response Model.
+- Метод `*Policy` с обращением к Repository, Port, filesystem, HTTP или
+  cache — суффикс **`Io`** (`assertEmailAvailableIo`); без внешних вызовов —
+  без суффикса (`assertSelfAccess`).
 
 ---
 
-## Миграция
+## Нетипизированные данные
 
-| Было | Станет |
-|------|--------|
-| слой Dto | убран; request + response — единый `Model/` (`*ResponseModel` при коллизии имён) |
-| `Command::fromArray` с полями body | `*Model::fromArray` + `new Command($model, …context)` |
-| criteria в Domain | Application Model + Port |
-| `*RepositoryInterface` в Domain | Application `Port/` |
-| `list` с фильтрами | отдельный `query` + `Search*` |
-| Domain enum без суффикса (`TaskGroupStatus`) | с суффиксом `*Enum` (`TaskGroupStatusEnum`) |
-| примитив с доменными правилами | Domain `ValueObject/` |
+`array` и `mixed` — **только на границе** (HTTP body, JSON decode, wire
+serde). Внутри Application, Policy, Service и тестов — typed Model, VO, enum.
+
+| Где | Как |
+|-----|-----|
+| Presentation (контроллер) | `requestPayload()` → `*Model::fromArray` → `*Service::execute` |
+| Application (Service, Policy) | typed Model, VO — без `array<string, mixed>` в сигнатурах и полях |
+| CLI / Application-тесты | `new *Model(...)` — **не** `fromArray`, не хелперы с `array $overrides` |
+| Integration-тесты | `*Model::toArray()` — только для тела HTTP-запроса |
+
+**Избегать:** payload / overrides как `array` между слоями; `fromArray` вне
+wire-границы; «магические» ключи массива там, где уже есть конструктор Model.
+
+---
+
+## list vs query (HTTP)
+
+| Метод | HTTP | Use case | Назначение |
+|-------|------|----------|-----------|
+| `list()` | `GET /api/{resource}` | `*ListQueryService` | простой список |
+| `query()` | `GET /api/{resource}/query` | `*SearchQueryService` | pagination + criteria + sort |
+
+`list` фильтрами не расширяем. Criteria — только в `Search*`.
+Пилот: `UserController::query()` → `UserSearchQueryService`.
+
+---
+
+## Масштаб
+
+Ориентир — до ~10⁶ `User` и ~10⁶ `Task`. Полный перебор — `listBatch` /
+`BatchUtils` + `listByIds`, без `listAll()`. Эталон — `TaskGroupRecalculationService`.
+Подробно — в [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md) → «Масштаб и batch-переборы».
 
 ---
 
 ## Чеклист
 
-1. Слой и **один** суффикс (кроме Domain UL: агрегат / VO / Domain enum)  
-2. Handler наружу — **только Model \| void**
-3. Payload — `*Model::fromArray`; Command/Query = intent + Model + context
-4. Application Model — только внутри Application; Domain VO — только в Domain
-5. Domain class VO — `ValueObject/`, уникальное UL-имя; enum — `Enum/`
-6. Вход — Command/Query; `list` ≠ `Search*`/`query`
-7. `*RepositoryInterface` — только в `Application/Port/`; возврат — Domain / Model / скаляр по роли метода (см. `Application/CLAUDE.md` → Port)
-8. `CacheInterface` — только в `*Cache`
-9. Async-постановка с правилами — `*Dispatcher` в `Application/Dispatcher/`, не в Handler и не в `*Service`
-10. Preconditions с IO / auth — `*Policy` в `Application/Policy/`; Handler не содержит длинных цепочек `if/throw`; метод Policy с I/O — суффикс `Io`
-11. DQL / CriteriaApplier — Infrastructure
-12. `array` / `mixed` — только wire-граница; внутри — Model / VO; в Application tests — `new *Model(...)`, не `fromArray` и не `array $overrides`
-13. Закрытое множество в поле Model — Domain enum или Application `*Enum`, не `string`
-14. Перебор больших коллекций (User/Task ~10⁶) — `listBatch` / batch (см. `Application/CLAUDE.md` → Масштаб)
+1. Слой и **один** суффикс (кроме VO и framework-coupled имён Infrastructure)
+2. `*Service::execute` наружу — **только** response Model \| void
+3. Payload — `*Model::fromArray`; `array`/`mixed` — только wire-граница
+4. Persistence `*Model` отдельно от request (`Action/`) и response (`Read/`)
+5. Enum — `Application/Enum/`; в полях Model — typed enum, не `string`
+6. VO — `Application/ValueObject/`, уникальное короткое имя
+7. `list` без criteria; фильтры — только в `query`
+8. `*RepositoryInterface` — только в `Application/Port/`; Entity наружу не выходит
+9. `CacheInterface` — только в `*Cache`
+10. Async-постановка — `*Dispatcher`; эффект после commit — Lifecycle или `*MessageHandler`
+11. Preconditions с IO / auth — `*Policy`; метод с I/O — суффикс `Io`
+12. DQL / CriteriaApplier — только в Infrastructure
+13. Межагрегатный `onDelete: CASCADE` — нет; `cascade remove` — только внутри одного агрегата
+14. Перебор больших коллекций — `listBatch` / `BatchUtils` + `listByIds`
 
 ---
 
-## Тесты
+## Чего в этом документе нет
 
-Соглашения по `tests` (Integration-контроллеры: Get / Write / Delete / Query) — см. `tests/CLAUDE.md`.  
+- **Слоя `Domain/`** — нет и не планируется; см. «Слои».
+- **`Command` / `Query` / `*CommandHandler` / `*QueryHandler`** — вход use case'а
+  это `*Model` + контекст, обёртка в отдельный класс не используется.
+- **`*RepositoryInterface` в Domain** — репозитории только в `Application/Port/`.
+- **Presentation/Request** — отдельного слоя нет; payload = `*Model`.

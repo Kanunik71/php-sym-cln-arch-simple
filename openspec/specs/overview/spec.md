@@ -36,17 +36,17 @@ The API SHALL писать в БД через репозитории (Port → D
 - Схема данных (обзор): `users` ──< `assets` / `files` / `task_groups` / `user_notification_preferences` / `refresh_tokens` (явное удаление при удалении пользователя); `users` >──< `tasks` (`task_users`, unique task_id+user_id); `users` >── `files` (avatar, `ON DELETE SET NULL`); `tasks` ──< `tasks` (parent, `SET NULL`); `tasks` >──< `assets` (`asset_task`, CASCADE) и >──< `task_groups` (`task_group_task`, CASCADE); `assets` >──< `files` (`asset_file`, position). Полные колонки — миграция `api/migrations/Version20260930100000.php`.
 - Глоссарий: Task (задача, может иметь `parentId` — подзадача); Task user (участник `task_users`, свой статус); Task group (статус вычисляется по составу); Asset (объект с ценой и типом, связан с задачами и файлами); File (`Temporary`/`Permanent`); Preference (настройка уведомлений по типу); Transactional type (обязательное уведомление); Debounce lock (кэш-lock от дублей пересчёта).
 - Асинхронность (обзор): `TaskCreated` — только лог; `TaskGroupsRecalculationRequestedEvent` — пересчёт групп; `UserRegisteredEvent` — email; `UserUpdatedEvent` — email/SMS по настройке.
-- Известные расхождения с целевой архитектурой (нет слоя `Domain`, naming mapper'ов и т.п.) — в Notes соответствующих спек.
+- Известные расхождения с целевой архитектурой — в Notes соответствующих спек.
 
-## Источник истины и целевая архитектура
+## Источник истины и архитектура
 
 - Спеки в `openspec/specs/` описывают **фактическое поведение** кода (`api/src`)
   и тестов (`api/tests`) — это источник истины о текущем поведении системы.
 - `api/CLAUDE.md` (+ `api/src/Application/CLAUDE.md`,
   `api/src/Infrastructure/CLAUDE.md`, `api/tests/CLAUDE.md`) описывает
-  **целевое состояние** архитектуры. Он используется при проектировании
-  изменений, а не как описание текущего кода.
+  **текущие архитектурные соглашения**: слои, именование, вход/выход use case'ов.
+  Он используется при проектировании изменений, а не как описание поведения.
 - Changes в `openspec/changes/` описывают будущие изменения (дельты
   ADDED/MODIFIED/REMOVED) по процессу OpenSpec: proposal → specs → design → tasks.
-- Расхождения кода с `CLAUDE.md` фиксируются в `## Notes` спек и при
-  необходимости становятся отдельными changes.
+- Расхождения фактического поведения с задокументированным контрактом
+  фиксируются в `## Notes` спек и при необходимости становятся отдельными changes.

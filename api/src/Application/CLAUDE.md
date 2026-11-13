@@ -245,8 +245,7 @@ $this->assetLifecycleService->delete($asset);
 
 При удалении корня с несколькими зависимыми агрегатами (`UserDeleteService`) — явная оркестрация детей (assets, owned files, preferences, снятие пользователя с task), а не FK cascade. FK RESTRICT / violation = сигнал, что use case неполный.
 
-Политика mapping: `api/src/Infrastructure/CLAUDE.md` → Cascade deletes;
-`.cursor/rules/doctrine-cascade-deletes.mdc`.
+Политика mapping: `api/src/Infrastructure/CLAUDE.md` → Cascade deletes.
 
 ---
 

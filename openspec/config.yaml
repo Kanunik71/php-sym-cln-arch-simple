@@ -10,14 +10,17 @@ context: |
   `openspec/` (specs, changes). Scale target ~10^6 users/tasks.
 
   Architecture: Clean Architecture layers — Presentation (Controller/Console)
-  → Application (Model → Service::execute, Action/Query, Policy, ViewModelMapper,
-  Dispatcher) → Port (interfaces) → Infrastructure (Doctrine, adapters).
-  Target architecture rules live in `api/CLAUDE.md` (+ `api/src/Application/CLAUDE.md`,
+  → Application (Model → Service::execute, Action/Query/Lifecycle, Policy,
+  ViewModelMapper, Dispatcher) → Port (interfaces) → Infrastructure (Doctrine,
+  adapters). There is no `Domain/` layer: persistent model, VO, enum, events and
+  exceptions live in `Application/`.
+  Architecture rules live in `api/CLAUDE.md` (+ `api/src/Application/CLAUDE.md`,
   `api/src/Infrastructure/CLAUDE.md`, `api/tests/CLAUDE.md`) — read relevant
   sections before writing designs/tasks; specs must not duplicate them, only reference.
   Specs describe the ACTUAL behavior of the code and tests (source of truth);
-  `api/CLAUDE.md` describes the TARGET state. Known gaps between CLAUDE.md and
-  code are recorded in the `## Notes` section of the affected specs.
+  `api/CLAUDE.md` describes the CURRENT architecture. Behavioral gaps between
+  code and the documented contract are recorded in the `## Notes` section of the
+  affected specs.
 
   specs are behavior-only: observable contracts (HTTP method/path, JSON in/out,
   status and error codes with `codeId`, CLI commands, async events, cache/locks).
@@ -50,7 +53,7 @@ rules:
     - Requirements SHALL describe the observable contract through JSON field names, HTTP statuses, `codeId` values, event names, CLI commands and cache/lock keys — not through PHP class names; `## Notes` MAY cite implementation classes and source paths as traceability pointers
     - Reference other domains (auth, files, notifications) instead of duplicating their rules
   design:
-    - "Map design to layers: Domain (VO/enum) → Application (Service/Action/Query/Model/Policy) → Port → Infrastructure (Doctrine/adapter)"
+    - "Map design to layers: Application (Service/Model/Policy/Mapper, VO/enum) → Port → Infrastructure (Doctrine/adapter); there is no Domain layer"
     - Reference concrete sections of api/CLAUDE.md instead of restating architecture
     - List file changes, DB migrations, async messages, cache keys, and tests
     - design.md describes the delta of a change only; the standing contracts of a domain stay in its umbrella spec.md
