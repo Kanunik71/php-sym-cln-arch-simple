@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Presentation\Controller\User;
 
 use App\Application\Exception\File\FileNotFoundException;
-use App\Application\Exception\File\InvalidFileStateException;
 use App\Application\Exception\File\UnauthorizedFileAccessException;
 use App\Application\Exception\User\UnauthorizedUserAccessException;
 use App\Application\Exception\User\UserAlreadyExistsException;
@@ -105,7 +104,7 @@ final class UserController extends BaseController
             return ErrorResponseUtils::json($exception, Response::HTTP_CONFLICT);
         } catch (FileNotFoundException $exception) {
             return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
-        } catch (UnauthorizedFileAccessException|InvalidFileStateException $exception) {
+        } catch (UnauthorizedFileAccessException $exception) {
             return ErrorResponseUtils::json($exception, Response::HTTP_FORBIDDEN);
         } catch (InvalidArgumentException $exception) {
             return ErrorResponseUtils::json($exception, Response::HTTP_BAD_REQUEST);

@@ -7,7 +7,6 @@ namespace App\Presentation\Controller\Asset;
 use App\Application\Exception\Asset\AssetNotFoundException;
 use App\Application\Exception\Asset\UnauthorizedAssetAccessException;
 use App\Application\Exception\File\FileNotFoundException;
-use App\Application\Exception\File\InvalidFileStateException;
 use App\Application\Exception\File\UnauthorizedFileAccessException;
 use App\Application\Model\Asset\Action\AssetCreateModel;
 use App\Application\Model\Asset\Action\AssetUpdateModel;
@@ -64,7 +63,7 @@ final class AssetController extends BaseController
             );
         } catch (FileNotFoundException $exception) {
             return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
-        } catch (UnauthorizedFileAccessException|InvalidFileStateException $exception) {
+        } catch (UnauthorizedFileAccessException $exception) {
             return ErrorResponseUtils::json($exception, Response::HTTP_FORBIDDEN);
         } catch (InvalidArgumentException $exception) {
             return ErrorResponseUtils::json($exception, Response::HTTP_BAD_REQUEST);
@@ -105,7 +104,7 @@ final class AssetController extends BaseController
             return ErrorResponseUtils::json($exception, Response::HTTP_FORBIDDEN);
         } catch (FileNotFoundException $exception) {
             return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
-        } catch (UnauthorizedFileAccessException|InvalidFileStateException $exception) {
+        } catch (UnauthorizedFileAccessException $exception) {
             return ErrorResponseUtils::json($exception, Response::HTTP_FORBIDDEN);
         } catch (InvalidArgumentException $exception) {
             return ErrorResponseUtils::json($exception, Response::HTTP_BAD_REQUEST);

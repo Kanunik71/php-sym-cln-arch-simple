@@ -18,7 +18,6 @@ enum ErrorCodeEnum: string
     case UnauthorizedAssetAccess = 'UNAUTHORIZED_ASSET_ACCESS';
     case FileNotFound = 'FILE_NOT_FOUND';
     case UnauthorizedFileAccess = 'UNAUTHORIZED_FILE_ACCESS';
-    case InvalidFileState = 'INVALID_FILE_STATE';
     case TaskGroupNotFound = 'TASK_GROUP_NOT_FOUND';
     case UnauthorizedTaskGroupAccess = 'UNAUTHORIZED_TASK_GROUP_ACCESS';
     case ValidationError = 'VALIDATION_ERROR';
