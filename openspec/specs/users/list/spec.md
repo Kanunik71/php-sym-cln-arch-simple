@@ -2,12 +2,12 @@
 
 ## Purpose
 
-Постраничный список пользователей без фильтров: `GET /api/users` отдаёт страницу с конвертом `{items, total, page, perPage}` (конверт — в [platform](../../platform/spec.md)), отсортированную по `createdAt DESC`, с пагинацией `page`/`perPage` (по умолчанию 1/20, максимум 100).
+Постраничный список пользователей без фильтров: `GET /api/users` отдаёт страницу с конвертом `{items, total, page, perPage}` (конверт — в [query](../../query/spec.md)), отсортированную по `createdAt DESC`, с пагинацией `page`/`perPage` (по умолчанию 1/20, максимум 100).
 
 ## Requirements
 
 ### Requirement: Страница списка пользователей
-The API SHALL для аутентифицированного пользователя (см. [auth](../../auth/spec.md)) возвращать на `GET /api/users` страницу пользователей с конвертом `{items, total, page, perPage}` (конверт — в [platform](../../platform/spec.md)), где `items` — профили в составе из требования «Состав профиля в ответе» в [users](../spec.md).
+The API SHALL для аутентифицированного пользователя (см. [auth](../../auth/spec.md)) возвращать на `GET /api/users` страницу пользователей с конвертом `{items, total, page, perPage}` (конверт — в [query](../../query/spec.md)), где `items` — профили в составе из требования «Состав профиля в ответе» в [users](../spec.md).
 
 #### Scenario: Список пользователей
 - **GIVEN** пользователь аутентифицирован

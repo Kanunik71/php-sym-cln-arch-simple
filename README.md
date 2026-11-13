@@ -40,7 +40,7 @@ openspec/
 ├── README.md        # индекс: карта доменов, схема данных, глоссарий
 ├── specs/           # источник истины: как система работает СЕЙЧАС
 │   ├── auth/ users/ tasks/ task-groups/ assets/ files/
-│   ├── notifications/ platform/   (spec.md в каждой)
+│   ├── notifications/ wire/ errors/ query/ async/   (spec.md в каждой)
 └── changes/         # изменения в работе + archive/ (история)
 ```
 

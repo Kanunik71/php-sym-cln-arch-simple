@@ -30,6 +30,16 @@ The API SHALL возвращать файл в JSON-объекте с полям
 - **WHEN** клиент читает метаданные файла
 - **THEN** JSON содержит поля `id`, `ownerId`, `originalName`, `mimeType`, `sizeBytes`, `status`, `createdAt`, `updatedAt`; поля `storageKey` нет
 
+### Requirement: Хранение файлов вне `public/`
+
+The API SHALL хранить файлы в локальном каталоге вне `public/`; доступ к содержимому SHALL быть возможен только через контроллер (подписанный download URL, см. [download](download/spec.md)), прямой запрос к storage-пути через nginx SHALL давать отказ.
+
+#### Scenario: Прямой доступ к storage
+
+- **GIVEN** известен путь файла в каталоге storage
+- **WHEN** запрос идёт через nginx без контроллера
+- **THEN** файл недоступен
+
 ## Notes
 
 - storage: `LocalFileStorageAdapter` (`FileStorageInterface`: `write`, `readStream`, `move`, `delete`); ключи `tmp/{id}` и `permanent/{id}`; каталог `app.file_storage.path`, вне `public/`, UUID без подписи не скачивается.

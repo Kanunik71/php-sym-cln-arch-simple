@@ -34,5 +34,5 @@ The API SHALL возвращать: `GET /api/assets` — страницу **с�
 
 ## Notes
 
-- Состав ассета — в [assets](../spec.md); конверт постраничного ответа — в [platform](../../platform/spec.md); доступ к задаче — в [tasks/access](../../tasks/access/spec.md).
+- Состав ассета — в [assets](../spec.md); конверт постраничного ответа — в [query](../../query/spec.md); доступ к задаче — в [tasks/access](../../tasks/access/spec.md).
 - Источники: `api/src/Presentation/Controller/Asset/AssetController.php`, `api/src/Presentation/Controller/Task/TaskAssetController.php`, `api/src/Application/Service/Asset/Query/AssetListQueryService.php`, `api/src/Application/Service/Asset/Query/AssetQueryService.php`, `api/src/Application/Service/Asset/Query/AssetListTaskQueryService.php`, `api/tests/Integration/Asset/AssetControllerTest.php`.

@@ -26,7 +26,7 @@ The API SHALL возвращать для типа без строки пере�
 
 - Каталог дефолтов (`defaults()`/`defaultFor()`): `user_updated = {enabled: true, email, sms}`; `user_registered` — transactional; строка БД (`user_notification_preferences`, unique `owner_id+type`) хранит только переопределение; регистрация строк не создаёт. `NotificationTypeEnum`: `user_registered`, `user_updated`; `NotificationChannelEnum`: `email`, `sms`.
 - Отправка (`NotificationService::notify`): transactional → `[email]`; иначе строка или дефолт; без каналов — выход. Шаблоны `api/templates/notification/{type}.{channel}.twig` (`user_registered.email`, `user_updated.email`, `user_updated.sms`); переменные `fname`, `lname`, `email`. Email — Symfony Mailer (`app.mailer_from`), HTML; SMS — заглушка в лог (`LoggingSmsSenderAdapter`).
-- События маршрутизируются в `async` (RabbitMQ; тестах `in-memory://`), retry — общий для транспорта: 3 попытки, delay 1 с, multiplier 2, затем `failed` (см. [platform](../platform/spec.md)).
+- События маршрутизируются в `async` (RabbitMQ; тестах `in-memory://`), retry — общий для транспорта: 3 попытки, delay 1 с, multiplier 2, затем `failed` (см. [async](../async/spec.md)).
 - `codeId`: `VALIDATION_ERROR` (400) — невалидные JSON/`type`/`channels`, transactional-тип; `401` — нет JWT.
 - Реализация: `PUT` сохраняет каждый пункт отдельной записью без общей транзакции — при сбое на середине ранее сохранённые пункты остаются применёнными.
 - Реализация: SMS отправляется заглушкой — сообщение пишется в лог вместо вызова провайдера.

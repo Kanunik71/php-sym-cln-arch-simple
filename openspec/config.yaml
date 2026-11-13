@@ -33,10 +33,11 @@ context: |
   (capability id `<domain>/<action>`). Delta specs for such a domain live in
   `openspec/changes/<change>/specs/<domain>/<action>/spec.md`. The umbrella
   `spec.md` stays a valid capability: it needs its own `## Purpose` and
-  `## Requirements`. `platform` is cross-cutting and stays single-file — it
-  describes contracts shared by several domains. Index documentation (map of
-  domains, schema relations, glossary) lives in `openspec/README.md` and is not
-  a capability.
+  `## Requirements`. Cross-cutting capabilities `wire` (формат полей), `errors`
+  (формат ошибок), `query` (листинги/поиск) и `async` (RabbitMQ, планировщик)
+  are single-file — they describe contracts shared by several domains. Index
+  documentation (map of domains, schema relations, glossary) lives in
+  `openspec/README.md` and is not a capability.
 
   Verification commands (run from `api/`; in Docker:
   `docker compose -f ../docker/docker-compose.yml exec php <cmd>`):

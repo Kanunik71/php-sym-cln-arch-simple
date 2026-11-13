@@ -6,6 +6,22 @@
 
 ## Requirements
 
+### Requirement: Модель доступа
+
+The API SHALL требовать JWT для всех `/api/*` кроме `/api/auth/*` (маршруты домена auth публичные, JWT не проверяется); все пользователи имеют только `ROLE_USER`, поля роли в БД нет; worker (`messenger-worker`) и CLI (`app:*`) работают по тем же правилам приложения — отдельных ролей и административного bypass не существует.
+
+#### Scenario: Доступ анонима
+
+- **GIVEN** нет JWT
+- **WHEN** любой `/api/*` вне `/api/auth/*`
+- **THEN** `401` с `codeId = INVALID_CREDENTIALS`
+
+#### Scenario: Успешный JWT
+
+- **GIVEN** валидный JWT (HS256; claims `username` = userId, `email`)
+- **WHEN** любой защищённый `/api/*`
+- **THEN** пользователь загружается по `id`, `getCurrentUserId()` возвращает userId
+
 ### Requirement: Политика пароля
 The API SHALL требовать пароль длиной 6–72 байта (непустой; пробелы по краям сохраняются) при регистрации и при смене пароля, иначе `400`, `codeId = VALIDATION_ERROR`.
 
@@ -26,6 +42,7 @@ The API SHALL выдавать refresh-токен в формате `rt_` + 32 �
 ## Notes
 
 - Реализация: уникальность `email` обеспечивается проверкой `existsByEmail` в Policy и `UNIQUE`-constraint на колонке; при гонке между проверкой и записью возможен `500` вместо `409 USER_ALREADY_EXISTS`.
+- Firewall: публичный `api_auth` (`security: false`) — только `/api/auth/*`; на `/api` — JWT-аутентификация (см. `api/config/packages/security.yaml`). Тело ошибки и fallback `401 → INVALID_CREDENTIALS` — в [errors](../errors/spec.md).
 - Валидация полей: `email` — trim/lowercase/`FILTER_VALIDATE_EMAIL`/≤255; `fname`/`lname` — trim, пусто → `null`, ≤100; `phone` — E.164, ≤20. `codeId`: `VALIDATION_ERROR` (400), `USER_ALREADY_EXISTS` (409), `INVALID_CREDENTIALS` (401), `INVALID_REFRESH_TOKEN` (401).
 - Ротация токена — атомарный `UPDATE ... WHERE revoked_at IS NULL`.
 - Access-токен после logout остаётся валиден до истечения TTL (≤900 с).

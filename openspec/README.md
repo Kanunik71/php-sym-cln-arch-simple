@@ -18,7 +18,15 @@
 | [assets](specs/assets/spec.md) | ассеты, изображения, привязка к задачам | [create](specs/assets/create/spec.md), [images](specs/assets/images/spec.md), [progress](specs/assets/progress/spec.md), [view](specs/assets/view/spec.md), [binding](specs/assets/binding/spec.md), [update](specs/assets/update/spec.md) |
 | [files](specs/files/spec.md) | загрузка, скачивание, временные файлы | [upload](specs/files/upload/spec.md), [promote](specs/files/promote/spec.md), [metadata](specs/files/metadata/spec.md), [download](specs/files/download/spec.md), [cleanup](specs/files/cleanup/spec.md) |
 | [notifications](specs/notifications/spec.md) | настройки и отправка | [preferences](specs/notifications/preferences/spec.md), [delivery](specs/notifications/delivery/spec.md) |
-| [platform](specs/platform/spec.md) | JWT, ошибки, query, async, кэш, batch | — (сквозной, single-file) |
+
+Сквозные (single-file, без подразделов):
+
+| Capability | Что внутри |
+|------------|------------|
+| [wire](specs/wire/spec.md) | формат идентификаторов (UUID v7) и дат (ATOM) в контракте |
+| [errors](specs/errors/spec.md) | конверт `{error, codeId}`, fallback-маппинг, невалидный JSON и UUID в path |
+| [query](specs/query/spec.md) | пагинация, сортировка, фильтры, конверт `{items, total, page, perPage}` |
+| [async](specs/async/spec.md) | RabbitMQ, retry и `failed`, планировщик |
 
 ## Схема данных (обзор)
 
@@ -30,9 +38,22 @@
 `tasks` >──< `assets` (`asset_task`, CASCADE) и >──< `task_groups` (`task_group_task`, CASCADE);
 `assets` >──< `files` (`asset_file`, position).
 
-Перечень таблиц, FK-политики и `codeId` whitelist — в
-[`platform/spec.md`](specs/platform/spec.md#notes). Полные колонки —
-миграция `api/migrations/Version20260930100000.php`.
+Таблицы: `users`, `files`, `assets`, `asset_file`, `asset_task`, `tasks`,
+`task_users`, `task_groups`, `task_group_task`, `user_notification_preferences`,
+`refresh_tokens`. FK-политики: `asset_task`, `task_group_task` — CASCADE;
+`tasks.parent_id`, `users.avatar_file_id` — SET NULL; остальные — default/RESTRICT.
+Полные колонки — миграция `api/migrations/Version20260930100000.php`.
+Docker `php` при `AUTO_MIGRATE=1` выполняет миграции при старте; worker — `AUTO_MIGRATE=0`.
+
+## Окружение
+
+- docker-compose: nginx 8080→80, php (build), mysql :3306, redis :6380,
+  rabbitmq :5673/:15673; `messenger-worker` — профиль `workers`.
+- Env: `APP_SECRET`, `JWT_SECRET`, `DATABASE_URL`, `REDIS_URL`,
+  `MESSENGER_TRANSPORT_DSN`, `MESSENGER_FAILURE_TRANSPORT_DSN`, `MAILER_FROM`,
+  `SCHEDULER_*_CRON`.
+- Кэш: Redis (`REDIS_URL`) в prod, array-кэш в тестах; ключи debounce-lock
+  пересчёта групп — в [task-groups](specs/task-groups/spec.md) → Notes.
 
 ## Глоссарий
 

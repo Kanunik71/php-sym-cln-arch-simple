@@ -17,5 +17,5 @@ The API SHALL предоставлять `app:task-groups:recalculate <id>` дл
 
 ## Notes
 
-- Правила вычисления статуса и debounce-lock — в [status](../status/spec.md); планировщик — в [platform](../../platform/spec.md).
+- Правила вычисления статуса и debounce-lock — в [status](../status/spec.md); планировщик — в [async](../../async/spec.md).
 - Источники: `api/src/Presentation/Console/TaskGroup/RecalculateTaskGroupsConsole.php`, `api/src/Application/Service/TaskGroup/Lifecycle/TaskGroupRecalculateService.php`.

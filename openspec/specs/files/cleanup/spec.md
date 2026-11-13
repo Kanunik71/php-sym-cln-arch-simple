@@ -21,6 +21,6 @@ The API SHALL удалять только `Temporary` файлы старше 24
 
 ## Notes
 
-- Состав файла — в [files](../spec.md); планировщик — в [platform](../../platform/spec.md).
+- Состав файла — в [files](../spec.md); планировщик — в [async](../../async/spec.md).
 - Реализация: при очистке запись в storage удаляется раньше строки БД.
 - Источники: `api/src/Presentation/Console/File/CleanupTmpFilesConsole.php`, `api/src/Application/Service/File/Lifecycle/FileCleanupTmpService.php`.

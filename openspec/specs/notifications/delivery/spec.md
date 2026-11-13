@@ -49,7 +49,7 @@ The API SHALL по событию `UserUpdatedEvent` (публикуется п�
 
 ## Notes
 
-- Типы, каналы и каталог дефолтов — в [notifications](../spec.md); настройки пользователя — в [preferences](../preferences/spec.md); асинхронность и retry — в [platform](../../platform/spec.md).
+- Типы, каналы и каталог дефолтов — в [notifications](../spec.md); настройки пользователя — в [preferences](../preferences/spec.md); асинхронность и retry — в [async](../../async/spec.md).
 - Реализация: SMS отправляется заглушкой — сообщение пишется в лог вместо вызова провайдера.
 - Реализация: письма отправляются в HTML без text-альтернативы.
 - Источники: `api/src/Application/Service/Notification/Lifecycle/NotificationService.php`, `api/src/Infrastructure/Messaging/User/Handler/UserRegisteredMessageHandler.php`, `api/src/Infrastructure/Messaging/User/Handler/UserUpdatedMessageHandler.php`, `api/tests/Application/Service/Notification/Lifecycle/NotificationServiceTest.php`.

@@ -17,6 +17,6 @@ The API SHALL возвращать `GET /api/tasks` как страницу (1 �
 
 ## Notes
 
-- Конверт постраничного ответа — в [platform](../../platform/spec.md); состав задачи — в [tasks](../spec.md).
+- Конверт постраничного ответа — в [query](../../query/spec.md); состав задачи — в [tasks](../spec.md).
 - Реализация: лист задач не кэшируется.
 - Источники: `api/src/Presentation/Controller/Task/TaskController.php`, `api/src/Application/Service/Task/Query/TaskListQueryService.php`, `api/tests/Integration/Task/TaskControllerTest.php`.

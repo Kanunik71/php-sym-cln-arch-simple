@@ -17,5 +17,5 @@ The API SHALL ежедневно (cron `30 3 * * *`, `SCHEDULER_REFRESH_TOKEN_CL
 ## Notes
 
 - Формат refresh-токена и семейства сессии — в [auth](../spec.md); ротация и отзыв family — в [refresh](../refresh/spec.md).
-- Планировщик и правила запуска — в [platform](../../platform/spec.md).
+- Планировщик и правила запуска — в [async](../../async/spec.md).
 - Источники: `api/src/Presentation/Console/Auth/CleanupRefreshTokensConsole.php`, `api/src/Application/Service/Auth/RefreshTokenService.php`.

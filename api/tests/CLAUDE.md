@@ -61,6 +61,12 @@ Integration/          # один тест на контроллер, зерка�
 | **Query** | чтение (`list` / `get` / `search`) | `execute(…) → *ViewModel \| list \| page` |
 | **Lifecycle** | не вход контроллера | свой публичный метод (`after*Persisted`, `recalculate*`, иногда `execute`) |
 
+## Окружение тестов
+
+- Транспорты `async` и `failed` — `in-memory://`; кэш — array (см. `config/packages/messenger.yaml`, `when@test`).
+- Password cost 4; схема БД пересоздаётся на `setUp` в `DatabaseTestCase`/`DatabaseWebTestCase`.
+- Suites: `Unit` (`tests/Application`, `tests/Infrastructure`, `tests/Utils`) и `Integration` (`tests/Integration`); интеграционные проверки — HTTP-статус **и** `codeId`.
+
 ### Application Service
 1. С БД, cache или messenger — `extends DatabaseTestCase`. Репозитории, MessageBus и Cache **не** мокать; seed через `$this->bed->…`. Чистая логика без IO (`statusFromMembership`, search meta, `TaskUserListService`) — `PHPUnit\Framework\TestCase`, сервис собирается через `new`.
 2. В тесте вызывается сервис под проверкой: `$this->bed->get(*Service::class)`. У Action/Query точка входа — `execute(…)`. У Lifecycle — его публичный метод. Чужой `*Service` — только чтобы увидеть последствие (list после create, login после смены пароля), не для подготовки состояния.

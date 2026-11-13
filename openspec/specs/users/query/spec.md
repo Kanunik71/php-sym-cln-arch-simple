@@ -2,12 +2,12 @@
 
 ## Purpose
 
-Поиск пользователей с фильтрами, сортировкой и пагинацией: `GET /api/users/query` отдаёт страницу с конвертом `{items, total, page, perPage}` (конверт — в [platform](../../platform/spec.md)), `GET /api/users/query/meta` — описание поддерживаемых полей, операторов и сортировки.
+Поиск пользователей с фильтрами, сортировкой и пагинацией: `GET /api/users/query` отдаёт страницу с конвертом `{items, total, page, perPage}` (конверт — в [query](../../query/spec.md)), `GET /api/users/query/meta` — описание поддерживаемых полей, операторов и сортировки.
 
 ## Requirements
 
 ### Requirement: Поиск с фильтрами и сортировкой
-The API SHALL для аутентифицированного пользователя (см. [auth](../../auth/spec.md)) поддерживать `GET /api/users/query` с пагинацией (`page` ≥ 1, `perPage` 1..100) и сортировкой (`field` asc / `-field` desc, дефолт `createdAt desc`); ответ — страница с конвертом `{items, total, page, perPage}` (конверт — в [platform](../../platform/spec.md)), где `items` — профили в составе из требования «Состав профиля в ответе» в [users](../spec.md).
+The API SHALL для аутентифицированного пользователя (см. [auth](../../auth/spec.md)) поддерживать `GET /api/users/query` с пагинацией (`page` ≥ 1, `perPage` 1..100) и сортировкой (`field` asc / `-field` desc, дефолт `createdAt desc`); ответ — страница с конвертом `{items, total, page, perPage}` (конверт — в [query](../../query/spec.md)), где `items` — профили в составе из требования «Состав профиля в ответе» в [users](../spec.md).
 
 #### Scenario: Фильтр и сортировка
 - **GIVEN** есть пользователи

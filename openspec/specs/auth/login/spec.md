@@ -31,5 +31,5 @@ The API SHALL выдавать access JWT (HS256, TTL 900) с claims `roles = ["
 
 ## Notes
 
-- Формат refresh-токена и семейства сессии — в [auth](../spec.md); правила ролей и доступа — в [platform](../../platform/spec.md).
+- Формат refresh-токена и семейства сессии — в [auth](../spec.md); правила ролей и доступа — в требовании «Модель доступа» в [auth](../spec.md).
 - Источники: `api/src/Presentation/Controller/Auth/AuthController.php`, `api/src/Application/Service/User/Action/UserLoginService.php`, `api/src/Application/Service/Auth/UserTokenPairService.php`, `api/src/Infrastructure/Security/LexikTokenProvider.php`, `api/src/Infrastructure/Security/DoctrineUserProvider.php`, `api/tests/Integration/Auth/AuthControllerTest.php`.

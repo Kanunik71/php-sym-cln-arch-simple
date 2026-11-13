@@ -28,7 +28,7 @@ The API SHALL принимать `POST /api/files` (`multipart/form-data`, по�
 
 ## Notes
 
-- Состав файла — в [files](../spec.md); правила доступа — в [platform](../../platform/spec.md).
+- Состав файла — в [files](../spec.md); правила доступа — в требовании «Модель доступа» в [auth](../../auth/spec.md).
 - Реализация: MIME-тип берётся из заголовка клиента, при пустом — по расширению имени файла; содержимое файла не проверяется.
 - Реализация: при ошибке записи в storage после сохранения строки БД строка БД удаляется (компенсация).
 - Источники: `api/src/Presentation/Controller/File/FileController.php`, `api/src/Application/Service/File/Action/FileUploadTmpService.php`, `api/src/Application/Policy/File/UploadFilePolicy.php`, `api/tests/Integration/File/FileControllerTest.php`.

@@ -27,6 +27,6 @@ The API SHALL отдавать `GET /api/files/{id}/download` как поток�
 
 ## Notes
 
-- Состав файла — в [files](../spec.md); правила ролей и доступа — в [platform](../../platform/spec.md).
+- Состав файла — в [files](../spec.md); правила ролей и доступа — в требовании «Модель доступа» в [auth](../../auth/spec.md).
 - Реализация: `Content-Disposition` подставляет исходное имя файла без экранирования кавычек и переводов строк.
 - Источники: `api/src/Presentation/Controller/File/FileController.php`, `api/src/Application/Service/File/Query/FileDownloadQueryService.php`, `api/src/Infrastructure/Routing/SymfonyFileDownloadUrlProvider.php`, `api/src/Infrastructure/Routing/FileDownloadSignature.php`, `api/tests/Integration/File/FileControllerTest.php`.
