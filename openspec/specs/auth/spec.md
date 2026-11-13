@@ -127,8 +127,11 @@ The API SHALL ежедневно (cron `30 3 * * *`, `SCHEDULER_REFRESH_TOKEN_CL
 
 ## Notes
 
-- Известные расхождения с целевой архитектурой: гонка unique-email не превращается в `409` (`500`); нет `UserLoginServiceTest` и теста `401 INVALID_CREDENTIALS` — см. [overview](../overview/spec.md).
+- Реализация: уникальность `email` обеспечивается проверкой `existsByEmail` в Policy и `UNIQUE`-constraint на колонке; при гонке между проверкой и записью возможен `500` вместо `409 USER_ALREADY_EXISTS`.
 - Валидация полей: `email` — trim/lowercase/`FILTER_VALIDATE_EMAIL`/≤255; `fname`/`lname` — trim, пусто → `null`, ≤100; `phone` — E.164, ≤20. `codeId`: `VALIDATION_ERROR` (400), `USER_ALREADY_EXISTS` (409), `INVALID_CREDENTIALS` (401), `INVALID_REFRESH_TOKEN` (401).
 - Refresh-токен: формат `rt_` + 32 случайных байта (base64url); family — одна сессия логина; ротация — атомарный `UPDATE ... WHERE revoked_at IS NULL`.
 - Access-токен после logout остаётся валиден до истечения TTL (≤900 с).
-- События из старой baseline (TTL 3600, без refresh-токенов) заменены на вышеуказанные при реализации 0002-auth.
+
+## Покрытие тестами
+
+- Не покрыты: логин с неверным паролем (`401 INVALID_CREDENTIALS`) — нет ни `UserLoginServiceTest`, ни интеграционного теста; ветка `401` покрыта только для отсутствующего и битого JWT.

@@ -6,7 +6,7 @@
 ## Requirements
 
 ### Requirement: Создание задачи и подзадачи
-The API SHALL создавать задачу через `POST /api/tasks` (`name` обязателен, trim, непустой, ≤255; `estimateTime` ≥ 0; `parentId` — 36-символьный id, родитель должен существовать, иначе `404 TASK_NOT_FOUND`) всегда со статусом `Initial` и без участников; `status`, `users`, `cancelReason` при создании не принимаются.
+The API SHALL создавать задачу через `POST /api/tasks` (`name` обязателен, trim, непустой, ≤255; `estimateTime` ≥ 0; `parentId` — 36-символьный id, родитель должен существовать, иначе `404 TASK_NOT_FOUND`) всегда со статусом `Initial` и без участников; `status`, `users`, `cancelReason` при создании не принимаются. При указании `parentId` проверяется только существование родителя — принадлежность родителя пользователю, глубина вложенности и отсутствие циклов не проверяются.
 
 #### Scenario: Создание задачи
 - **GIVEN** аутентифицированный пользователь
@@ -24,6 +24,11 @@ The API SHALL создавать задачу через `POST /api/tasks` (`nam
 - **GIVEN** `parentId` указывает на несуществующую задачу
 - **WHEN** `POST /api/tasks`
 - **THEN** `404 TASK_NOT_FOUND`
+
+#### Scenario: Родитель другого пользователя
+- **GIVEN** `parentId` указывает на задачу, принадлежащую другому пользователю
+- **WHEN** `POST /api/tasks`
+- **THEN** `201`, подзадача создана с указанным `parentId` — доступ к родителю не проверяется
 
 ### Requirement: Переходы статусов
 The API SHALL допускать переходы `Initial→Active`, `Active→Canceled`, `Active→Finished` через `PATCH /api/tasks/{id}/status` и отклонять остальные (`409 INVALID_TASK_STATUS_TRANSITION`). Переход в `Active` требует `estimateTime`, в `Canceled` — непустой `cancelReason` (≤1000); `finishedDate`/`cancellationDate` ставит сервер; self-transition запрещён (`status=Initial` — `400`).
@@ -95,6 +100,10 @@ The API SHALL позволять владельцу `DELETE /api/tasks/{id}` с 
 - `TaskViewModel`: `id`, `ownerId`, `name`, `parentId`, `estimateTime`, `status`, `createdAt`, `users` (`{userId, status}[]`), `cancelReason`, `finishedDate`, `cancellationDate`. `TaskPageModel`: `items`, `total`, `page`, `perPage`. Дочерние задачи, ассеты и группы в ответе не возвращаются.
 - `TaskStatusEnum`: `Initial`→`Active`; `Active`→`Canceled|Finished`; `Canceled`/`Finished` — терминальные. `keepsAssetInProgress()` = `Initial`/`Active` (используется пересчётом групп и `inProgress` ассетов). `TaskUserStatusEnum`: `Initial→Active|Declined`; `Active→Declined|Finished`; `withForcedStatus()` переходы не проверяет.
 - Участники меняются только при переходе в `Active` с `userId` (существующий → принудительно `Active`, новый создаётся `Active`; `UNIQUE(task_id, user_id)`); создатель в участники не добавляется.
-- `codeId`: `VALIDATION_ERROR` (400), `UNAUTHORIZED_TASK_ACCESS` (403), `TASK_NOT_FOUND` (404), `INVALID_TASK_STATUS_TRANSITION` (409); невалидный 36-символьный UUID — `500`.
-- Известные расхождения: у родителя не проверяются циклы/глубина/доступ (`CreateTaskPolicy` проверяет только существование); тестами не покрыты тела успешных ответов и часть `400`/`404` — см. [overview](../overview/spec.md).
+- `codeId`: `VALIDATION_ERROR` (400), `UNAUTHORIZED_TASK_ACCESS` (403), `TASK_NOT_FOUND` (404), `INVALID_TASK_STATUS_TRANSITION` (409).
 - Источники: `api/src/Presentation/Controller/Task/TaskController.php`, `api/src/Application/Service/Task/**`, `api/src/Application/Enum/Task/**`, `api/tests/Integration/Task/TaskControllerTest.php`.
+
+## Покрытие тестами
+
+- Не покрыты: тела успешных ответов и часть сценариев `400`/`404`.
+- Не покрыт: сценарий «Родитель другого пользователя».

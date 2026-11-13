@@ -23,7 +23,7 @@ The API SHALL создавать группу через `POST /api/task-groups`
 #### Scenario: Создание в контексте задачи
 - **GIVEN** доступ к `taskId` из пути
 - **WHEN** `POST /api/tasks/{taskId}/task-groups` с `name`
-- **THEN** `201`, группа привязана к задаче из пути; `taskIds` из body валидируются, но **игнорируются** (текущее поведение)
+- **THEN** `201`, группа привязана к задаче из пути; `taskIds` из body принимаются и проверяются на формат, но не используются — состав группы определяется задачей из пути
 - **Covers:** `TaskGroupCreateServiceTest`
 
 ### Requirement: Вычисление статуса группы
@@ -63,7 +63,7 @@ The API SHALL разрешать `attach`, `removeTask` и `DELETE` группы
 - **THEN** `200` даже если он не владелец группы
 
 ### Requirement: Сводка по группам
-The API SHALL на `GET /api/task-groups/summary` возвращать `200` список всех групп БД (`createdAt desc`) с `taskStatusCounts` (`{initial, active, canceled, finished}`) для каждой; пустая группа — все нули. Текущее поведение: без пагинации и фильтра по владельцу (см. Notes).
+The API SHALL на `GET /api/task-groups/summary` возвращать `200` список всех групп БД (`createdAt desc`) с `taskStatusCounts` (`{initial, active, canceled, finished}`) для каждой; пустая группа — все нули. Сводка не ограничена владельцем и не поддерживает пагинацию — возвращаются все группы.
 
 #### Scenario: Счётчики статусов
 - **GIVEN** группы с задачами разных статусов
@@ -95,5 +95,9 @@ The API SHALL предоставлять `app:task-groups:recalculate <id>` дл
 - Debounce-lock: `task_group_recalc.task.{taskId}` и `task_group_recalc.groups.{sha256(sorted ids)}`, TTL 30 с; при исключении в handler lock живёт до истечения TTL.
 - Триггеры пересчёта: создание группы с задачами, attach новой задачи, detach существующей, смена статуса задачи (`requestByTaskId`), удаление задачи (`requestByGroupIds`). Не триггерят: создание пустой группы, удаление группы, создание задачи.
 - `codeId`: `VALIDATION_ERROR` (400), `UNAUTHORIZED_TASK_ACCESS`/`UNAUTHORIZED_TASK_GROUP_ACCESS` (403), `TASK_NOT_FOUND`/`TASK_GROUP_NOT_FOUND` (404).
-- Известные расхождения: summary возвращает все группы без пагинации и фильтра по владельцу (масштаб); в `POST /api/tasks/{taskId}/task-groups` поле `taskIds` валидируется, но игнорируется; тестами не покрыты `400/404` — см. [overview](../overview/spec.md).
+- Реализация: сводка читает все группы батчами по 1000 и сортирует в памяти; при ~10⁶ групп это полный обход таблицы.
 - Источники: `api/src/Presentation/Controller/TaskGroup/**`, `api/src/Presentation/Controller/Task/TaskTaskGroupController.php`, `api/src/Application/Service/TaskGroup/**`, `api/src/Application/Policy/TaskGroup/TaskGroupAccessPolicy.php`, `api/src/Infrastructure/Messaging/TaskGroup/Handler/RecalculateTaskGroupsMessageHandler.php`.
+
+## Покрытие тестами
+
+- Не покрыты: ошибки `400` и `404` в сценариях создания, привязки и отвязки группы.

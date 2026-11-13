@@ -15,7 +15,7 @@ The API SHALL возвращать `GET /api/users/me/notification-preferences` 
 - **Covers:** `tests/Integration/Notification/NotificationPreferenceControllerTest::testGetPreferencesReturnsOk`
 
 ### Requirement: Обновление переопределений
-The API SHALL принимать `PUT /api/users/me/notification-preferences` (`preferences[]`: `type`, `enabled`, `channels` ⊆ `{email, sms}`, пустой список каналов допустим), перезаписывая только присланные пункты и создавая отсутствующие строки; неприсланные пункты каталога не меняются; ответ — каталог с переопределениями (`{type, enabled, channels}`; `id`/`ownerId` не возвращаются).
+The API SHALL принимать `PUT /api/users/me/notification-preferences` (`preferences[]`: `type`, `enabled`, `channels` ⊆ `{email, sms}`, пустой список каналов допустим), перезаписывая только присланные пункты и создавая отсутствующие строки; неприсланные пункты каталога не меняются; ответ — каталог с переопределениями (`{type, enabled, channels}`; `id`/`ownerId` не возвращаются). Повтор одного типа в запросе не отклоняется — применяется последнее вхождение.
 
 #### Scenario: Обновление переопределения
 - **GIVEN** пользователь присылает `{"preferences":[{"type":"user_updated","enabled":false,"channels":["email"]}]}`
@@ -28,6 +28,11 @@ The API SHALL принимать `PUT /api/users/me/notification-preferences` (`
 - **WHEN** `PUT` с `user_updated`
 - **THEN** `200`, строка создана и заменяет дефолт каталога, остальные пункты не меняются
 - **Covers:** `NotificationUpdateServiceTest::testCreatesOverrideWhenPreferenceMissing`
+
+#### Scenario: Повтор типа в запросе
+- **GIVEN** запрос содержит два пункта с одним и тем же `type`
+- **WHEN** `PUT /api/users/me/notification-preferences`
+- **THEN** `200`, сохранено значение последнего пункта; в ответе тип присутствует один раз
 
 ### Requirement: Транзакционные типы не настраиваются
 The API SHALL отклонять `PUT` с транзакционным типом (`user_registered`) кодом `400 VALIDATION_ERROR`.
@@ -68,6 +73,13 @@ The API SHALL по событию `UserUpdatedEvent` (публикуется п�
 - Отправка (`NotificationService::notify`): transactional → `[email]`; иначе строка или дефолт; без каналов — выход. Шаблоны `api/templates/notification/{type}.{channel}.twig` (`user_registered.email`, `user_updated.email`, `user_updated.sms`); переменные `fname`, `lname`, `email`. Email — Symfony Mailer (`app.mailer_from`), HTML; SMS — заглушка в лог (`LoggingSmsSenderAdapter`).
 - События маршрутизируются в `async` (RabbitMQ; тестах `in-memory://`), retry — общий для транспорта: 3 попытки, delay 1 с, multiplier 2, затем `failed` (см. [platform](../platform/spec.md)).
 - `codeId`: `VALIDATION_ERROR` (400) — невалидные JSON/`type`/`channels`, transactional-тип; `401` — нет JWT.
-- Известные расхождения: `PUT` обновляет несколько записей без транзакции; дубли `type` в запросе не проверяются; SMS — заглушка (реального провайдера не будет); нет тестов handler'ов и повторной отправки; HTML-письма без text-альтернативы — см. [overview](../overview/spec.md).
+- Реализация: `PUT` сохраняет каждый пункт отдельной записью без общей транзакции — при сбое на середине ранее сохранённые пункты остаются применёнными.
+- Реализация: SMS отправляется заглушкой — сообщение пишется в лог вместо вызова провайдера.
+- Реализация: письма отправляются в HTML без text-альтернативы.
 - Решения (из старой спеки): новые типы (задачи, дедлайны) не добавляем.
 - Источники: `api/src/Presentation/Controller/Notification/NotificationPreferenceController.php`, `api/src/Application/Service/Notification/**`, `api/src/Enum/Notification/**`, `api/src/Infrastructure/Messaging/User/Handler/**`, `api/tests/Integration/Notification/**`.
+
+## Покрытие тестами
+
+- Не покрыты: обработчики событий и повторная отправка уведомления.
+- Не покрыт: сценарий «Повтор типа в запросе».

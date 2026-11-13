@@ -36,7 +36,7 @@ The API SHALL писать в БД через репозитории (Port → D
 - Схема данных (обзор): `users` ──< `assets` / `files` / `task_groups` / `user_notification_preferences` / `refresh_tokens` (явное удаление при удалении пользователя); `users` >──< `tasks` (`task_users`, unique task_id+user_id); `users` >── `files` (avatar, `ON DELETE SET NULL`); `tasks` ──< `tasks` (parent, `SET NULL`); `tasks` >──< `assets` (`asset_task`, CASCADE) и >──< `task_groups` (`task_group_task`, CASCADE); `assets` >──< `files` (`asset_file`, position). Полные колонки — миграция `api/migrations/Version20260930100000.php`.
 - Глоссарий: Task (задача, может иметь `parentId` — подзадача); Task user (участник `task_users`, свой статус); Task group (статус вычисляется по составу); Asset (объект с ценой и типом, связан с задачами и файлами); File (`Temporary`/`Permanent`); Preference (настройка уведомлений по типу); Transactional type (обязательное уведомление); Debounce lock (кэш-lock от дублей пересчёта).
 - Асинхронность (обзор): `TaskCreated` — только лог; `TaskGroupsRecalculationRequestedEvent` — пересчёт групп; `UserRegisteredEvent` — email; `UserUpdatedEvent` — email/SMS по настройке.
-- Известные расхождения с целевой архитектурой — в Notes соответствующих спек.
+- Детали реализации поведения — в секции `## Notes` соответствующих спек; непокрытые тестами ветви — в секции `## Покрытие тестами`.
 
 ## Источник истины и архитектура
 

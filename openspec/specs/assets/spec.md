@@ -25,6 +25,11 @@ The API SHALL создавать ассет через `POST /api/assets` (`name
 - **WHEN** создание
 - **THEN** `400 VALIDATION_ERROR`
 
+#### Scenario: Порядок прикрепления файлов относительно сохранения
+- **GIVEN** в `imageFileIds` передан файл, который не удалось прикрепить
+- **WHEN** создание ассета
+- **THEN** ассет уже сохранён и остаётся в БД; ошибка прикрепления не откатывает сохранение
+
 ### Requirement: Изображения — только свои файлы
 The API SHALL при указании `imageFileIds` требовать, чтобы каждый файл принадлежал текущему пользователю (`403 UNAUTHORIZED_FILE_ACCESS`) и существовал (`404 FILE_NOT_FOUND`); статус файла не проверяется (`Temporary` повышается до `Permanent` при привязке, `Permanent` допустим). Порядок файлов определяет позиции; первый файл — `mainImage`. `PUT` заменяет `imageFileIds` целиком (включая пустой список — все изображения удаляются); новые файлы прикрепляются, удалённые — удаляются из БД и storage.
 
@@ -113,7 +118,12 @@ The API SHALL разрешать `PUT /api/assets/{id}` (`name`, `price`, `image
 
 - `AssetViewModel`: `id`, `ownerId`, `name`, `taskIds`, `price`, `type`, `createdAt` (ATOM), `inProgress`, `mainImage` (`{id, url}` или `null`). `AssetDetailModel` дополнительно содержит `tasks` (`{id, name, status, parentId}[]`) и полный `images` (`{id, url}[]`). `AssetPageModel`: `items`, `total`, `page`, `perPage`.
 - `price` в БД — `NUMERIC(10,2)`, неотрицательное, до 2 знаков (`MoneyUtils`); тип неизменяем после создания.
-- `codeId`: `VALIDATION_ERROR` (400), `UNAUTHORIZED_ASSET_ACCESS`/`UNAUTHORIZED_TASK_ACCESS`/`UNAUTHORIZED_FILE_ACCESS` (403), `ASSET_NOT_FOUND`/`TASK_NOT_FOUND`/`FILE_NOT_FOUND` (404); невалидный 36-символьный UUID — `500`.
-- Событий Messenger для ассетов нет. Создание/обновление: `save()`, затем attach/sync файлов — без общей транзакции.
-- Известные расхождения: нет общей транзакции для БД+файлов (`attachFiles` может упасть после `save`, ассет остаётся); `INVALID_FILE_STATE` объявлен, но не выбрасывается; `taskIds` не проверяются на дубли — см. [overview](../overview/spec.md).
+- `codeId`: `VALIDATION_ERROR` (400), `UNAUTHORIZED_ASSET_ACCESS`/`UNAUTHORIZED_TASK_ACCESS`/`UNAUTHORIZED_FILE_ACCESS` (403), `ASSET_NOT_FOUND`/`TASK_NOT_FOUND`/`FILE_NOT_FOUND` (404).
+- Событий Messenger для ассетов нет.
+- Реализация: сохранение ассета и прикрепление файлов идут последовательно, без общей транзакции — при сбое прикрепления ассет остаётся сохранённым.
+- Реализация: повторяющиеся `taskIds` не отбрасываются — в БД связь хранится один раз, но в ответе `taskIds` задача присутствует столько раз, сколько указано в запросе.
 - Источники: `api/src/Presentation/Controller/Asset/AssetController.php`, `api/src/Presentation/Controller/Task/TaskAssetController.php`, `api/src/Application/Service/Asset/**`, `api/tests/Integration/Asset/**`.
+
+## Покрытие тестами
+
+- Не покрыт: сценарий «Порядок прикрепления файлов относительно сохранения».

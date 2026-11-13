@@ -28,7 +28,7 @@ The API SHALL возвращать ошибки приложения как JSON
 - **THEN** ответ `{"error": "...", "codeId": "INVALID_TASK_STATUS_TRANSITION"}`
 
 #### Scenario: Ошибки без собственного кода
-- **GIVEN** `401` без собственного `codeId` (нет/битый JWT), необработанное исключение или битый UUID в path
+- **GIVEN** `401` без собственного `codeId` (нет/битый JWT), необработанное исключение или невалидный UUID в path
 - **WHEN** приложение не создаёт `ErrorResponseModel`
 - **THEN** `401` переписывается в `codeId = INVALID_CREDENTIALS`; `InvalidArgumentException` → `400`; прочее без кода → `500` с `VALIDATION_ERROR` (в prod без текста исключения)
 
@@ -44,6 +44,19 @@ The API SHALL использовать UUID v7 как идентификатор
 - **GIVEN** любой ответ с объектами
 - **WHEN** клиент читает `id` и дату
 - **THEN** `id` — UUID-строка, дата — ATOM (ISO-8601 с часами и секундами)
+
+### Requirement: Идентификатор в пути
+The API SHALL принимать в path-параметре `{id}` 36-символьную строку из hex-символов и дефисов; строка, не удовлетворяющая этому виду, SHALL давать `404` (маршрут не совпадает); строка вида 36 hex-символов, не разбираемая как UUID, SHALL давать `400` с `codeId = VALIDATION_ERROR` и текстом `Invalid UUID.`.
+
+#### Scenario: Идентификатор не по формату
+- **GIVEN** в `{id}` передана строка, не совпадающая с 36 hex-символами и дефисами
+- **WHEN** клиент запрашивает ресурс по этому идентификатору
+- **THEN** `404` с `codeId = VALIDATION_ERROR` (маршрут не совпал)
+
+#### Scenario: Идентификатор не разбирается как UUID
+- **GIVEN** в `{id}` передана 36-символьная hex-строка без корректного расположения дефисов
+- **WHEN** клиент запрашивает ресурс по этому идентификатору
+- **THEN** `400` с `codeId = VALIDATION_ERROR` и текстом `Invalid UUID.`
 
 ### Requirement: Query-контракт листинг/поиска
 The API SHALL поддерживать на листинговых/поисковых эндпоинтах пагинацию, сортировку и фильтры в едином формате (см. сценарии и Notes); whitelist полей и операторов задаётся на бэкенде.
@@ -134,5 +147,9 @@ The API SHALL в тестах использовать `in-memory://` транс
 - Пример поиска: `GET /api/users/query?page=2&perPage=50&sort=-createdAt&filter[email][eq]=a@b.c&filter[city][in][]=Moscow`. Пагинация: page ≥ 1/1, perPage 1..100/20. Сортировка: `field` asc, `-field` desc, дефолт по use-case. Операторы `FilterOperatorEnum`: `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `like`, `in`, `isNull`, `isNotNull`; строки — eq/ne/like/in/isNull/isNotNull; int и даты — сравнения + in (int)/isNull/isNotNull; `in` требует непустого списка; meta-эндпоинт (`/query/meta`, только Users) отдаёт whitelist и дефолты.
 - `codeId` whitelist (`ErrorCodeEnum`): `VALIDATION_ERROR` (400), `INVALID_CREDENTIALS` (401), `UNAUTHORIZED_USER_ACCESS`, `UNAUTHORIZED_TASK_ACCESS`, `UNAUTHORIZED_ASSET_ACCESS`, `UNAUTHORIZED_FILE_ACCESS`, `UNAUTHORIZED_TASK_GROUP_ACCESS`, `INVALID_FILE_STATE` (403), `USER_NOT_FOUND`, `TASK_NOT_FOUND`, `ASSET_NOT_FOUND`, `FILE_NOT_FOUND`, `TASK_GROUP_NOT_FOUND` (404), `USER_ALREADY_EXISTS`, `INVALID_TASK_STATUS_TRANSITION` (409).
 - Таблицы: `users`, `files`, `assets`, `asset_file`, `asset_task`, `tasks`, `task_users`, `task_groups`, `task_group_task`, `user_notification_preferences`, `refresh_tokens`. FK: `asset_task`, `task_group_task` — CASCADE; `tasks.parent_id`, `users.avatar_file_id` — SET NULL; остальные — default/RESTRICT.
-- Известные расхождения: по старой baseline `GET /api/tasks` кэшировался на 60 секунд и мог отдавать устаревший список (см. [overview](../overview/spec.md) и [tasks](../tasks/spec.md) — сейчас лист не кэшируется). TTL JWT ранее описывался как 3600 — фактическое значение 900 (после внедрения refresh-токенов, см. [auth](../auth/spec.md)).
+- Реализация: `INVALID_FILE_STATE` задекларирован в whitelist кодов, но ни одним обработчиком не используется — код недостижим для клиента.
 - Источники: `api/config/packages/**`, `api/src/Presentation/Controller/BaseController.php`, `api/src/Application/Exception/**`, `api/src/Shared/Utils/**`, `api/src/Infrastructure/**`, `api/migrations/**`, `docker/**`.
+
+## Покрытие тестами
+
+- Не покрыты: сценарии «Идентификатор не по формату» и «Идентификатор не разбирается как UUID».
