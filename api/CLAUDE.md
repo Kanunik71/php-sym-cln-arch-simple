@@ -5,7 +5,7 @@
 
 | Файл | Про что |
 |------|---------|
-| [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md) | use case'ы, Model, Port, Policy, Cache, Dispatcher, batch-переборы, delete-оркестрация |
+| [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md) | правила слоя Application: роли Service, три роли Model, VO, Port, оркестрация, delete, масштаб |
 | [`src/Infrastructure/CLAUDE.md`](src/Infrastructure/CLAUDE.md) | Doctrine, кэш, очереди, security, storage, роутинг, notification |
 | [`tests/CLAUDE.md`](tests/CLAUDE.md) | базы тестов, фикстуры, правила интеграционных проверок |
 
@@ -21,10 +21,9 @@ api/src/
 └── Shared/Utils/    # статические утилиты (Asserts, Filter, Http)
 ```
 
-Слоя `Domain/` нет. Персистентная модель, Value Object, enum, события и
-исключения живут в `Application/` — это осознанное решение, а не недоработка:
-VO и инварианты отделены от use case'ов папками, а зависимости от внешнего
-мира идут только через `Port/`.
+Внутри `Application/` персистентная модель, Value Object, enum, события и
+исключения живут рядом с use case'ами, отделённые папками; зависимости от
+внешнего мира идут только через `Port/`.
 
 ### Правило зависимостей
 
@@ -61,7 +60,7 @@ Presentation  ──►  Application  ──►  Port  ◄──  Infrastructure
 | **Policy** | Предусловия use case (auth, uniqueness, exists) | `UpdateUserPolicy`, `TaskAccessPolicy` |
 | **Cache** | Политика ключей кэша | `TaskGroupCache` |
 | **Dispatcher** | Постановка async-работы: дедуп, lock, dispatch | `TaskGroupRecalculationDispatcher` |
-| **ModelMapper** | Persistence `*Model` → response `*Model` | `UserViewModelMapper`, `FileItemModelMapper` |
+| **Mapper** | Application `*Model` → response `*Model` | `UserViewModelMapper`, `FileItemModelMapper` |
 
 ### Infrastructure
 
@@ -139,8 +138,10 @@ CLI        → new *Model(...)    → *Service::execute($model, …context) → 
 | `Model/Http/` | Формат ошибки | `ErrorResponseModel` |
 
 - Persistence `*Model` наружу не сериализуется — только `Read/*ViewModel`.
-- Entity не покидают Infrastructure.
-- Enum в поле Model — typed enum, не `string`.
+- Entity не покидают Infrastructure; в поле Model — typed enum, не `string`.
+- Коллизия имён ролей — суффикс `*ResponseModel`.
+
+Правила Model, Enum и VO — в [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md#model).
 
 ---
 
@@ -148,112 +149,54 @@ CLI        → new *Model(...)    → *Service::execute($model, …context) → 
 
 | Слой | Суффикс | Направление | Пример |
 |------|---------|-------------|--------|
-| Application | `*ModelMapper` | persistence `*Model` → response `*Model` | `UserViewModelMapper` |
+| Application | `*Mapper` | persistence `*Model` → response `*Model` | `UserViewModelMapper` |
 | Infrastructure | `*Mapper` | `*Model` ↔ Entity | `UserMapper` |
+
+Слой различается папкой, а не суффиксом: `Application/Mapper/` против
+Infrastructure `Persistence/Doctrine/Mapper/`. Инфикс `Model` в имени — часть
+имени маппируемого типа (`UserViewModel`, `FileItemModel`), а не обязательная
+часть суффикса.
 
 `FileItemModelMapper` — особый случай: `fileId` / `fileIds` → `FileItemModel`
 (собирает подписанный URL).
 
 ---
 
-## Port
+## Детали Application
 
-Контракты к Infrastructure — в `Application/Port/`, реализации — в
-`Infrastructure/`. Persist / lookup / search — один `*RepositoryInterface`
-на сущность.
+Карта тем; правила — в [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md).
 
-Возврат из репозитория — по роли метода:
-
-| Возврат | Когда | Пример |
-|---------|-------|--------|
-| persistence `*Model` | write / load для изменения | `findOrFail` → `UserModel` |
-| response / facts Model | результат чтения, не равный строке таблицы | `search` → `UserPaginatedModel` |
-| скаляр / void | факт, мутация связи | `existsByEmail`, `attachTask` |
-
-Entity наружу не выходит.
-
----
-
-## Cache / Dispatcher / Policy
-
-- `CacheInterface` — только в `*Cache` (`TaskGroupCache`). `*Dispatcher` берёт
-  lock через `*Cache`, а не через `CacheInterface` напрямую.
-- `*Dispatcher` — решает «ставить ли async-задачу» (дедуп, нормализация,
-  lock) и делает `MessageBusInterface::dispatch`. Работу не выполняет
-  (`*Service`), очередь не обрабатывает (`*MessageHandler`).
-- `*Policy` — предусловия use case: auth, uniqueness, exists, use-case
-  contract. Бросает `Application/Exception`. Не персистит и не возвращает
-  response Model.
-- Метод `*Policy` с обращением к Repository, Port, filesystem, HTTP или
-  cache — суффикс **`Io`** (`assertEmailAvailableIo`); без внешних вызовов —
-  без суффикса (`assertSelfAccess`).
-
----
-
-## Нетипизированные данные
-
-`array` и `mixed` — **только на границе** (HTTP body, JSON decode, wire
-serde). Внутри Application, Policy, Service и тестов — typed Model, VO, enum.
-
-| Где | Как |
-|-----|-----|
-| Presentation (контроллер) | `requestPayload()` → `*Model::fromArray` → `*Service::execute` |
-| Application (Service, Policy) | typed Model, VO — без `array<string, mixed>` в сигнатурах и полях |
-| CLI / Application-тесты | `new *Model(...)` — **не** `fromArray`, не хелперы с `array $overrides` |
-| Integration-тесты | `*Model::toArray()` — только для тела HTTP-запроса |
-
-**Избегать:** payload / overrides как `array` между слоями; `fromArray` вне
-wire-границы; «магические» ключи массива там, где уже есть конструктор Model.
-
----
-
-## list vs query (HTTP)
-
-| Метод | HTTP | Use case | Назначение |
-|-------|------|----------|-----------|
-| `list()` | `GET /api/{resource}` | `*ListQueryService` | простой список |
-| `query()` | `GET /api/{resource}/query` | `*SearchQueryService` | pagination + criteria + sort |
-
-`list` фильтрами не расширяем. Criteria — только в `Search*`.
-Пилот: `UserController::query()` → `UserSearchQueryService`.
-
----
-
-## Масштаб
-
-Ориентир — до ~10⁶ `User` и ~10⁶ `Task`. Без `listAll()`.
-
-- **HTTP-эндпоинт** — полный перебор запрещён: ответ пагинирован (`search` с `PaginationModel`) или работает по известным id (`listByIds`).
-- **Фоновая задача** — полный перебор разрешён, но только keyset-обходом и стримингом: `BatchUtils::stream` + `listBatchBefore` / `listByIds`. `OFFSET`-пагинация для обхода квадратична и недопустима.
-
-Эталон полного обхода — `TaskGroupSummarizeQueryService`; эталон по известным id — `TaskGroupRecalculationService`.
-Подробно — в [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md) → «Масштаб и batch-переборы».
+| Тема | Раздел |
+|------|--------|
+| Service: Action / Query / Lifecycle, `list` ≠ `query` | [Service](src/Application/CLAUDE.md#service) |
+| Model, Enum, ValueObject | [Model](src/Application/CLAUDE.md#model) |
+| Port: что и когда возвращает | [Port](src/Application/CLAUDE.md#port) |
+| Mapper, Cache, Dispatcher, Policy, Event, Exception | [Оркестрация](src/Application/CLAUDE.md#оркестрация) |
+| Удаление агрегатов и транзакции | [Delete orchestration](src/Application/CLAUDE.md#delete-orchestration) |
+| Масштаб, keyset, стриминг | [Масштаб и batch-переборы](src/Application/CLAUDE.md#масштаб-и-batch-переборы) |
+| `array`/`mixed` только на wire | [Границы типизации](src/Application/CLAUDE.md#границы-типизации) |
 
 ---
 
 ## Чеклист
 
 1. Слой и **один** суффикс (кроме VO и framework-coupled имён Infrastructure)
-2. `*Service::execute` наружу — **только** response Model \| void
-3. Payload — `*Model::fromArray`; `array`/`mixed` — только wire-граница
-4. Persistence `*Model` отдельно от request (`Action/`) и response (`Read/`)
-5. Enum — `Application/Enum/`; в полях Model — typed enum, не `string`
-6. VO — `Application/ValueObject/`, уникальное короткое имя
-7. `list` без criteria; фильтры — только в `query`
-8. `*RepositoryInterface` — только в `Application/Port/`; Entity наружу не выходит
-9. `CacheInterface` — только в `*Cache`
-10. Async-постановка — `*Dispatcher`; эффект после commit — Lifecycle или `*MessageHandler`
-11. Preconditions с IO / auth — `*Policy`; метод с I/O — суффикс `Io`
-12. DQL / CriteriaApplier — только в Infrastructure
-13. Межагрегатный `onDelete: CASCADE` — нет; `cascade remove` — только внутри одного агрегата
-14. Перебор больших коллекций — только в фоновых задачах, keyset-обходом (`BatchUtils::stream` + `listBatchBefore` / `listByIds`); в HTTP-эндпоинтах — только пагинация или `listByIds`
+2. `Presentation → Application → Port ← Infrastructure`: Application не импортирует Infrastructure
+3. `*Service::execute` наружу — **только** response Model \| void
+4. Persistence `*Model` отдельно от request (`Action/`) и response (`Read/`); Entity не выходит из Infrastructure
+5. Enum — `Application/Enum/`, в поле Model — typed enum
+6. `*RepositoryInterface` — только в `Application/Port/`; наружу Model или скаляр
+7. `CacheInterface` — только в `*Cache`; async ставит `*Dispatcher`
+8. Межагрегатный `onDelete: CASCADE` — нет; `cascade remove` — только внутри одного агрегата
+9. Перебор больших коллекций — только в фоне, keyset + `BatchUtils::stream`; в HTTP — пагинация или `listByIds`
+10. Детальные правила Application — в [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md#чеклист)
 
 ---
 
 ## Чего в этом документе нет
 
-- **Слоя `Domain/`** — нет и не планируется; см. «Слои».
 - **`Command` / `Query` / `*CommandHandler` / `*QueryHandler`** — вход use case'а
   это `*Model` + контекст, обёртка в отдельный класс не используется.
 - **`*RepositoryInterface` в Domain** — репозитории только в `Application/Port/`.
 - **Presentation/Request** — отдельного слоя нет; payload = `*Model`.
+- **Списка файлов и классов** — это состояние кода, а не архитектура.

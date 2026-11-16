@@ -10,5 +10,5 @@
 
 - Язык и структурные заголовки артефактов заданы в `openspec/config.yaml` (`context` и `rules`) — следуй им при создании proposal/design/tasks/spec-дельт.
 - `openspec/specs/` описывает **фактическое** поведение кода (`api/src`) и тестов (`api/tests`) — это источник истины.
-- `api/CLAUDE.md` (+ `api/src/Application/CLAUDE.md`, `api/src/Infrastructure/CLAUDE.md`, `api/tests/CLAUDE.md`) описывает **целевое** состояние архитектуры — используй его при проектировании изменений, но не переноси его в спеки как описание текущего поведения.
+- `api/CLAUDE.md` (+ `api/src/Application/CLAUDE.md`, `api/src/Infrastructure/CLAUDE.md`, `api/tests/CLAUDE.md`) описывает **целевое** состояние архитектуры — используй его при проектировании и реализации изменений, но не переноси его в спеки как описание текущего поведения.
 - Расхождения кода с `CLAUDE.md` фиксируй в секции `## Notes` соответствующей спеки.

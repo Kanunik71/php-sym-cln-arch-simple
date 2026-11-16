@@ -1,331 +1,330 @@
-# Application: layer-first + entity
+# Application: архитектура слоя
 
-В `Application/` первый уровень — **роль**. Внутри — сущность (`Task/`, `User/`, …) или `Common/` / `Http/`. Слоя `Domain/` нет: персистентная модель, VO, enum, события и исключения живут здесь.
+Слой `Application` — место, где живёт use case. Документ отвечает на вопрос
+«как устроен слой и как принимать решения в новом коде», а не «что где сейчас
+лежит».
+
+| Здесь | Не здесь |
+|-------|----------|
+| роли классов и их ответственность | HTTP-методы, поля JSON, статусы, `codeId` → [`openspec/specs/`](../../../openspec/specs/) |
+| правила зависимостей и границ | карта слоёв и таблица суффиксов → [`api/CLAUDE.md`](../../CLAUDE.md) |
+| инварианты, которые нельзя нарушать | Doctrine, Redis, Messenger, storage → [`src/Infrastructure/CLAUDE.md`](../Infrastructure/CLAUDE.md) |
+
+Примеры построены на плейсхолдерах (`{Entity}`, `Foo`, `Bar`): документ
+описывает правило, а не текущий набор классов. Конкретные имена появляются
+только там, где имя и есть правило (суффиксы `Io`, `Mapper`, роли Model).
+
+---
+
+## Форма слоя
+
+Первый уровень — **роль**, второй — сущность (`{Entity}/`). Персистентная
+модель, VO, enum, события и исключения — такие же артефакты слоя, как Service
+и Port; роль артефакта задаёт папка.
 
 ```
 Application/
-├── Service/       # use case: Action (write), Query (read), Lifecycle
-├── Model/         # persistence + request (Action/) + response (Read/)
-├── Enum/          # закрытые множества, отдельно от Model
-├── ValueObject/   # инварианты полей (Email, Phone)
-├── Mapper/        # persistence *Model → response *ViewModel
-├── Cache/         # политика ключей; единственный потребитель CacheInterface
-├── Dispatcher/    # async intent: дедуп, lock, dispatch Event
-├── Policy/        # предусловия use case + общие правила доступа
-├── Port/          # контракты к Infrastructure
-├── Event/         # факты для Messenger
-└── Exception/     # coded-исключения use case
+├── Service/        # {Entity}/Action | Query | Lifecycle — use case
+├── Model/          # persistence + request + response
+├── ValueObject/    # инвариант поля
+├── Enum/           # закрытое множество
+├── Mapper/         # persistence Model → response Model
+├── Cache/          # политика ключей
+├── Dispatcher/     # постановка async-работы
+├── Policy/         # предусловия use case
+├── Port/           # контракт к Infrastructure
+├── Event/          # факт для очереди
+└── Exception/      # coded-исключение
 ```
 
-Action/Query наружу отдают **только response Model | void** (`*ViewModel`, page, list). Персистентная `*Model` (`UserModel`, `TaskModel`, …) — вход репозитория и Lifecycle, не JSON ответа.
+- **Зависимости:** `Presentation → Application → Port ← Infrastructure`.
+- `Application` не импортирует `Infrastructure`; внешний мир — только через `Port/`.
+- `Application` может использовать `Shared/Utils` — чистые статические хелперы.
+
+✅ `Application/Service/{Entity}/Action/FooService.php` — роль → сущность.
+
+❌ `Application/{Entity}/Service/FooService.php` — сущность на первом уровне ломает
+навигацию «что за класс» и размывает границу роли.
 
 ---
 
 ## Service
 
+| Подроль | Когда | Вход | Выход |
+|---------|-------|------|--------|
+| **Action** | создание, изменение, удаление, аутентификация | request Model + контекст | response Model \| void |
+| **Query** | чтение: одна сущность, список, поиск, meta | Model/контекст | response Model, list, page |
+| **Lifecycle** | side effects после persist, batch-обход | свой метод (`after*Persisted`, `recalculate*`) или `execute` для job/CLI | void \| факты для вызывающего |
+
+Правила:
+
+- `execute` — единственный вход use case. Обёрток `*Command` / `*Query` /
+  `*Handler` нет: вход — request Model плюс контекст (`userId`, `currentUserId`).
+- Наружу из Action/Query — **только response Model \| void**. Persistence
+  `*Model` — внутренний факт, вход репозитория, а не JSON ответа.
+- Action: Policy → собрать/изменить Model → persist → Lifecycle → response Model.
+- Query не имеет side effects; чтение и маппинг — вся его работа.
+- Lifecycle не вызывается контроллером напрямую: его зовёт Action/Query,
+  job/CLI или `*MessageHandler`.
+- Presentation не содержит use-case логики: разобрать вход → `execute`.
+  Console разбирает CLI-аргументы и вызывает `*Service`.
+- Чтение/удаление без body не заводит request Model: контекст передаётся
+  именованными аргументами.
+
+```php
+// ✅ Presentation только разбирает вход
+$service->execute(FooRequestModel::fromArray($payload), id: $id, currentUserId: $actor);
+
+// ✅ без body — контекст, а не пустая Model
+$service->execute(id: $id, currentUserId: $actor);
+
+// ❌ Controller решает задачу use case
+if ($repo->exists($id)) { ... }
+$repo->save($model);
 ```
-Service/User/
-├── Action/     # UserRegisterService, UserUpdateService, UserDeleteService, UserLoginService
-├── Query/      # UserListQueryService, UserQueryService, UserSearchQueryService, UserSearchMetaQueryService
-└── Lifecycle/  # UserLifecycleService — side effects после persist
-```
 
-| Папка | HTTP | Вход | Выход |
-|-------|------|------|--------|
-| **Action** | create, update, delete, login, register | `execute(*Model?, …context)` | `*ViewModel` \| `void` |
-| **Query** | `list` / `get` / `query` | `execute(…)` | `*ViewModel`, `list`, page |
-| **Lifecycle** | не вход контроллера | свой метод (`after*Persisted`, `recalculate*`, `deleteRecords`) или `execute` для job/CLI | `void` \| факты для вызывающего |
-
-| Use case | HTTP | Сервис |
-|----------|------|--------|
-| список без criteria | `list()` | `*ListQueryService` |
-| pagination + criteria + sort | `query()` | `*SearchQueryService` |
-| одна сущность | `get()` | `*QueryService` |
-| meta whitelist для `/query` | `queryMeta()` | `*SearchMetaQueryService` |
-
-`list` фильтрами не расширяем. Criteria — только в `Search*`. Пилот: `UserController::query()` → `UserSearchQueryService`.
-
-Контроллер не содержит use-case логики: `fromArray` → `execute`. Console парсит CLI и вызывает `*Service` (`RecalculateTaskGroupsConsole` → `TaskGroupRecalculateService`).
-
-```
-HTTP array → *Model::fromArray → Service::execute($model, …context) → *ViewModel | list | page | void
-CLI / tests → new *Model(...)  → Service::execute($model, …context)
-Get / List / Delete без body   → execute(userId:, currentUserId:) — request Model не заводить
-```
-
-Типичный Action: Policy → собрать / изменить `*Model` → `*Repository::save` → Lifecycle (событие, cache, dispatcher) → `*ViewModelMapper`.
+**list ≠ query.** `list` — простой список без критериев; фильтры, сортировка и
+пагинация — отдельный use case поиска. Расширять `list` фильтрами нельзя:
+иначе появляются два места, где живёт выборка.
 
 ---
 
-## Model / Enum / ValueObject
+## Model
 
-```
-Model/Common/ArrayableModelInterface.php       # fromArray / toArray
-Model/Common/ArrayableModelListInterface.php   # fromArrayList / toArrayList
-Model/Common/FileItemModel.php                 # id + url (response)
-Model/Common/PaginationModel.php
-Model/Common/SortModel.php
-Model/Common/Filter/StringFilterModel.php
-Model/Common/Filter/IntFilterModel.php
-Model/Common/Filter/DateTimeFilterModel.php
-Model/Common/Query/SearchQueryMetaModel.php
-Model/Http/ErrorResponseModel.php
+Один суффикс `Model` — три роли, различаются папкой:
 
-Model/User/UserModel.php                       # persistence
-Model/User/UserLocationModel.php
-Model/User/UserFilterCriterionModel.php        # ArrayableModelListInterface
-Model/User/Action/UserUpdateModel.php          # request write
-Model/User/Action/UserSearchModel.php          # request search
-Model/User/Action/UserLoginModel.php
-Model/User/Read/UserViewModel.php              # response
-Model/User/Read/UserPageModel.php              # list<UserViewModel> + page meta
-Model/User/Read/UserPaginatedModel.php         # list<UserModel> + total (из port, не arrayable)
-Model/User/Read/UserRegisterResponseModel.php  # коллизия с UserRegisterModel
+| Роль | Где | Кто потребитель |
+|------|-----|-----------------|
+| **persistence** | `Model/{Entity}/` | репозиторий, Lifecycle |
+| **request** | `Model/{Entity}/Action/` | `Service::execute` |
+| **response** | `Model/{Entity}/Read/` | Presentation, Infrastructure (facts) |
 
-Model/Task/TaskModel.php
-Model/Task/Action/TaskCreateModel.php
-Model/Task/Read/TaskViewModel.php
-Model/Task/Read/TaskLightModel.php
+Правила:
 
-Enum/Common/FilterOperatorEnum.php
-Enum/Common/SortDirectionEnum.php
-Enum/User/UserFilterFieldEnum.php
-Enum/User/UserSortFieldEnum.php
-Enum/Task/TaskStatusEnum.php                   # бывший «доменный» enum — тоже здесь
+- Роли не смешиваются. Request Model не отдаётся наружу; persistence Model не
+  сериализуется в ответ; response Model не принимается на вход записи.
+- Коллизия имён ролей решается суффиксом `*ResponseModel`, а не общей Model.
+- Persistence Model — зеркало состояния, а не форма запроса и не DTO.
+- Закрытое множество в поле — **typed enum**, не `string`. Enum живёт в
+  `Application/Enum/` — и доменный статус, и application-контракт (операторы
+  фильтра, направления сортировки).
+- Нетипизированный `array` в полях Model допустим только на wire-границе
+  (см. «Границы типизации»).
+- Model — wire-структура: данные и минимальные инварианты формы. Бизнес-правила
+  с I/O — в Policy, инварианты поля — в VO/persistence Model, а не в
+  `fromArray`.
 
-ValueObject/Common/Email.php
-ValueObject/Common/Phone.php
+```php
+// ✅ разные роли — разные классы
+final class FooModel { /* persistence */ }
+final class FooRequestModel { /* Action: wire → typed */ }
+final class FooViewModel { /* Read: typed → wire */ }
+
+// ❌ одна Model на всё: request, persistence и ответ клиенту
+final class FooModel { public array $payload; }
 ```
 
-| Папка | Суффикс | В JSON из Action/Query? |
-|-------|---------|-------------------------|
-| `Model/{Entity}/*Model` | Model | нет — persistence / внутренний факт |
-| `Model/{Entity}/Action/` | Model | нет — request |
-| `Model/{Entity}/Read/` | Model | **да** — response |
-| `Enum/` | Enum | только как поле Model |
-| `ValueObject/` | нет | нет — скаляр через `toString()` на границе |
-
-Имя VO = ubiquitous language (`Email`, `Phone`), без суффикса роли. Заводить при инварианте, не на каждое поле. Общие — `ValueObject/Common/`; контекстные — `ValueObject/{Entity}/`. Короткое имя уникально по всему `ValueObject/`.
+Файл в ответе — отдельная структура `id + url`, а не пара `*FileId` + `*Url` в
+одной Model. Поля именуются по роли в сущности (`avatar`, `images`), а не общим
+`files[]`. В write-payload передаётся id файла; URL собирается на выходе.
 
 ---
 
-## Files in Model
+## ValueObject
 
-### Enum fields
-- Закрытое множество в поле Model — typed enum, не `string`.
-- Статус / тип сущности (`TaskStatusEnum`, `NotificationTypeEnum`, `NotificationChannelEnum`, …) и application-контракт (`FilterOperatorEnum`, …) — оба в `Application/Enum/`.
-- `fromArray` — `InputAssertUtils::requiredEnum` / `enumList`.
+- VO заводится под **инвариант** (формат, диапазон, нормализация), а не под
+  каждое поле. Поле без инварианта остаётся скаляром в Model.
+- Имя VO = ubiquitous language, без суффикса роли: `Email`, `Phone`, `Money`.
+  Суффиксы вроде `*ValueObject` или `UserEmail` вводят второй словарь.
+- Короткое имя уникально в пределах `ValueObject/`. Общие — `Common/`,
+  контекстные — `{Entity}/`.
+- Инвариант проверяется в конструкторе VO; наружу VO не сериализуется — на
+  границе отдаётся скаляр.
 
-### Read (response Model)
-- Файл в ответе API — `FileItemModel` (`id` + `url`) в `Model/Common/`.
-- Поля именуются по **роли** в сущности (`avatar`, `images`), не общим `files[]`.
-- Один файл → `?FileItemModel`; коллекция → `list<FileItemModel>`.
-- Пары `*FileId` + `*Url` в одном response Model не использовать.
+```php
+// ✅ инвариант в одном месте
+$email = new Email($raw);          // бросает на невалидном входе
 
-### Write (Model)
-- Payload write — `?string` / `list<string>` fileId (после upload).
-- `FileItemModel` только на выходе Action/Query.
-
-### Mapping
-- `*ViewModelMapper::fromModel($model, FileDownloadUrlProviderInterface $urlProvider)`.
-- Service не вызывает `buildDownloadUrl*`; URL строит mapper (`FileItemModelMapper::fromFileId` / `fromFileIds`).
-- `FileDownloadUrlProviderInterface` — Application Port; реализация в Infrastructure.
-- Read, которому нужен fetch-join (`AssetDetailModel`, `TaskViewModel` из репозитория), может собрать Infrastructure Doctrine mapper. Action/Query всё равно возвращает response Model.
+// ❌ проверка формата продублирована в сервисах
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) { ... }
+```
 
 ---
 
 ## Port
 
-Контракты к Infrastructure — в `Application/Port/`:
+- Контракт к внешнему миру — только `Application/Port/`, реализация — Infrastructure.
+- Один `*RepositoryInterface` на агрегат: persist, lookup, search.
+- Наружу из порта — Application Model или скаляр. Doctrine Entity и ORM-объекты
+  границу не пересекают.
+- Возврат — по роли метода:
 
+| Возврат | Когда |
+|---------|-------|
+| persistence `*Model` | write / load для изменения |
+| response / facts Model | чтение, результат которого не равен строке таблицы |
+| скаляр / void | факт (`exists`), мутация связи (`attach`) |
+
+- Search с criteria / pagination / sort принимает Application Model в
+  сигнатуре. Сборка критериев из `array` — забота Infrastructure, не Service.
+- Не заводить новый тип «под одну колонку», если хватает скаляра или уже
+  существующей Model.
+
+```php
+// ✅ порт говорит на языке Application
+public function search(FooSearchModel $query): FooPageModel;
+public function existsByCode(string $code): bool;
+
+// ❌ из порта утекает ORM
+public function findBy(array $criteria): array;   // и внутри Entity
 ```
-Port/User/UserRepositoryInterface.php
-Port/Task/TaskRepositoryInterface.php
-Port/TaskGroup/TaskGroupRepositoryInterface.php
-Port/Asset/AssetRepositoryInterface.php
-Port/File/FileRepositoryInterface.php
-Port/File/FileStorageInterface.php
-Port/File/FileDownloadUrlProviderInterface.php
-Port/Notification/NotificationPreferenceRepositoryInterface.php
-Port/Notification/MailerInterface.php
-Port/Notification/SmsSenderInterface.php
-Port/Notification/NotificationTemplateRendererInterface.php
-Port/Security/TokenProviderInterface.php
-Port/CacheInterface.php
-Port/PasswordHasherInterface.php
-Port/TransactionManagerInterface.php
+
+---
+
+## Оркестрация
+
+Каждая роль — одна ответственность. Смешение ролей и есть источник
+«сервисов на 800 строк».
+
+| Роль | Ответственность | Не делает |
+|------|-----------------|-----------|
+| `*Mapper` (App) | persistence Model → response Model; собирает URL | не ходит в БД |
+| `*Cache` | политика ключей и TTL; единственный потребитель `CacheInterface` | не бизнес-логика |
+| `*Dispatcher` | решает, ставить ли async-задачу: дедуп, lock, `dispatch` | не выполняет работу, не обрабатывает очередь |
+| `*Policy` | предусловия use case: auth, uniqueness, exists, контракт | не персистит, не возвращает response Model |
+| `*MessageHandler` (Infra) | реакция на Event | не use case |
+
+**Имя Mapper** — по тому, что маппится (`UserViewModelMapper`, `FileItemModelMapper`,
+`TaskLightModelMapper`), а не по роли. Обязательного инфикса `Model` нет:
+`EmailMapper`, `SearchCriteriaMapper` — нормальные имена. Слой задаёт папка, а
+не суффикс: `Application/Mapper/` против Infrastructure `Mapper/`.
+
+**Policy.** Именование: per use case — `{Operation}{Entity}Policy`,
+общее правило доступа — `{Entity}AccessPolicy`. Публичный метод, который
+обращается к Repository, Port, filesystem, HTTP или cache, получает суффикс
+**`Io`**; метод без внешних вызовов — без суффикса. По суффиксу видно, можно ли
+звать метод в чистой проверке.
+
+```php
+// ✅ по имени понятно, что будет I/O
+$policy->assertCodeAvailableIo($code);
+$policy->assertSelfAccess($actor, $ownerId);
+
+// ❌ I/O спрятан за «чистым» именем
+$policy->assertCodeAvailable($code);   // внутри репозиторий
 ```
 
-- Persist / lookup / search — один `*RepositoryInterface` на сущность.
-- Связи, нужные response Model (Asset tasks/files, Task users), грузит Infrastructure fetcher. Mapper не догружает lazy.
-- Search с criteria / pagination / sort — `search(...)` (Application Model в сигнатуре). Сейчас: `UserRepositoryInterface::search` → `UserPaginatedModel`.
-- Реализация — Infrastructure (`DoctrineUserRepository` и соседние адаптеры).
+**Event / Exception.**
 
-### Что возвращает Port / Repository
+- Event диспатчит Lifecycle или Dispatcher. Обработчик очереди — Infrastructure
+  `*MessageHandler`, не Action.
+- Исключение use case — `Exception/{Entity}/`, `DomainException` +
+  `codeId` из `ErrorCodeEnum`. Наружу это контракт: он описан в спеках.
+- Нарушение контракта payload (тип, whitelist) — `InvalidArgumentException` на
+  сборке входа; Presentation отображает его в 400. Это не use-case исключение.
 
-Entity **не** выходит наружу. По роли метода:
+---
 
-| Возврат | Когда | Пример |
-|---------|--------|--------|
-| **persistence `*Model`** | write / load для изменения | `findOrFail` → `UserModel`, `TaskGroupModel`; `save` → тот же `*Model` |
-| **response / facts Model** | результат чтения, который не равен строке таблицы | `search` → `UserPaginatedModel`; `listTaskStatusCountsByIds` → `TaskStatusCountsModel`; `findDetailOrFail` → `AssetDetailModel` |
-| **скаляр / void** | факт, мутация связи | `existsByEmail`, `containsTask`, `attachTask` |
+## Delete orchestration
 
-Не заводить отдельный тип «под одну колонку SQL», если хватает скаляра или уже существующей Model. Action/Query наружу по-прежнему только **response Model | void**.
+Удаление агрегата — **явный сценарий в Service**, а не побочный эффект ORM.
 
-### Масштаб и batch-переборы
+Порядок:
 
-В проде `User` и `Task` (и связанные коллекции вроде `TaskGroup`) могут быть порядка **миллиона** строк. Долгие job’ы (пересчёт и подобные) могут идти **часами**.
+1. Policy — доступ и предусловия.
+2. Удалить / отвязать / переназначить дочерние агрегаты и owned-коллекции.
+3. Side effects вне БД (object storage, cache, события) — **после commit**.
 
-| Можно | Нельзя |
-|-------|--------|
-| `find*` / `listByIds` / `search` с pagination | полный scan миллиона моделей одним запросом |
-| chunk id → `listByIds($chunk)` → обработка | копить весь набор моделей, если ответ этого не требует |
-| `BatchUtils::each` / `BatchUtils::chunk` (`Shared/Utils`, default 1000) | `listAll()` — метода нет |
-| `BatchUtils::stream` — обход батчами по курсору | `OFFSET`-пагинация для полного обхода — квадратична |
+Правила:
 
-#### Где перебор разрешён, а где нет
+- Межагрегатный `onDelete: CASCADE` и скрытый ORM cascade запрещены: Application
+  не должен «не знать» об удалении чужих данных.
+- `cascade remove` / `orphanRemoval` допустимы только внутри одного агрегата
+  (детали mapping — Infrastructure).
+- Несколько записей в одном use case — в `TransactionManagerInterface::run`.
+  Object storage, cache и messenger — после commit.
+- FK `RESTRICT` / violation — сигнал, что use case неполный, а не повод включить
+  cascade.
+
+```php
+// ✅ БД в транзакции, внешний мир — после коммита
+$keys = $this->transactionManager->run(
+    fn (): array => $this->deleteAggregateWithChildren($id),
+);
+$this->lifecycle->purgeStorage($keys);
+
+// ❌ удаление ребёнка другого агрегата делегировано БД
+#[ORM\ManyToOne(targetEntity: Bar::class, onDelete: 'CASCADE')]
+```
+
+---
+
+## Масштаб и batch-переборы
+
+Прод рассчитан на большие коллекции (порядка 10⁶ строк на агрегат). Метода
+«прочитать всё» нет.
 
 | Контекст | Правило |
 |----------|---------|
-| **HTTP-эндпоинт** | Полный перебор **запрещён**. Ответ всегда пагинирован (`search` с `PaginationModel`) либо работает по известным id (`listByIds`). |
-| **Фоновая задача** (Console / worker / scheduler) | Полный перебор **разрешён**, обязан быть keyset-обходом и стримингом. |
+| **HTTP-эндпоинт** | полный перебор запрещён: пагинация (`search` + page Model) или работа по известным id (`listByIds`) |
+| **Фоновая задача** (Console / worker / scheduler) | перебор разрешён, но только keyset-обходом и стримингом |
 
-Исключение — эндпоинт, чей контракт требует всех строк (сейчас `GET /api/task-groups/summary`): он обязан возвращать `TaskGroupSummaryModel` по всем группам, поэтому идёт keyset-обходом, но это осознанная плата за контракт, а не образец для новых эндпоинтов.
-
-#### Как делать перебор в фоновой задаче
-
-1. **Keyset-курсор, а не OFFSET.** `OFFSET` заставляет БД каждый раз перечитывать и выбрасывать пропущенные строки — суммарно ≈ N²/2 строк на полном обходе. Курсор по `id` идёт по `PRIMARY KEY` и держит обход линейным. Идентификаторы — UUID v7, они растут со временем, поэтому курсор по `id` совпадает с порядком по времени создания.
-2. **Стриминг, а не накопление.** `BatchUtils::stream` обрабатывает батч сразу и не держит всю коллекцию в памяти: расход памяти O(размер батча), а не O(число строк).
-3. **Сортировка — в SQL.** Не `usort` по собранному массиву.
+- **Keyset, не OFFSET.** `OFFSET` заставляет БД перечитывать и выбрасывать
+  пропущенные строки — суммарно ≈ N²/2 на полном обходе. Курсор по монотонному
+  ключу (`id`, растущий со временем) держит обход линейным.
+- **Streaming, не накопление.** Батч обрабатывается сразу; память —
+  O(размер батча), не O(число строк).
+- **Сортировка — в SQL.** Не сортировать собранный массив.
+- **Исключение по контракту** (эндпоинт обязан вернуть все строки) —
+  осознанная плата, фиксируется в спеке этого эндпоинта и не тиражируется на
+  другие.
+- Batch-оркестрация — в Lifecycle Service; Console только парсит CLI.
 
 ```php
-// Обход всех групп, свежие сверху, без накопления в памяти.
+// ✅ обход всех строк: keyset + потоковая обработка
 BatchUtils::stream(
-    fetch: fn (string $beforeId): array => $repo->listBatchBefore($beforeId, 1000),
-    cursorOf: static fn (array $batch): string => $batch[count($batch) - 1]->getId(),
-    handle: function (array $batch): void { /* … */ },
-    startCursor: BatchUtils::LAST_CURSOR,
-);
-```
-
-Эталон полного обхода: `TaskGroupSummarizeQueryService::execute` — keyset + `BatchUtils::stream`.
-Эталон по известным id: `TaskGroupRecalculationService::recalculateByGroupIds` — `BatchUtils::each($ids, …)` + `listByIds`.
-
-Presentation Console только парсит CLI и вызывает `*Service`; batch-оркестрация — в Lifecycle `*Service`.
-
----
-
-## Mapper / Cache / Dispatcher / Policy
-
-- `*ViewModelMapper` — persistence `*Model` → response `*ViewModel`
-- `FileItemModelMapper` — `fileId` / `fileIds` → `FileItemModel`
-- `*Cache` — единственные потребители `CacheInterface` (`TaskGroupCache`)
-- `*Dispatcher` — «ставить ли async-задачу» (дедуп, нормализация, lock через `*Cache`) + `MessageBusInterface::dispatch`; не выполняет работу Lifecycle и не обрабатывает очередь
-- `*Policy` — preconditions (auth, uniqueness, exists, use-case contract); методы `assert*` / `resolve*`; бросает `Application\Exception`
-- CriteriaApplier / DQL — Infrastructure, не Service
-
-### Policy
-
-```
-Policy/User/UpdateUserPolicy.php       # под конкретный use case
-Policy/Task/TaskAccessPolicy.php       # общее правило доступа
-```
-
-| Тип | Именование | Пример |
-|-----|------------|--------|
-| per use case | `{Operation}{Entity}Policy` | `RegisterUserPolicy`, `ChangeTaskStatusPolicy` |
-| shared access | `{Entity}AccessPolicy` | `TaskAccessPolicy`, `UserAccessPolicy`, `AssetAccessPolicy` |
-
-**Суффикс метода `Io`:** публичный метод Policy с обращением к Repository, Port (кроме pure config из ctor), filesystem, HTTP или cache — `…Io` (`assertEmailAvailableIo`, `resolveAuthenticatedUserIo`, `assertUserCanAccessIo`, `assertParentExistsIo`). Без внешних вызовов — без суффикса (`assertSelfAccess`, `assertOwner`, `assertCanUpdate`).
-
-Action: load `*Model` → `$policy->assert…()` → изменить модель → persist → Lifecycle → response Model.
-
-### Delete orchestration
-
-Удаление родителя **не** должно полагаться на `onDelete: CASCADE` или скрытый ORM cascade по другим агрегатам. Порядок (удалить / отвязать / переназначить) — в `*DeleteService` и Lifecycle `*Service`.
-
-Типичный порядок:
-
-1. Policy (доступ)
-2. Удалить / отвязать дочерние агрегаты и owned-коллекции (`*Repository::delete` / `detach*` / …)
-3. Side effects вне БД (object storage, cache) — после commit
-
-Несколько записей в одном use case (`UserRegisterService`, `UserDeleteService`) — в `TransactionManagerInterface::run`. Object storage / cache / messenger — **после** commit.
-
-```php
-// эталон: multi-write + storage после commit (UserDeleteService)
-$storageKeys = $this->transactionManager->run(function () use ($userId, $user): array {
-    return $this->deleteDatabaseRecords($userId, $user);
-});
-$this->fileLifecycleService->purgeStorage($storageKeys);
-
-// простой delete одного агрегата — AssetLifecycleService::delete (DB + storage)
-$this->assetLifecycleService->delete($asset);
-```
-
-При удалении корня с несколькими зависимыми агрегатами (`UserDeleteService`) — явная оркестрация детей (assets, owned files, preferences, снятие пользователя с task), а не FK cascade. FK RESTRICT / violation = сигнал, что use case неполный.
-
-Политика mapping: `api/src/Infrastructure/CLAUDE.md` → Cascade deletes.
-
----
-
-## Event / Exception
-
-```
-Event/Task/TaskCreatedEvent.php
-Event/User/UserRegisteredEvent.php
-Event/User/UserUpdatedEvent.php
-Event/TaskGroup/TaskGroupsRecalculationRequestedEvent.php
-
-Exception/ErrorCodeEnum.php
-Exception/CodedExceptionInterface.php
-Exception/User/UserNotFoundException.php
-```
-
-- Event диспатчит Lifecycle или Dispatcher. Обработчик очереди — Infrastructure `*MessageHandler`, не Action.
-- Исключение use case — `Application/Exception/{Entity}/`, `extends DomainException`, `CodedExceptionInterface::getCodeId()` → `ErrorCodeEnum`.
-- Ошибки контракта payload (тип, whitelist) — `InvalidArgumentException` на `fromArray` / сборке входа Service. Их ловит контроллер как 400.
-
----
-
-## Payload Model → Service
-
-```php
-// body
-$this->updateUser->execute(
-    UserUpdateModel::fromArray($this->requestPayload($request)),
-    userId: $id,
-    currentUserId: $this->getCurrentUserId(),
+    fetch: fn (?string $cursor): array => $repo->listBatch($cursor, $size),
+    cursorOf: fn (array $batch): string => end($batch)->getId(),
+    handle: function (array $batch): void { /* обработать и забыть */ },
+    startCursor: BatchUtils::FIRST_CURSOR,
 );
 
-// query string
-$this->searchUsers->execute(UserSearchModel::fromArray($request->query->all()));
-
-// без body
-$this->deleteUser->execute(userId: $id, currentUserId: $this->getCurrentUserId());
+// ✅ работа по известным id — батчами
+BatchUtils::each($ids, fn (array $chunk) => $service->recalculate($repo->listByIds($chunk)));
 ```
 
-- `*Model::fromArray` — wire → typed (типы / минимальный shape). Use-case contract без IO — в Service до записи (whitelist sort/filter). С IO — в `*Policy`.
-- Инварианты поля — VO / persistence `*Model`, не повторная проверка типов в Service.
-- Единый wire Model — `ArrayableModelInterface`; список criteria — `ArrayableModelListInterface` (`fromArrayList` / `toArrayList`).
-- Response Model — `ArrayableModelInterface` (`fromArray` для декодирования в тестах; наружу — public props). Page из port (`UserPaginatedModel`) — не arrayable.
-- `toArray()` / `toArrayList()` — Integration и serde (wire-ключи).
-- `array` / `mixed` — только на границе wire. В Service, Policy, Lifecycle и тестах Application — `new *Model(...)`, не `fromArray` и не `array $overrides`.
+---
+
+## Границы типизации
+
+`array` и `mixed` — **только на wire-границе**: HTTP body, JSON decode, serde.
+
+- Внутри Application, Policy, Lifecycle и тестов — Model, VO, enum.
+- `array $payload` / `array $overrides` в сигнатурах Service и Policy —
+  запрещены: они теряют контракт и протаскивают «магические» ключи.
+- `fromArray` — только на границе (wire → typed). Внутри — `new *Model(...)`.
+- `toArray` — для wire и сериализации, не для передачи данных между классами.
+
+```php
+// ✅ wire → typed один раз, дальше — типы
+$service->execute(FooRequestModel::fromArray($request->getPayload()));
+
+// ❌ нетипизированное передаётся вглубь слоя
+$service->execute($request->getPayload());
+```
 
 ---
 
 ## Чеклист
 
-1. Вход HTTP — `*Service::execute`; выход Action/Query — response Model | void
-2. Payload → `*Model::fromArray`; без `Presentation\Request` и без Command/Query-обёртки
-3. Persistence `*Model` отдельно от request (`Action/`) и response (`Read/`); при коллизии имён — `*ResponseModel`
-4. Enum — `Enum/`; в полях Model — typed enum, не `string`
-5. VO — `ValueObject/`, уникальное короткое имя, без суффикса роли
-6. Repository — только `Application/Port/`; возврат persistence Model / response Model / скаляр; search с criteria — `search`
-7. `list` без criteria; фильтры только в `query`
-8. Policy: метод с I/O — суффикс `Io`; без I/O — без суффикса
-9. Delete: межагрегатные дети и side effects — явно в `*DeleteService` / Lifecycle, не через DB/ORM cascade
-10. Полный перебор User/Task/(связанных) — `listBatch` / `BatchUtils` + `listByIds`; см. «Масштаб и batch-переборы»
-11. Async-постановка — `*Dispatcher`; эффект после commit — Lifecycle или `*MessageHandler`
-12. `CacheInterface` — только в `*Cache`
+1. Вход use case — `*Service::execute`; выход — response Model \| void
+2. `array`/`mixed` — только wire-граница; внутри — Model/VO/enum
+3. Роли Model разделены; persistence Model не уходит клиенту
+4. Закрытое множество — typed enum; VO — только под инвариант
+5. Port — контракт; наружу Model или скаляр, Entity не выходит
+6. Policy с I/O — суффикс `Io`; Policy не персистит
+7. Delete — явные дети и side effects; cascade только внутри агрегата
+8. Перебор — пагинация/keyset; OFFSET и полный scan запрещены
+9. Async ставит `*Dispatcher`, выполняет Lifecycle или `*MessageHandler`
+10. `CacheInterface` — только в `*Cache`
+

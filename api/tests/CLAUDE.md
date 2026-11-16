@@ -17,7 +17,7 @@ tests/
 └── AuthenticatedWebTestCase.php  # демо-пользователь + логин
 ```
 
-**Не создавать `tests/Unit/`** — слои лежат в корне `tests/`, как в `src/`. Слоя `Domain/` нет: персистентная модель — Application `*Model`, VO — `Application/ValueObject`.
+**Не создавать `tests/Unit/`** — слои лежат в корне `tests/`, как в `src/`; тесты персистентной модели — в `tests/Application/Model`, VO — в `tests/Application/ValueObject`.
 
 ---
 
@@ -28,7 +28,7 @@ tests/
 | **`Application/Service/{Entity}/{Action,Query,Lifecycle}`** | `DatabaseTestCase`, если есть БД / cache / messenger; иначе `PHPUnit\Framework\TestCase` | один `*Service` через `$this->bed->get(…)`; ответ `*ViewModel` vs персистентная `*Model` (`Asserts*ModelTrait`); search filter/sort; `clear()` + `find*` |
 | **`Application/Model` / `ValueObject` / `Utils`** | `TestCase` | `fromArray` / whitelist, инварианты VO и утилит — без БД |
 | **Integration `{Name}ControllerTest`** | `AuthenticatedWebTestCase` или `DatabaseWebTestCase` | HTTP status + error `codeId` |
-| **ModelMapper отдельно** | — | не тестируем |
+| **`Application/Mapper` отдельно** | — | не тестируем |
 
 ```
 Application/

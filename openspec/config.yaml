@@ -17,7 +17,8 @@ context: |
   исключения живут в `Application/`.
   Архитектурные правила — в `api/CLAUDE.md` (+ `api/src/Application/CLAUDE.md`,
   `api/src/Infrastructure/CLAUDE.md`, `api/tests/CLAUDE.md`) — читай нужные
-  разделы перед написанием design/tasks; спеки их не дублируют, а ссылаются.
+  разделы перед планированием и реализацией (proposal, design, tasks, apply);
+  спеки их не дублируют, а ссылаются.
   Спеки описывают ФАКТИЧЕСКОЕ поведение кода и тестов (источник истины);
   `api/CLAUDE.md` описывает ТЕКУЩУЮ архитектуру. Расхождения фактического
   поведения с задокументированным контрактом фиксируются в секции `## Notes`
@@ -60,16 +61,19 @@ rules:
   design:
     - "Отобрази дизайн по слоям: Application (Service/Model/Policy/Mapper, VO/enum) → Port → Infrastructure (Doctrine/адаптер); слоя Domain нет"
     - Ссылайся на конкретные разделы api/CLAUDE.md вместо пересказа архитектуры
+    - "Если изменение затрагивает Application — назови роли классов (Action/Query/Lifecycle, Model, Port, Policy) и раздел CLAUDE.md; отступление от архитектурного правила фиксируй явно как исключение"
     - Перечисли изменяемые файлы, миграции БД, async-сообщения, ключи кэша и тесты
     - design.md описывает только дельту изменения; постоянные контракты домена остаются в его umbrella spec.md
   tasks:
     - "Группируй задачи по фазам: Application → Infrastructure → Presentation → Tests → Checks"
     - Каждая задача называет затрагиваемые файлы и способ проверки
+    - "Задачи по Application называют роль класса (Action/Query/Lifecycle, Model, Port, Policy, Mapper) и раздел CLAUDE.md, которому следует реализация"
 
 operations:
   apply:
     guidance:
       - Запускай `composer cs-check`, `composer phpstan` и `php bin/phpunit` из api/ (через docker), прежде чем отмечать группу выполненной
+      - Перед правкой кода сверься с разделом CLAUDE.md своего слоя; отступление от архитектурного правила согласуй с пользователем и зафиксируй в design.md
       - Отмечай чекбоксы tasks.md по мере работы; обновляй спеки openspec при изменении поведения
   archive:
     guidance:
