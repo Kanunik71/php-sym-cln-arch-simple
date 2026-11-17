@@ -60,8 +60,8 @@ Presentation  ──►  Application  ──►  Port  ◄──  Infrastructure
 | **Interface** | Прочий контракт | `CacheInterface`, `ArrayableModelInterface` |
 | **Service** | `Action`/`Query` — use case, оркестрация; прочие подпапки — переиспользуемый шаг | `UserUpdateService`, `RefreshTokenService` |
 | **Policy** | Предусловия use case (auth, uniqueness, exists) | `UpdateUserPolicy`, `TaskAccessPolicy` |
-| **Cache** | Политика ключей кэша | `TaskGroupCache` |
-| **Dispatcher** | Постановка async-работы: дедуп, lock, dispatch | `TaskGroupRecalculationDispatcher` |
+| **Cache** | Политика ключей и TTL (роль пока пуста) | — |
+| **Dispatcher** | Постановка async-работы: `dispatch` | `TaskGroupRecalculationDispatcher` |
 | **Mapper** | Application `*Model` → response `*Model` | `UserViewModelMapper`, `FileItemModelMapper` |
 
 ### Infrastructure
@@ -71,7 +71,7 @@ Presentation  ──►  Application  ──►  Port  ◄──  Infrastructure
 | **Entity** | Модель таблицы БД (Doctrine) | `UserEntity` |
 | **Mapper** | `*Model` ↔ Entity | `UserMapper` |
 | **Repository** | Реализация `*RepositoryInterface` | `DoctrineUserRepository` |
-| **Adapter** | Обёртка над библиотекой | `LocalFileStorageAdapter`, `SymfonyMailerAdapter` |
+| **Adapter** | Обёртка над библиотекой | `LocalFileStorageAdapter`, `SymfonyMailerAdapter`, `TaskGroupLock` |
 | **Provider** | Внешний ресурс | `LexikTokenProvider`, `SymfonyFileDownloadUrlProvider` |
 | **MessageHandler** | Асинхронный обработчик Event | `UserUpdatedMessageHandler` |
 | **Service** | Техническая реализация | `RedisCacheService` |

@@ -19,25 +19,41 @@ final readonly class TaskGroupRecalculationService
     ) {
     }
 
-    public function recalculateByTaskId(string $taskId): void
+    /**
+     * @param callable(): void|null $onBatch вызывается перед каждым батчем,
+     *                                       чтобы вызывающий мог продлить лок
+     */
+    public function recalculateByTaskId(string $taskId, ?callable $onBatch = null): void
     {
         $taskGroups = $this->taskGroupRepository->listByTaskId($taskId);
 
         BatchUtils::each(
             $taskGroups,
-            fn (array $chunk) => $this->recalculateGroups($chunk),
+            function (array $chunk) use ($onBatch): void {
+                if ($onBatch !== null) {
+                    $onBatch();
+                }
+
+                $this->recalculateGroups($chunk);
+            },
             $this->batchSize,
         );
     }
 
     /**
-     * @param list<string> $taskGroupIds
+     * @param list<string>          $taskGroupIds
+     * @param callable(): void|null $onBatch      вызывается перед каждым батчем,
+     *                                            чтобы вызывающий мог продлить лок
      */
-    public function recalculateByGroupIds(array $taskGroupIds): void
+    public function recalculateByGroupIds(array $taskGroupIds, ?callable $onBatch = null): void
     {
         BatchUtils::each(
             $taskGroupIds,
-            function (array $chunk): void {
+            function (array $chunk) use ($onBatch): void {
+                if ($onBatch !== null) {
+                    $onBatch();
+                }
+
                 $this->recalculateGroups($this->taskGroupRepository->listByIds($chunk));
             },
             $this->batchSize,

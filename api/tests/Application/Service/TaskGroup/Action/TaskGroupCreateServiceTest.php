@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\TaskGroup\Action;
 
-use App\Application\Dispatcher\TaskGroup\TaskGroupRecalculationDispatcher;
 use App\Application\Enum\Task\TaskUserStatusEnum;
-use App\Application\Event\TaskGroup\TaskGroupsRecalculationRequestedEvent;
+use App\Application\Event\TaskGroup\TaskGroupsRecalculationByGroupIdsRequestedEvent;
 use App\Application\Exception\Task\TaskNotFoundException;
 use App\Application\Exception\Task\UnauthorizedTaskAccessException;
 use App\Application\Model\Task\TaskUserModel;
@@ -47,10 +46,9 @@ final class TaskGroupCreateServiceTest extends DatabaseTestCase
         );
 
         $this->assertDispatched(
-            TaskGroupsRecalculationRequestedEvent::class,
-            predicate: fn (TaskGroupsRecalculationRequestedEvent $event): bool => $event->taskGroupIds === [$result->id],
+            TaskGroupsRecalculationByGroupIdsRequestedEvent::class,
+            predicate: fn (TaskGroupsRecalculationByGroupIdsRequestedEvent $event): bool => $event->taskGroupIds === [$result->id],
         );
-        $this->bed->get(TaskGroupRecalculationDispatcher::class)->releaseGroupIdsLock([$result->id]);
     }
 
     public function testCreatesEmptyTaskGroupWithoutRecalculation(): void
@@ -67,7 +65,7 @@ final class TaskGroupCreateServiceTest extends DatabaseTestCase
 
         $this->assertSame($create->name, $result->name);
         $this->assertSame($user->getId(), $result->ownerId);
-        $this->assertDispatched(TaskGroupsRecalculationRequestedEvent::class, times: 0);
+        $this->assertDispatched(TaskGroupsRecalculationByGroupIdsRequestedEvent::class, times: 0);
     }
 
     public function testThrowsWhenTaskUnknown(): void

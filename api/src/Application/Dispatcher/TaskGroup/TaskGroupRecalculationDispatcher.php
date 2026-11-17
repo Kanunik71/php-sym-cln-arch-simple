@@ -4,25 +4,28 @@ declare(strict_types=1);
 
 namespace App\Application\Dispatcher\TaskGroup;
 
-use App\Application\Cache\TaskGroup\TaskGroupCache;
-use App\Application\Event\TaskGroup\TaskGroupsRecalculationRequestedEvent;
+use App\Application\Event\TaskGroup\TaskGroupsRecalculationByGroupIdsRequestedEvent;
+use App\Application\Event\TaskGroup\TaskGroupsRecalculationByTaskRequestedEvent;
 use Symfony\Component\Messenger\MessageBusInterface;
 
+/**
+ * Ставит пересчёт TaskGroup в очередь.
+ *
+ * Продюсер не держит лок: HTTP-запрос короткий и не может ждать конца
+ * асинхронной работы. Одновременность ограничивает потребитель — он берёт
+ * лок на канал пересчёта и не запускает второй пересчёт, пока первый не
+ * закончен.
+ */
 final readonly class TaskGroupRecalculationDispatcher
 {
     public function __construct(
         private MessageBusInterface $messageBus,
-        private TaskGroupCache $taskGroupCache,
     ) {
     }
 
     public function requestByTaskId(string $taskId): void
     {
-        if (!$this->taskGroupCache->tryAcquireTaskLock($taskId)) {
-            return;
-        }
-
-        $this->messageBus->dispatch(new TaskGroupsRecalculationRequestedEvent(taskId: $taskId));
+        $this->messageBus->dispatch(new TaskGroupsRecalculationByTaskRequestedEvent(taskId: $taskId));
     }
 
     /**
@@ -37,23 +40,6 @@ final readonly class TaskGroupRecalculationDispatcher
         $uniqueGroupIds = array_values(array_unique($taskGroupIds));
         sort($uniqueGroupIds);
 
-        if (!$this->taskGroupCache->tryAcquireGroupIdsLock($uniqueGroupIds)) {
-            return;
-        }
-
-        $this->messageBus->dispatch(new TaskGroupsRecalculationRequestedEvent(taskGroupIds: $uniqueGroupIds));
-    }
-
-    public function releaseTaskLock(string $taskId): void
-    {
-        $this->taskGroupCache->releaseTaskLock($taskId);
-    }
-
-    /**
-     * @param list<string> $taskGroupIds
-     */
-    public function releaseGroupIdsLock(array $taskGroupIds): void
-    {
-        $this->taskGroupCache->releaseGroupIdsLock($taskGroupIds);
+        $this->messageBus->dispatch(new TaskGroupsRecalculationByGroupIdsRequestedEvent(taskGroupIds: $uniqueGroupIds));
     }
 }

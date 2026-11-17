@@ -76,6 +76,9 @@ services:
     App\Application\Port\CacheInterface:
         alias: App\Infrastructure\Cache\RedisCacheService
 
+    App\Application\Port\TaskGroup\TaskGroupLockInterface:
+        alias: App\Infrastructure\Lock\TaskGroupLock
+
     App\Application\Port\Notification\NotificationPreferenceRepositoryInterface:
         alias: App\Infrastructure\Persistence\Doctrine\Repository\DoctrineNotificationPreferenceRepository
 
@@ -91,6 +94,10 @@ services:
     App\Infrastructure\Cache\RedisCacheService:
         arguments:
             $cache: '@cache.app'
+
+    App\Infrastructure\Lock\TaskGroupLock:
+        arguments:
+            $lockFactory: '@lock.task_group_recalc.factory'
 
     App\Infrastructure\Storage\LocalFileStorageAdapter:
         arguments:

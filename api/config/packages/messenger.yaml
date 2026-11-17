@@ -15,7 +15,8 @@ framework:
 
         routing:
             'App\Application\Event\Task\TaskCreatedEvent': async
-            'App\Application\Event\TaskGroup\TaskGroupsRecalculationRequestedEvent': async
+            'App\Application\Event\TaskGroup\TaskGroupsRecalculationByTaskRequestedEvent': async
+            'App\Application\Event\TaskGroup\TaskGroupsRecalculationByGroupIdsRequestedEvent': async
             'App\Application\Event\User\UserRegisteredEvent': async
             'App\Application\Event\User\UserUpdatedEvent': async
 

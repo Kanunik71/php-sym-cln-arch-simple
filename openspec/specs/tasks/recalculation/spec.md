@@ -7,12 +7,12 @@
 ## Requirements
 
 ### Requirement: Пересчёт групп при изменениях
-The API SHALL при смене статуса задачи публиковать `TaskGroupsRecalculationRequestedEvent` (`taskId`), при удалении — с `taskGroupIds` затронутых групп (см. [task-groups](../../task-groups/spec.md)); при создании задачи событие публикуется, но обработчик только логирует. Список задач не кэшируется.
+The API SHALL при смене статуса задачи публиковать `TaskGroupsRecalculationByTaskRequestedEvent` (`taskId`), при удалении — `TaskGroupsRecalculationByGroupIdsRequestedEvent` с id затронутых групп (см. [task-groups](../../task-groups/spec.md)); при создании задачи событие публикуется, но обработчик только логирует. Список задач не кэшируется.
 
 #### Scenario: Пересчёт после смены статуса
 - **GIVEN** задача входит в группы
 - **WHEN** сменён статус задачи
-- **THEN** группы пересчитаны асинхронно через `RecalculateTaskGroupsMessageHandler`
+- **THEN** группы пересчитаны асинхронно через `RecalculateTaskGroupsByTaskMessageHandler`
 
 #### Scenario: Пересчёт после удаления
 - **GIVEN** задача входит в группы
@@ -21,6 +21,6 @@ The API SHALL при смене статуса задачи публиковат
 
 ## Notes
 
-- Правила вычисления статуса группы и debounce-lock — в [task-groups](../../task-groups/spec.md).
+- Правила вычисления статуса группы и lock пересчёта — в [task-groups](../../task-groups/spec.md).
 - Реализация: список задач не кэшируется.
-- Источники: `api/src/Application/Service/Task/Action/TaskChangeStatusService.php`, `api/src/Application/Service/Task/Action/TaskDeleteService.php`, `api/src/Infrastructure/Messaging/TaskGroup/Handler/RecalculateTaskGroupsMessageHandler.php`.
+- Источники: `api/src/Application/Service/Task/Action/TaskChangeStatusService.php`, `api/src/Application/Service/Task/Action/TaskDeleteService.php`, `api/src/Infrastructure/Messaging/TaskGroup/Handler/**`.

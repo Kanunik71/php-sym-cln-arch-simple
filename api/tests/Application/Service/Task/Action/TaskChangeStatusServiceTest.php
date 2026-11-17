@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\Task\Action;
 
-use App\Application\Dispatcher\TaskGroup\TaskGroupRecalculationDispatcher;
 use App\Application\Enum\Task\TaskStatusEnum;
 use App\Application\Enum\Task\TaskUserStatusEnum;
-use App\Application\Event\TaskGroup\TaskGroupsRecalculationRequestedEvent;
+use App\Application\Event\TaskGroup\TaskGroupsRecalculationByTaskRequestedEvent;
 use App\Application\Exception\Task\InvalidTaskStatusTransitionException;
 use App\Application\Exception\Task\UnauthorizedTaskAccessException;
 use App\Application\Model\Task\Action\TaskChangeStatusModel;
@@ -45,10 +44,9 @@ final class TaskChangeStatusServiceTest extends DatabaseTestCase
         $this->assertSame($activate->assignUserId, $active->users[0]->userId);
         $this->assertSame(TaskUserStatusEnum::Active, $active->users[0]->status);
         $this->assertDispatched(
-            TaskGroupsRecalculationRequestedEvent::class,
-            predicate: fn (TaskGroupsRecalculationRequestedEvent $event): bool => $event->taskId === $task->getId(),
+            TaskGroupsRecalculationByTaskRequestedEvent::class,
+            predicate: fn (TaskGroupsRecalculationByTaskRequestedEvent $event): bool => $event->taskId === $task->getId(),
         );
-        $this->bed->get(TaskGroupRecalculationDispatcher::class)->releaseTaskLock($task->getId());
 
         $finish = new TaskChangeStatusModel(status: TaskStatusEnum::Finished);
 
@@ -61,10 +59,9 @@ final class TaskChangeStatusServiceTest extends DatabaseTestCase
         $this->assertSame($finish->status, $finished->status);
         $this->assertNotNull($finished->finishedDate);
         $this->assertDispatched(
-            TaskGroupsRecalculationRequestedEvent::class,
-            predicate: fn (TaskGroupsRecalculationRequestedEvent $event): bool => $event->taskId === $task->getId(),
+            TaskGroupsRecalculationByTaskRequestedEvent::class,
+            predicate: fn (TaskGroupsRecalculationByTaskRequestedEvent $event): bool => $event->taskId === $task->getId(),
         );
-        $this->bed->get(TaskGroupRecalculationDispatcher::class)->releaseTaskLock($task->getId());
 
         $this->bed->clear();
         $persisted = $this->bed->findTaskById($task->getId());

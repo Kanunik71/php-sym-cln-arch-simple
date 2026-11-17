@@ -52,8 +52,9 @@ Docker `php` при `AUTO_MIGRATE=1` выполняет миграции при 
 - Env: `APP_SECRET`, `JWT_SECRET`, `DATABASE_URL`, `REDIS_URL`,
   `MESSENGER_TRANSPORT_DSN`, `MESSENGER_FAILURE_TRANSPORT_DSN`, `MAILER_FROM`,
   `SCHEDULER_*_CRON`.
-- Кэш: Redis (`REDIS_URL`) в prod, array-кэш в тестах; ключи debounce-lock
-  пересчёта групп — в [task-groups](specs/task-groups/spec.md) → Notes.
+- Кэш: Redis (`REDIS_URL`) в prod, array-кэш в тестах. Lock пересчёта групп —
+  `symfony/lock` поверх Redis, `in-memory` в тестах; ключи — в
+  [task-groups](specs/task-groups/spec.md) → Notes.
 
 ## Глоссарий
 
@@ -64,12 +65,13 @@ Docker `php` при `AUTO_MIGRATE=1` выполняет миграции при 
 - **File** — `Temporary` / `Permanent`.
 - **Preference** — настройка уведомлений по типу.
 - **Transactional type** — обязательное уведомление.
-- **Debounce lock** — кэш-lock от дублей пересчёта.
+- **Recalculation lock** — `symfony/lock`-лок от параллельного пересчёта одного scope.
 
 ## Асинхронность (обзор)
 
 - `TaskCreatedEvent` — только лог.
-- `TaskGroupsRecalculationRequestedEvent` — пересчёт групп.
+- `TaskGroupsRecalculationByTaskRequestedEvent` — пересчёт групп задачи.
+- `TaskGroupsRecalculationByGroupIdsRequestedEvent` — пересчёт указанных групп.
 - `UserRegisteredEvent` — email.
 - `UserUpdatedEvent` — email/SMS по настройке.
 

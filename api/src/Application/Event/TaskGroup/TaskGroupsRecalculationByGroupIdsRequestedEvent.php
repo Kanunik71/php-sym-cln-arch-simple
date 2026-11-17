@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace App\Application\Event\TaskGroup;
 
-final readonly class TaskGroupsRecalculationRequestedEvent
+/**
+ * Пересчёт указанных групп.
+ */
+final readonly class TaskGroupsRecalculationByGroupIdsRequestedEvent
 {
     /**
      * @param list<string> $taskGroupIds
      */
     public function __construct(
-        public ?string $taskId = null,
-        public array $taskGroupIds = [],
+        public array $taskGroupIds,
     ) {
     }
 }

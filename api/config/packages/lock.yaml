@@ -1,0 +1,8 @@
+framework:
+    lock:
+        task_group_recalc: '%env(REDIS_URL)%'
+
+when@test:
+    framework:
+        lock:
+            task_group_recalc: 'in-memory'

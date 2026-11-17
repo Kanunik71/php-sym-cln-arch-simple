@@ -24,6 +24,7 @@ Infrastructure/Persistence/Doctrine/Repository/DoctrineUserRepository.php
 Infrastructure/
 ├── Persistence/    # БД: Entity, Mapper, Repository, транзакции
 ├── Cache/          # Redis-адаптер CacheInterface
+├── Lock/           # мьютексы на symfony/lock
 ├── Messaging/      # async MessageHandler по сущности
 ├── Scheduler/      # периодические задачи (Symfony Scheduler)
 ├── Security/       # JWT, пароли, Symfony Security
@@ -127,22 +128,35 @@ Side effects (object storage, cache, events) **никогда** не делег�
 
 ### Cache
 
-Реализация `CacheInterface` (Application Port). Не знает о Task/User/Asset — только ключ, TTL и callback. Потребители в Application — только классы `*Cache` (`TaskGroupCache`), не Service. `*Dispatcher` берёт lock через `*Cache` (`TaskGroupCache`), не через `CacheInterface` напрямую.
+Реализация `CacheInterface` (Application Port). Не знает о Task/User/Asset — только ключ, TTL и callback. Потребителей в Application сейчас нет: роль `*Cache` пуста, порт и адаптер оставлены как готовая инфраструктура.
 
 | Класс | Роль |
 |-------|------|
 | `RedisCacheService` | Адаптер Symfony Cache / Redis |
 
+### Lock
+
+Адаптеры Application-портов блокировок на `symfony/lock`. Один named resource `task_group_recalc`: Redis в dev/prod, `in-memory` в тестах (`config/packages/lock.yaml`).
+
+Ключи лока и TTL — деталь реализации: Application знает только «канал пересчёта» (задача или набор групп), но не формат ключа.
+
+| Класс | Роль |
+|-------|------|
+| `TaskGroupLock` | `TaskGroupLockInterface`: ресурс `task_group_recalc.task.{taskId}` / `task_group_recalc.groups.{sha256(sorted ids)}`, TTL 120 с, `acquire(blocking: false)` |
+| `SymfonyLockHandle` | `refresh()` для длинной работы и `release()` в `finally` |
+
 ### Messaging
 
-Асинхронная реакция на Application Event через Symfony Messenger. Это не use case: `*MessageHandler` вызывает Application `*Service` (и при необходимости снимает lock диспетчера).
+Асинхронная реакция на Application Event через Symfony Messenger. Это не use case: `*MessageHandler` вызывает Application `*Service` (и при необходимости берёт лок).
 
 Внутри `Messaging/` группировка по сущности, затем роль:
 
 ```
 Messaging/
 ├── Task/Handler/TaskCreatedMessageHandler.php
-├── TaskGroup/Handler/RecalculateTaskGroupsMessageHandler.php
+├── TaskGroup/Handler/
+│   ├── RecalculateTaskGroupsByTaskMessageHandler.php
+│   └── RecalculateTaskGroupsByGroupIdsMessageHandler.php
 └── User/Handler/
     ├── UserRegisteredMessageHandler.php
     └── UserUpdatedMessageHandler.php
@@ -151,7 +165,8 @@ Messaging/
 | Класс | Роль |
 |-------|------|
 | `TaskCreatedMessageHandler` | Логирует `TaskCreatedEvent` |
-| `RecalculateTaskGroupsMessageHandler` | `TaskGroupRecalculationService`, затем `releaseTaskLock` / `releaseGroupIdsLock` |
+| `RecalculateTaskGroupsByTaskMessageHandler` | Пересчёт групп задачи: лок канала «по задаче», `release()` в `finally` |
+| `RecalculateTaskGroupsByGroupIdsMessageHandler` | Пересчёт указанных групп: лок канала «по набору групп», `release()` в `finally` |
 | `UserRegisteredMessageHandler` | `NotificationService::notify` (`UserRegistered`) |
 | `UserUpdatedMessageHandler` | `NotificationService::notify` (`UserUpdated`) |
 
