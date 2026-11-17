@@ -24,7 +24,7 @@
 
 ```
 Application/
-├── Service/        # {Entity}/Action | Query | Lifecycle — use case
+├── Service/        # {Entity}/Action | Query — use case; прочие подпапки — Service
 ├── Model/          # persistence + request + response
 ├── ValueObject/    # инвариант поля
 ├── Enum/           # закрытое множество
@@ -50,22 +50,45 @@ Application/
 
 ## Service
 
-| Подроль | Когда | Вход | Выход |
-|---------|-------|------|--------|
-| **Action** | создание, изменение, удаление, аутентификация | request Model + контекст | response Model \| void |
-| **Query** | чтение: одна сущность, список, поиск, meta | Model/контекст | response Model, list, page |
-| **Lifecycle** | side effects после persist, batch-обход | свой метод (`after*Persisted`, `recalculate*`) или `execute` для job/CLI | void \| факты для вызывающего |
+**Use case — это `Action` и `Query`.** Других ролей входа нет; имя класса
+`*Service` сохраняется, роль задаёт папка. Всё остальное в
+`Application/Service/**` — **Service**: переиспользуемый шаг. Имена прочих
+подпапок (`Lifecycle`, `Auth`, `Common`, любые новые) роли не задают — это
+навигация по сущности или теме, список открыт.
 
-Правила:
+| Роль | Когда | Вход | Выход |
+|------|-------|------|--------|
+| **Use case** — `Action` | создание, изменение, удаление, аутентификация | request Model + контекст | response Model \| void |
+| **Use case** — `Query` | чтение: одна сущность, список, поиск, meta | Model/контекст | response Model, list, page |
+| **Service** — прочие подпапки | шаг: side effects после persist, batch-обход, техническая операция | свой метод (`after*Persisted`, `recalculate*`) или `execute` для job | void \| факты для вызывающего |
+
+Правила входа:
+
+- Use case вызывается из `Presentation/Controller` или из другого
+  `Action`/`Query`. Service — из use case, `Console` или `*MessageHandler`.
+  Controller в Service не входит; use case из job'а — тоже.
+- Use case может вызывать use case — это межагрегатная оркестрация
+  (`UserDelete → TaskDelete`). Service use case не вызывает: иначе кирпич
+  обрастает сценарием.
+- `Policy`, `Mapper`, `Cache`, `Dispatcher` use case не вызывают.
+- Транзакцию открывает вход — use case или job; Service участвует в чужой
+  транзакции и `TransactionManagerInterface` не использует. Side effects
+  (messenger, cache, object storage) — после commit, на уровне самого внешнего
+  входа.
+- У метода Service один класс входов: если его зовут из use case, его не
+  зовёт Console/MessageHandler, и наоборот — иначе Policy проверяется через
+  раз.
+
+Правила use case:
 
 - `execute` — единственный вход use case. Обёрток `*Command` / `*Query` /
   `*Handler` нет: вход — request Model плюс контекст (`userId`, `currentUserId`).
 - Наружу из Action/Query — **только response Model \| void**. Persistence
   `*Model` — внутренний факт, вход репозитория, а не JSON ответа.
-- Action: Policy → собрать/изменить Model → persist → Lifecycle → response Model.
+- Action: Policy → собрать/изменить Model → persist → Service → response Model.
 - Query не имеет side effects; чтение и маппинг — вся его работа.
-- Lifecycle не вызывается контроллером напрямую: его зовёт Action/Query,
-  job/CLI или `*MessageHandler`.
+- Service не вызывается контроллером напрямую: его зовёт Action/Query,
+  Console или `*MessageHandler`.
 - Presentation не содержит use-case логики: разобрать вход → `execute`.
   Console разбирает CLI-аргументы и вызывает `*Service`.
 - Чтение/удаление без body не заводит request Model: контекст передаётся
@@ -317,14 +340,16 @@ $service->execute($request->getPayload());
 
 ## Чеклист
 
-1. Вход use case — `*Service::execute`; выход — response Model \| void
-2. `array`/`mixed` — только wire-граница; внутри — Model/VO/enum
-3. Роли Model разделены; persistence Model не уходит клиенту
-4. Закрытое множество — typed enum; VO — только под инвариант
-5. Port — контракт; наружу Model или скаляр, Entity не выходит
-6. Policy с I/O — суффикс `Io`; Policy не персистит
-7. Delete — явные дети и side effects; cascade только внутри агрегата
-8. Перебор — пагинация/keyset; OFFSET и полный scan запрещены
-9. Async ставит `*Dispatcher`, выполняет Lifecycle или `*MessageHandler`
-10. `CacheInterface` — только в `*Cache`
+1. Use case — `Action`/`Query`; вход — `execute`, выход — response Model \| void
+2. Граница входа: Controller → Action/Query, job (Console/MessageHandler) → Service; Service не зовёт use case
+3. Транзакцию открывает вход (use case или job); Service участвует, но не открывает
+4. `array`/`mixed` — только wire-граница; внутри — Model/VO/enum
+5. Роли Model разделены; persistence Model не уходит клиенту
+6. Закрытое множество — typed enum; VO — только под инвариант
+7. Port — контракт; наружу Model или скаляр, Entity не выходит
+8. Policy с I/O — суффикс `Io`; Policy не персистит
+9. Delete — явные дети и side effects; cascade только внутри агрегата
+10. Перебор — пагинация/keyset; OFFSET и полный scan запрещены
+11. Async ставит `*Dispatcher`, выполняет Service или `*MessageHandler`
+12. `CacheInterface` — только в `*Cache`
 

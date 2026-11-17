@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace App\Application\Service\Auth;
 
-use App\Application\Exception\Auth\InvalidRefreshTokenException;
 use App\Application\Model\Auth\RefreshTokenIssuedModel;
 use App\Application\Model\Auth\RefreshTokenModel;
 use App\Application\Port\Auth\RefreshTokenRepositoryInterface;
-use App\Application\Port\TransactionManagerInterface;
 use App\Shared\Utils\UidUtils;
 use DateInterval;
 use DateTimeImmutable;
@@ -21,7 +19,6 @@ final readonly class RefreshTokenService
 
     public function __construct(
         private RefreshTokenRepositoryInterface $repository,
-        private TransactionManagerInterface $transactionManager,
         private int $ttlSeconds,
         private int $cleanupRetentionSeconds,
     ) {
@@ -29,53 +26,46 @@ final readonly class RefreshTokenService
 
     public function issue(string $userId): RefreshTokenIssuedModel
     {
-        return $this->transactionManager->run(
-            fn (): RefreshTokenIssuedModel => $this->createToken(
-                userId: $userId,
-                familyId: UidUtils::generateString(),
-                now: new DateTimeImmutable(),
-            ),
+        return $this->createToken(
+            userId: $userId,
+            familyId: UidUtils::generateString(),
+            now: new DateTimeImmutable(),
         );
     }
 
-    public function rotate(string $plainToken): RefreshTokenIssuedModel
+    /**
+     * @return RefreshTokenIssuedModel|null null when the presented token is unknown, expired, revoked or reused
+     */
+    public function rotate(string $plainToken): ?RefreshTokenIssuedModel
     {
-        $issued = $this->transactionManager->run(function () use ($plainToken): ?RefreshTokenIssuedModel {
-            $now = new DateTimeImmutable();
-            $stored = $this->repository->findByHash(self::hash($plainToken));
+        $now = new DateTimeImmutable();
+        $stored = $this->repository->findByHash(self::hash($plainToken));
 
-            if ($stored === null) {
-                return null;
-            }
-
-            if ($stored->isRevoked()) {
-                $this->repository->revokeFamily($stored->familyId, $now);
-
-                return null;
-            }
-
-            if (!$stored->isActive($now)) {
-                return null;
-            }
-
-            if (!$this->repository->revokeIfActive($stored->id, $now)) {
-                $this->repository->revokeFamily($stored->familyId, $now);
-
-                return null;
-            }
-
-            return $this->createToken(
-                userId: $stored->userId,
-                familyId: $stored->familyId,
-                now: $now,
-            );
-        });
-
-        if ($issued === null) {
-            throw InvalidRefreshTokenException::create();
+        if ($stored === null) {
+            return null;
         }
 
-        return $issued;
+        if ($stored->isRevoked()) {
+            $this->repository->revokeFamily($stored->familyId, $now);
+
+            return null;
+        }
+
+        if (!$stored->isActive($now)) {
+            return null;
+        }
+
+        if (!$this->repository->revokeIfActive($stored->id, $now)) {
+            $this->repository->revokeFamily($stored->familyId, $now);
+
+            return null;
+        }
+
+        return $this->createToken(
+            userId: $stored->userId,
+            familyId: $stored->familyId,
+            now: $now,
+        );
     }
 
     public function revoke(string $plainToken): void

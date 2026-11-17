@@ -7,6 +7,7 @@ namespace App\Application\Service\User\Action;
 use App\Application\Model\User\Action\UserLoginModel;
 use App\Application\Model\User\Read\UserLoginResponseModel;
 use App\Application\Policy\User\LoginUserPolicy;
+use App\Application\Port\TransactionManagerInterface;
 use App\Application\Service\Auth\UserTokenPairService;
 
 final readonly class UserLoginService
@@ -14,6 +15,7 @@ final readonly class UserLoginService
     public function __construct(
         private LoginUserPolicy $loginUserPolicy,
         private UserTokenPairService $userTokenPairService,
+        private TransactionManagerInterface $transactionManager,
     ) {
     }
 
@@ -21,6 +23,8 @@ final readonly class UserLoginService
     {
         $user = $this->loginUserPolicy->resolveAuthenticatedUserIo($model->email, $model->password);
 
-        return $this->userTokenPairService->issue($user);
+        return $this->transactionManager->run(
+            fn (): UserLoginResponseModel => $this->userTokenPairService->issue($user),
+        );
     }
 }

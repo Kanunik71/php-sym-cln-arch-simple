@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\Auth;
 
-use App\Application\Exception\Auth\InvalidRefreshTokenException;
 use App\Application\Model\Auth\RefreshTokenModel;
 use App\Application\Port\Auth\RefreshTokenRepositoryInterface;
 use App\Application\Service\Auth\RefreshTokenService;
@@ -23,6 +22,7 @@ final class RefreshTokenServiceTest extends DatabaseTestCase
         $this->assertStringStartsWith('rt_', $issued->token);
 
         $rotated = $service->rotate($issued->token);
+        $this->assertNotNull($rotated);
         $this->assertNotSame($issued->token, $rotated->token);
         $this->assertSame($user->id, $rotated->userId);
     }
@@ -34,15 +34,10 @@ final class RefreshTokenServiceTest extends DatabaseTestCase
 
         $issued = $service->issue($user->id);
         $rotated = $service->rotate($issued->token);
+        $this->assertNotNull($rotated);
 
-        try {
-            $service->rotate($issued->token);
-            $this->fail('Expected InvalidRefreshTokenException.');
-        } catch (InvalidRefreshTokenException) {
-        }
-
-        $this->expectException(InvalidRefreshTokenException::class);
-        $service->rotate($rotated->token);
+        $this->assertNull($service->rotate($issued->token), 'Reused token must be rejected.');
+        $this->assertNull($service->rotate($rotated->token), 'Family must be revoked after reuse.');
     }
 
     public function testExpiredTokenIsRejected(): void
@@ -59,8 +54,7 @@ final class RefreshTokenServiceTest extends DatabaseTestCase
             expiresAt: new DateTimeImmutable('-1 minute'),
         ));
 
-        $this->expectException(InvalidRefreshTokenException::class);
-        $service->rotate($plainToken);
+        $this->assertNull($service->rotate($plainToken));
     }
 
     public function testRevokeInvalidatesFamily(): void
@@ -71,8 +65,7 @@ final class RefreshTokenServiceTest extends DatabaseTestCase
         $issued = $service->issue($user->id);
         $service->revoke($issued->token);
 
-        $this->expectException(InvalidRefreshTokenException::class);
-        $service->rotate($issued->token);
+        $this->assertNull($service->rotate($issued->token));
     }
 
     public function testRevokeAllForUser(): void
@@ -85,14 +78,8 @@ final class RefreshTokenServiceTest extends DatabaseTestCase
         $service->revokeAllForUser($user->id);
 
         foreach ([$first, $second] as $issued) {
-            try {
-                $service->rotate($issued->token);
-                $this->fail('Expected InvalidRefreshTokenException.');
-            } catch (InvalidRefreshTokenException) {
-            }
+            $this->assertNull($service->rotate($issued->token));
         }
-
-        $this->addToAssertionCount(1);
     }
 
     public function testCleanupDeletesExpiredTokens(): void

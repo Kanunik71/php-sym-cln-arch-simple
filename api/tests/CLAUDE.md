@@ -32,10 +32,11 @@ tests/
 
 ```
 Application/
+├── ArchitectureTest.php                     # граница входа (сканирует src/, не зеркало)
 ├── Service/{Asset,File,Notification,Task,TaskGroup,User}/
 │   ├── Action/      # write use case, execute()
 │   ├── Query/       # read use case, execute()
-│   └── Lifecycle/   # побочные эффекты после persist, пересчёт, cleanup
+│   └── Lifecycle/   # Service: side effects после persist, пересчёт, cleanup
 ├── Model/{Asset,File,Task,TaskGroup,User}/   # + SortModelTest в корне Model/
 └── ValueObject/Common/                       # Email, Phone
 
@@ -57,15 +58,16 @@ Integration/          # один тест на контроллер, зерка�
 
 | Папка Service | Роль | Вход |
 |---------------|------|------|
-| **Action** | изменение | `execute(*Model?, …context) → *ViewModel \| void` |
-| **Query** | чтение (`list` / `get` / `search`) | `execute(…) → *ViewModel \| list \| page` |
-| **Lifecycle** | не вход контроллера | свой публичный метод (`after*Persisted`, `recalculate*`, иногда `execute`) |
+| **Action** | use case, изменение | `execute(*Model?, …context) → *ViewModel \| void` |
+| **Query** | use case, чтение (`list` / `get` / `search`) | `execute(…) → *ViewModel \| list \| page` |
+| **прочие** (`Lifecycle`, `Auth`, …) | Service: переиспользуемый шаг | свой публичный метод (`after*Persisted`, `recalculate*`, иногда `execute`) |
 
 ## Окружение тестов
 
 - Транспорты `async` и `failed` — `in-memory://`; кэш — array (см. `config/packages/messenger.yaml`, `when@test`).
 - Password cost 4; схема БД пересоздаётся на `setUp` в `DatabaseTestCase`/`DatabaseWebTestCase`.
 - Suites: `Unit` (`tests/Application`, `tests/Infrastructure`, `tests/Utils`) и `Integration` (`tests/Integration`); интеграционные проверки — HTTP-статус **и** `codeId`.
+- `tests/Application/ArchitectureTest.php` — единственное исключение из «зеркало `src/Application`»: сканирует `src/` целиком и проверяет границу входа (Controller → Action/Query, job → Service, Service не зовёт use case, Service не открывает транзакцию). Роль класса определяется по папке: `Action`/`Query` — use case, остальное в `Application/Service/**` — Service.
 
 ### Application Service
 1. С БД, cache или messenger — `extends DatabaseTestCase`. Репозитории, MessageBus и Cache **не** мокать; seed через `$this->bed->…`. Чистая логика без IO (`statusFromMembership`, search meta, `TaskUserListService`) — `PHPUnit\Framework\TestCase`, сервис собирается через `new`.

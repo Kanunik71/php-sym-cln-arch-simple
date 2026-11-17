@@ -34,10 +34,12 @@ Presentation  ──►  Application  ──►  Port  ◄──  Infrastructure
 
 - `Application` **не импортирует** `Infrastructure` — только `Port/`.
 - `Infrastructure` реализует `Port/`, наружу отдаёт `Application/Model`.
-- `Presentation` читает `Application` и вызывает `*Service::execute`.
+- `Presentation/Controller` вызывает `Action`/`Query::execute`; `Console` и
+  `MessageHandler` входят в Service.
 - `Shared/Utils` — чистые статические хелперы, о доменах не знают.
 
-Проверка: `grep -rn "use App\\Infrastructure" api/src/Application` — пусто.
+Проверка: `grep -rn "use App\\Infrastructure" api/src/Application` — пусто;
+граница входа — `tests/Application/ArchitectureTest.php`.
 
 ---
 
@@ -56,7 +58,7 @@ Presentation  ──►  Application  ──►  Port  ◄──  Infrastructure
 | **Event** | Факт для Messenger | `UserUpdatedEvent` |
 | **RepositoryInterface** | Контракт репозитория (Port) | `UserRepositoryInterface` |
 | **Interface** | Прочий контракт | `CacheInterface`, `ArrayableModelInterface` |
-| **Service** | Use case: оркестрация | `UserUpdateService` |
+| **Service** | `Action`/`Query` — use case, оркестрация; прочие подпапки — переиспользуемый шаг | `UserUpdateService`, `RefreshTokenService` |
 | **Policy** | Предусловия use case (auth, uniqueness, exists) | `UpdateUserPolicy`, `TaskAccessPolicy` |
 | **Cache** | Политика ключей кэша | `TaskGroupCache` |
 | **Dispatcher** | Постановка async-работы: дедуп, lock, dispatch | `TaskGroupRecalculationDispatcher` |
@@ -100,26 +102,32 @@ change, если понадобится):
 ## Application: вход / выход / внутри
 
 ```
-HTTP array → *Model::fromArray → *Service::execute($model, …context) → response Model | void
-CLI        → new *Model(...)    → *Service::execute($model, …context) → response Model | void
+HTTP         → *Model::fromArray  → Action/Query::execute($model, …context) → response Model | void
+CLI / worker → аргументы/handler  → Service-метод(...)                      → Model | скаляр | void
 ```
 
 | Слой | Роль | Выход наружу |
 |------|------|--------------|
 | **Model** | request + response (JSON) | да, response Model |
 | **Enum** | закрытое множество | только как поле Model |
-| **Service** | use case | **только** response Model \| void |
+| **Action** / **Query** | use case (вход из Controller или другого use case) | **только** response Model \| void |
+| **Service** | переиспользуемый шаг (вход из use case, Console, MessageHandler) | Model \| скаляр \| void |
 | **Policy** | предусловия (auth, uniqueness, exists) | ничего (бросает исключение) |
 | **Port** | контракт к Infrastructure | — |
 
-`Action`/`Query`/`Lifecycle` — подпапки `Service/{Entity}/`, различаются
-входом, а не типом:
+**Use case — это `Action` и `Query`.** Других ролей входа нет; всё остальное в
+`Service/{Entity}/` — Service, имена подпапок (`Lifecycle`, `Auth`, `Common`,
+новые) роли не задают. Граница входа:
 
-| Подпапка | HTTP | Вход | Выход |
-|----------|------|------|-------|
-| **Action** | create, update, delete, login | `execute(*Model?, …context)` | `*ViewModel` \| void |
-| **Query** | list / get / query | `execute(…)` | `*ViewModel`, list, page |
-| **Lifecycle** | не вход контроллера | свой метод (`after*Persisted`, `recalculate*`) | void |
+| Подпапка | Вход | Вход из | Выход |
+|----------|------|---------|-------|
+| **Action** | `execute(*Model?, …context)` | Controller, Action/Query | `*ViewModel` \| void |
+| **Query** | `execute(…)` | Controller, Action/Query | `*ViewModel`, list, page |
+| **Service** (прочие) | свой метод (`after*Persisted`, `recalculate*`) или `execute` для job | Action/Query, Console, `*MessageHandler` | void \| факты для вызывающего |
+
+Service не вызывает use case, Controller не вызывает Service, job не вызывает
+use case. Транзакцию открывает вход (use case или job), Service — только
+участвует. Проверяется тестом `tests/Application/ArchitectureTest.php`.
 
 Подробности — в [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md).
 
@@ -182,14 +190,15 @@ Infrastructure `Persistence/Doctrine/Mapper/`. Инфикс `Model` в имен�
 
 1. Слой и **один** суффикс (кроме VO и framework-coupled имён Infrastructure)
 2. `Presentation → Application → Port ← Infrastructure`: Application не импортирует Infrastructure
-3. `*Service::execute` наружу — **только** response Model \| void
-4. Persistence `*Model` отдельно от request (`Action/`) и response (`Read/`); Entity не выходит из Infrastructure
-5. Enum — `Application/Enum/`, в поле Model — typed enum
-6. `*RepositoryInterface` — только в `Application/Port/`; наружу Model или скаляр
-7. `CacheInterface` — только в `*Cache`; async ставит `*Dispatcher`
-8. Межагрегатный `onDelete: CASCADE` — нет; `cascade remove` — только внутри одного агрегата
-9. Перебор больших коллекций — только в фоне, keyset + `BatchUtils::stream`; в HTTP — пагинация или `listByIds`
-10. Детальные правила Application — в [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md#чеклист)
+3. Use case — `Action`/`Query`; `execute` наружу — **только** response Model \| void
+4. Граница входа: Controller → `Action`/`Query`, job → Service; Service не зовёт use case; транзакция — у входа
+5. Persistence `*Model` отдельно от request (`Action/`) и response (`Read/`); Entity не выходит из Infrastructure
+6. Enum — `Application/Enum/`, в поле Model — typed enum
+7. `*RepositoryInterface` — только в `Application/Port/`; наружу Model или скаляр
+8. `CacheInterface` — только в `*Cache`; async ставит `*Dispatcher`
+9. Межагрегатный `onDelete: CASCADE` — нет; `cascade remove` — только внутри одного агрегата
+10. Перебор больших коллекций — только в фоне, keyset + `BatchUtils::stream`; в HTTP — пагинация или `listByIds`
+11. Детальные правила Application — в [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md#чеклист)
 
 ---
 
