@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Service\TaskGroup\Lifecycle;
 
+use App\Application\Cache\TaskGroup\TaskGroupSummaryCache;
 use App\Application\Enum\TaskGroup\TaskGroupStatusEnum;
 use App\Application\Model\TaskGroup\TaskGroupMembershipFactsModel;
 use App\Application\Model\TaskGroup\TaskGroupModel;
@@ -15,6 +16,7 @@ final readonly class TaskGroupRecalculationService
 {
     public function __construct(
         private TaskGroupRepositoryInterface $taskGroupRepository,
+        private TaskGroupSummaryCache $summaryCache,
         private int $batchSize = BatchUtils::DEFAULT_SIZE,
     ) {
     }
@@ -84,6 +86,11 @@ final readonly class TaskGroupRecalculationService
 
             $this->taskGroupRepository->save($updated);
         }
+
+        // Task status counters of the summary are derived from the tasks
+        // themselves, so the cached summary is dropped for every processed
+        // group — not only for the ones whose status has changed.
+        $this->summaryCache->invalidate();
     }
 
     /**

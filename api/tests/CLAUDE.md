@@ -27,12 +27,14 @@ tests/
 |------|----------------|---------------|
 | **`Application/Service/{Entity}/{Action,Query,Lifecycle}`** | `DatabaseTestCase`, если есть БД / cache / messenger; иначе `PHPUnit\Framework\TestCase` | один `*Service` через `$this->bed->get(…)`; ответ `*ViewModel` vs персистентная `*Model` (`Asserts*ModelTrait`); search filter/sort; `clear()` + `find*` |
 | **`Application/Model` / `ValueObject` / `Utils`** | `TestCase` | `fromArray` / whitelist, инварианты VO и утилит — без БД |
+| **`Application/Cache/{Entity}`** | `TestCase` | ключ и TTL, попадание / промах / инвалидация — порт подменяется double'ом |
 | **Integration `{Name}ControllerTest`** | `AuthenticatedWebTestCase` или `DatabaseWebTestCase` | HTTP status + error `codeId` |
 | **`Application/Mapper` отдельно** | — | не тестируем |
 
 ```
 Application/
 ├── ArchitectureTest.php                     # граница входа (сканирует src/, не зеркало)
+├── Cache/{TaskGroup}/                       # *Cache: ключ, TTL, инвалидация
 ├── Service/{Asset,File,Notification,Task,TaskGroup,User}/
 │   ├── Action/      # write use case, execute()
 │   ├── Query/       # read use case, execute()

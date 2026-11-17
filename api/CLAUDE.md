@@ -60,7 +60,7 @@ Presentation  ──►  Application  ──►  Port  ◄──  Infrastructure
 | **Interface** | Прочий контракт | `CacheInterface`, `ArrayableModelInterface` |
 | **Service** | `Action`/`Query` — use case, оркестрация; прочие подпапки — переиспользуемый шаг | `UserUpdateService`, `RefreshTokenService` |
 | **Policy** | Предусловия use case (auth, uniqueness, exists) | `UpdateUserPolicy`, `TaskAccessPolicy` |
-| **Cache** | Политика ключей и TTL (роль пока пуста) | — |
+| **Cache** | Политика ключей и TTL | `TaskGroupSummaryCache` |
 | **Dispatcher** | Постановка async-работы: `dispatch` | `TaskGroupRecalculationDispatcher` |
 | **Mapper** | Application `*Model` → response `*Model` | `UserViewModelMapper`, `FileItemModelMapper` |
 
@@ -195,7 +195,7 @@ Infrastructure `Persistence/Doctrine/Mapper/`. Инфикс `Model` в имен�
 5. Persistence `*Model` отдельно от request (`Action/`) и response (`Read/`); Entity не выходит из Infrastructure
 6. Enum — `Application/Enum/`, в поле Model — typed enum
 7. `*RepositoryInterface` — только в `Application/Port/`; наружу Model или скаляр
-8. `CacheInterface` — только в `*Cache`; async ставит `*Dispatcher`
+8. `CacheInterface` — только в `*Cache`; кеш владеет ключом и TTL; async ставит `*Dispatcher`
 9. Межагрегатный `onDelete: CASCADE` — нет; `cascade remove` — только внутри одного агрегата
 10. Перебор больших коллекций — только в фоне, keyset + `BatchUtils::stream`; в HTTP — пагинация или `listByIds`
 11. Детальные правила Application — в [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md#чеклист)

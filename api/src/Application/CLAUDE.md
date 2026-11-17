@@ -29,6 +29,7 @@ Application/
 ├── ValueObject/    # инвариант поля
 ├── Enum/           # закрытое множество
 ├── Mapper/         # persistence Model → response Model
+├── Cache/          # {Entity}/*Cache — ключ, TTL, инвалидация
 ├── Dispatcher/     # постановка async-работы
 ├── Policy/         # предусловия use case
 ├── Port/           # контракт к Infrastructure
@@ -213,6 +214,7 @@ public function findBy(array $criteria): array;   // и внутри Entity
 | `*Mapper` (App) | persistence Model → response Model; собирает URL | не ходит в БД |
 | `*Dispatcher` | решает, ставить ли async-задачу: `dispatch` | не выполняет работу, не обрабатывает очередь |
 | `*Policy` | предусловия use case: auth, uniqueness, exists, контракт | не персистит, не возвращает response Model |
+| `*Cache` | ключ, TTL и инвалидация кеша | не ходит в БД, не вызывает use case |
 | `*MessageHandler` (Infra) | реакция на Event | не use case |
 
 **Имя Mapper** — по тому, что маппится (`UserViewModelMapper`, `FileItemModelMapper`,
@@ -349,5 +351,5 @@ $service->execute($request->getPayload());
 9. Delete — явные дети и side effects; cascade только внутри агрегата
 10. Перебор — пагинация/keyset; OFFSET и полный scan запрещены
 11. Async ставит `*Dispatcher`, выполняет Service или `*MessageHandler`
-12. `CacheInterface` — только в `*Cache`; потребителей у него пока нет (порт оставлен как готовая инфраструктура)
+12. `CacheInterface` — только в `*Cache`; `*Cache` владеет ключом и TTL, загрузчик получает от вызывающего
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Service\TaskGroup\Query;
 
+use App\Application\Cache\TaskGroup\TaskGroupSummaryCache;
 use App\Application\Service\TaskGroup\Query\TaskGroupSummarizeQueryService;
 use App\Tests\DatabaseTestCase;
 
@@ -26,6 +27,7 @@ final class TaskGroupSummarizeKeysetTest extends DatabaseTestCase
         // batch size 10 => the walk spans three batches
         $service = new TaskGroupSummarizeQueryService(
             $this->bed->taskGroupRepository(),
+            $this->bed->get(TaskGroupSummaryCache::class),
             10,
         );
 
@@ -55,6 +57,7 @@ final class TaskGroupSummarizeKeysetTest extends DatabaseTestCase
 
         $service = new TaskGroupSummarizeQueryService(
             $this->bed->taskGroupRepository(),
+            $this->bed->get(TaskGroupSummaryCache::class),
             2,
         );
 

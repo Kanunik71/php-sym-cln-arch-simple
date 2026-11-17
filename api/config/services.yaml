@@ -6,6 +6,7 @@ parameters:
     app.jwt.access_ttl: 900
     app.refresh_token.ttl_seconds: 2592000
     app.refresh_token.cleanup_retention_seconds: 604800
+    app.cache.task_group_summary_ttl_seconds: 60
     scheduler_file_cleanup_cron_default: '0 3 * * *'
     app.scheduler.file_cleanup_cron: '%env(default:scheduler_file_cleanup_cron_default:SCHEDULER_FILE_CLEANUP_CRON)%'
     scheduler_refresh_token_cleanup_cron_default: '30 3 * * *'
@@ -66,6 +67,10 @@ services:
     App\Application\Service\Auth\UserTokenPairService:
         arguments:
             $accessTtl: '%app.jwt.access_ttl%'
+
+    App\Application\Cache\TaskGroup\TaskGroupSummaryCache:
+        arguments:
+            $ttlSeconds: '%app.cache.task_group_summary_ttl_seconds%'
 
     App\Application\Port\PasswordHasherInterface:
         alias: App\Infrastructure\Security\SymfonyPasswordHasher
