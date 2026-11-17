@@ -70,6 +70,7 @@
         "phpstan": "php -d memory_limit=1G vendor/bin/phpstan analyse --configuration=phpstan.neon.dist",
         "cs-check": "php-cs-fixer fix --dry-run --diff --config=.php-cs-fixer.dist.php",
         "cs-fix": "php-cs-fixer fix --config=.php-cs-fixer.dist.php",
+        "hooks:install": "git -C .. config core.hooksPath .githooks",
         "deploy:prod": [
             "@composer dump-env prod",
             "@php bin/console cache:clear --no-warmup --env=prod",

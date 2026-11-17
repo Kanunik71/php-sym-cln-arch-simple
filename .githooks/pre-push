@@ -1,0 +1,36 @@
+#!/bin/sh
+# pre-push: полные проверки api/ — php-cs-fixer (весь проект) и phpstan.
+# Тесты сюда не входят: Integration-сьюту нужна поднятая БД (см. README).
+
+case "$0" in
+    */*) HOOK_DIR=$(CDPATH= cd -- "${0%/*}" && pwd) ;;
+    *)   HOOK_DIR=$(CDPATH= cd -- . && pwd) ;;
+esac
+. "$HOOK_DIR/lib/common.sh"
+
+detect_runner
+
+if [ "$RUNNER" = none ]; then
+    print_runner_skip "git-hook pre-push"
+    exit 0
+fi
+
+echo "git-hook pre-push: проверка стиля (composer cs-check)…"
+if ! cs_fixer_check; then
+    echo "" >&2
+    echo "git-hook pre-push: php-cs-fixer нашёл нарушения стиля." >&2
+    echo "  Исправить:  cd api && composer cs-fix" >&2
+    echo "  В Docker:   docker compose -f docker/docker-compose.yml exec php composer cs-fix" >&2
+    echo "  Обойти:     git push --no-verify" >&2
+    exit 1
+fi
+
+echo "git-hook pre-push: статический анализ (composer phpstan)…"
+if ! phpstan_analyse; then
+    echo "" >&2
+    echo "git-hook pre-push: phpstan нашёл ошибки." >&2
+    echo "  Обойти: git push --no-verify" >&2
+    exit 1
+fi
+
+exit 0

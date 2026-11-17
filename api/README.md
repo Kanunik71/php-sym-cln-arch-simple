@@ -34,3 +34,12 @@ docker compose -f ../docker/docker-compose.yml exec php composer cs-check
 docker compose -f ../docker/docker-compose.yml exec php composer cs-fix
 docker compose -f ../docker/docker-compose.yml exec php composer phpstan
 ```
+
+Git-хуки (`pre-commit` → check стиля по staged-файлам, `pre-push` →
+`cs-check` + `phpstan`) живут в корне репозитория — см. раздел
+[«Git-хуки»](../README.md#git-хуки). Подключение с хоста:
+
+```bash
+cd api && composer hooks:install
+# или из корня: git config core.hooksPath .githooks
+```

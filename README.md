@@ -141,6 +141,34 @@ Change считается сделанным, когда:
 `docker compose -f ../docker/docker-compose.yml exec php ...`, см.
 [`api/README.md`](api/README.md)).
 
+### Git-хуки
+
+Общие хуки лежат в версионируемом `.githooks/` и подключаются через
+`core.hooksPath` — копировать файлы в `.git/hooks` не нужно.
+
+```bash
+# включить (один раз)
+git config core.hooksPath .githooks
+# или с хоста: cd api && composer hooks:install
+
+# выключить
+git config --unset core.hooksPath
+```
+
+| Хук | Что проверяет | Когда срабатывает |
+|-----|---------------|-------------------|
+| `pre-commit` | `php-cs-fixer --dry-run` только по staged-файлам `api/**/*.php` | коммит с изменениями PHP в `api/` |
+| `pre-push` | полный `cs-check` + `phpstan` | любой push |
+
+Проверки выполняются локальным PHP (`api/vendor`), если его нет — через
+`docker compose exec php`; если недоступно ни то ни другое, хук печатает
+предупреждение и пропускает проверку. Автофикса нет: `pre-commit` только
+показывает diff и блокирует коммит, исправление — `composer cs-fix`.
+Аварийный обход — `git commit --no-verify` / `git push --no-verify`.
+
+Хуки — локальная страховка, а не гарантия: их можно обойти, поэтому
+строгая проверка должна жить в CI.
+
 ---
 
 ## Как устроен проект (от пользователя к данным)

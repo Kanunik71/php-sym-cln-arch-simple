@@ -1,0 +1,42 @@
+#!/bin/sh
+# pre-commit: проверка стиля php-cs-fixer по staged-файлам api/.
+# Только блокирует коммит — автофикса нет (исправление: composer cs-fix).
+
+case "$0" in
+    */*) HOOK_DIR=$(CDPATH= cd -- "${0%/*}" && pwd) ;;
+    *)   HOOK_DIR=$(CDPATH= cd -- . && pwd) ;;
+esac
+. "$HOOK_DIR/lib/common.sh"
+
+# Пути передаём относительно api/ (в контейнере /var/www/html == api/).
+set --
+while IFS= read -r file; do
+    [ -n "$file" ] || continue
+    set -- "$@" "${file#api/}"
+done <<EOF
+$(git -c core.quotepath=false diff --cached --name-only --diff-filter=ACMR -- 'api/*.php')
+EOF
+
+# Среди staged-изменений нет PHP в api/ — проверять нечего.
+[ "$#" -gt 0 ] || exit 0
+
+detect_runner
+
+if [ "$RUNNER" = none ]; then
+    print_runner_skip "git-hook pre-commit"
+    exit 0
+fi
+
+cs_fixer_check "$@"
+status=$?
+
+if [ "$status" -ne 0 ]; then
+    echo "" >&2
+    echo "git-hook pre-commit: php-cs-fixer нашёл нарушения стиля в staged-файлах." >&2
+    echo "  Исправить:  cd api && composer cs-fix" >&2
+    echo "  В Docker:   docker compose -f docker/docker-compose.yml exec php composer cs-fix" >&2
+    echo "  Обойти:     git commit --no-verify" >&2
+    exit "$status"
+fi
+
+exit 0
