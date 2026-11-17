@@ -1,2 +1,5 @@
 # Git-хуки исполняются через sh: CRLF в скриптах ломает интерпретатор.
 /.githooks/** text eol=lf
+
+# Windows-скрипты: в рабочей копии CRLF.
+*.cmd text eol=crlf

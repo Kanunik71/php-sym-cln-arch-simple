@@ -8,6 +8,27 @@
 | [`docker/`](docker/README.md) | Docker Compose для локальной разработки (nginx, PHP, база, воркеры) |
 | [`openspec/`](openspec/README.md) | Спеки, changes и процесс Spec-Driven Development |
 
+## Быстрый старт
+
+С нуля, одной командой (Windows, PowerShell 5.1+):
+
+```powershell
+.\build.ps1
+# или двойным кликом по build.cmd
+```
+
+Скрипт проверяет git и Docker, включает git-хуки, ставит PHP-зависимости на
+хосте (если есть `php` + `composer`) и поднимает стек:
+`docker compose up -d --wait`. Образ php собирается автоматически, если его
+нет, а entrypoint контейнера сам выполняет `composer install` и миграции.
+
+Флаги: `-WithWorkers` (поднять messenger-worker), `-Build` (пересобрать
+образы), `-SkipComposer` (не ставить зависимости на хосте),
+`-TimeoutSeconds <сек>` (ожидание готовности, по умолчанию 600).
+
+После запуска API — <http://localhost:8080> (проверка: `GET /api/assets`
+отвечает 401 без токена), RabbitMQ UI — <http://localhost:15673>.
+
 ## Разработка по SDD (OpenSpec)
 
 Проект использует [OpenSpec](https://openspec.dev) — Spec-Driven Development:
