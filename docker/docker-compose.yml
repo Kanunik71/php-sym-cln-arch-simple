@@ -7,7 +7,7 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - ../api:/var/www/api
+      - ../api:/var/www/html
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       php:
@@ -22,7 +22,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
       redis:
         condition: service_started
@@ -32,7 +32,7 @@ services:
       AUTO_MIGRATE: "1"
       APP_SECRET: dev_secret_change_in_production
       JWT_SECRET: dev_jwt_secret_must_be_at_least_32_characters_long
-      DATABASE_URL: mysql://app:app@mysql:3306/app?serverVersion=8.0&charset=utf8mb4
+      DATABASE_URL: postgresql://app:app@postgres:5432/app?serverVersion=16&charset=utf8
       REDIS_URL: redis://redis:6379
       MESSENGER_TRANSPORT_DSN: amqp://guest:guest@rabbitmq:5672/%2f/messages
       MESSENGER_FAILURE_TRANSPORT_DSN: amqp://guest:guest@rabbitmq:5672/%2f/failed
@@ -55,7 +55,7 @@ services:
     depends_on:
       php:
         condition: service_healthy
-      mysql:
+      postgres:
         condition: service_healthy
       redis:
         condition: service_started
@@ -65,28 +65,27 @@ services:
       AUTO_MIGRATE: "0"
       APP_SECRET: dev_secret_change_in_production
       JWT_SECRET: dev_jwt_secret_must_be_at_least_32_characters_long
-      DATABASE_URL: mysql://app:app@mysql:3306/app?serverVersion=8.0&charset=utf8mb4
+      DATABASE_URL: postgresql://app:app@postgres:5432/app?serverVersion=16&charset=utf8
       REDIS_URL: redis://redis:6379
       MESSENGER_TRANSPORT_DSN: amqp://guest:guest@rabbitmq:5672/%2f/messages
       MESSENGER_FAILURE_TRANSPORT_DSN: amqp://guest:guest@rabbitmq:5672/%2f/failed
       XDEBUG_MODE: "off"
     restart: unless-stopped
 
-  mysql:
-    container_name: cln-simple-mysql
-    image: mysql:8
+  postgres:
+    container_name: cln-simple-postgres
+    image: postgres:16-alpine
     ports:
-      - "3306:3306"
+      - "5432:5432"
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: app
-      MYSQL_USER: app
-      MYSQL_PASSWORD: app
+      POSTGRES_DB: app
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      test: ["CMD-SHELL", "pg_isready -U app -d app"]
       interval: 5s
       timeout: 5s
       retries: 30
@@ -108,7 +107,7 @@ services:
       - rabbitmq_data:/var/lib/rabbitmq
 
 volumes:
-  mysql_data:
-    name: cln-simple-mysql-data
+  postgres_data:
+    name: cln-simple-postgres-data
   rabbitmq_data:
     name: cln-simple-rabbitmq-data

@@ -9,6 +9,7 @@ use App\Application\Model\User\Action\UserLoginModel;
 use App\Application\Model\User\Action\UserRefreshModel;
 use App\Application\Model\User\Action\UserUpdateModel;
 use App\Application\Model\User\Read\UserLoginResponseModel;
+use App\Application\Model\User\Read\UserPageModel;
 use App\Application\Model\User\UserLocationModel;
 use App\Shared\Utils\UidUtils;
 use App\Tests\AuthenticatedWebTestCase;
@@ -287,6 +288,27 @@ final class UserControllerTest extends AuthenticatedWebTestCase
         );
 
         $this->assertSame(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
+    }
+
+    public function testQueryLikeIsCaseInsensitive(): void
+    {
+        $this->createAuthenticatedClient(fname: 'Demo');
+        $this->createUser(email: 'case-check@example.com', fname: 'Other');
+
+        $this->client->request(
+            'GET',
+            '/api/users/query?'.http_build_query([
+                'filter' => ['fname' => ['like' => 'DEMO']],
+            ]),
+            server: $this->demoAuthorizedServer(),
+        );
+
+        $this->assertSame(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
+
+        $page = $this->decodeModel($this->client, UserPageModel::class);
+        self::assertSame(1, $page->total);
+        self::assertCount(1, $page->items);
+        self::assertSame($this->demoUser->getId(), $page->items[0]->id);
     }
 
     public function testQueryInvalidFilterReturnsBadRequest(): void

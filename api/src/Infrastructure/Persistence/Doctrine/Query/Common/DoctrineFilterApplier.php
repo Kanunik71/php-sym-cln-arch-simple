@@ -44,17 +44,17 @@ final class DoctrineFilterApplier
 
         match ($filter->operator) {
             FilterOperatorEnum::Eq => $qb
-                ->andWhere(sprintf('%s = :%s', $path, $param))
-                ->setParameter($param, $filter->value),
+                ->andWhere(sprintf('LOWER(%s) = :%s', $path, $param))
+                ->setParameter($param, mb_strtolower((string) $filter->value)),
             FilterOperatorEnum::Ne => $qb
-                ->andWhere(sprintf('%s != :%s', $path, $param))
-                ->setParameter($param, $filter->value),
+                ->andWhere(sprintf('LOWER(%s) != :%s', $path, $param))
+                ->setParameter($param, mb_strtolower((string) $filter->value)),
             FilterOperatorEnum::Like => $qb
-                ->andWhere(sprintf('%s LIKE :%s', $path, $param))
-                ->setParameter($param, $this->likeValue($filter->value ?? '')),
+                ->andWhere(sprintf('LOWER(%s) LIKE :%s', $path, $param))
+                ->setParameter($param, $this->likeValue((string) $filter->value)),
             FilterOperatorEnum::In => $qb
-                ->andWhere(sprintf('%s IN (:%s)', $path, $param))
-                ->setParameter($param, $filter->values ?? []),
+                ->andWhere(sprintf('LOWER(%s) IN (:%s)', $path, $param))
+                ->setParameter($param, $this->lowerValues($filter->values)),
             FilterOperatorEnum::IsNull => $qb->andWhere(sprintf('%s IS NULL', $path)),
             FilterOperatorEnum::IsNotNull => $qb->andWhere(sprintf('%s IS NOT NULL', $path)),
             default => throw new InvalidArgumentException(sprintf('Operator "%s" is not supported for string path "%s".', $filter->operator->value, $path)),
@@ -147,10 +147,25 @@ final class DoctrineFilterApplier
 
     private function likeValue(string $value): string
     {
+        $value = mb_strtolower($value);
+
         if (str_contains($value, '%') || str_contains($value, '_')) {
             return $value;
         }
 
         return '%'.$value.'%';
+    }
+
+    /**
+     * @param list<string>|null $values
+     *
+     * @return list<string>
+     */
+    private function lowerValues(?array $values): array
+    {
+        return array_map(
+            static fn (string $value): string => mb_strtolower($value),
+            $values ?? [],
+        );
     }
 }

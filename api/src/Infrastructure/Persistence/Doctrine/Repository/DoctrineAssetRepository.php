@@ -167,7 +167,7 @@ final readonly class DoctrineAssetRepository implements AssetRepositoryInterface
         $taskCol = AssetEntity::JOIN_COLUMN_TASK_ID;
 
         $sql = <<<SQL
-            INSERT IGNORE INTO {$joinTable} ({$assetCol}, {$taskCol}) VALUES (:{$assetCol}, :{$taskCol})
+            INSERT INTO {$joinTable} ({$assetCol}, {$taskCol}) VALUES (:{$assetCol}, :{$taskCol}) ON CONFLICT DO NOTHING
             SQL;
 
         $connection->executeStatement(

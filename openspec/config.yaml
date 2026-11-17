@@ -5,7 +5,7 @@ context: |
   (`## Purpose`, `### Requirement:`, `#### Scenario:`, GIVEN/WHEN/THEN) и
   ключевые слова SHALL/MUST остаются на английском.
 
-  Проект: `cln-arch-sym-simple` — монорепозиторий: `api/` (Symfony 7 API, MySQL,
+  Проект: `cln-arch-sym-simple` — монорепозиторий: `api/` (Symfony 7 API, PostgreSQL,
   JWT, RabbitMQ, Redis, локальное файловое хранилище), `docker/` (nginx, php,
   воркеры), `openspec/` (спеки, changes). Целевой масштаб — ~10^6 пользователей
   и задач.

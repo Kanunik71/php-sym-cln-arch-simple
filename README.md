@@ -4,7 +4,7 @@
 
 | Каталог | Назначение |
 |---------|-----------|
-| [`api/`](api/README.md) | Основной Symfony API (MySQL, JWT, бизнес-логика) |
+| [`api/`](api/README.md) | Основной Symfony API (PostgreSQL, JWT, бизнес-логика) |
 | [`docker/`](docker/README.md) | Docker Compose для локальной разработки (nginx, PHP, база, воркеры) |
 | [`openspec/`](openspec/README.md) | Спеки, changes и процесс Spec-Driven Development |
 
@@ -175,13 +175,13 @@ flowchart TB
   CLI --> Pres
 
   subgraph InfraStore["Хранилища и очереди API"]
-    MySQL[(MySQL)]
+    PostgreSQL[(PostgreSQL)]
     Redis[(Redis<br/>cache / locks)]
     FS[("files<br/>local storage")]
     RMQ_async["RabbitMQ<br/>messages queue"]
   end
 
-  Infra --> MySQL
+  Infra --> PostgreSQL
   Infra --> Redis
   Infra --> FS
   Infra -->|Application Event| RMQ_async
@@ -201,7 +201,7 @@ flowchart TB
 1. **Человек** обращается к `nginx` (`:8080` — API) или запускает Console.
 2. **Presentation** собирает запрос `*Model` (`fromArray`) и вызывает `*Service::execute`. Console разбирает CLI и вызывает Lifecycle-`*Service`.
 3. **Application**: Policy → persistence `*Model` → Port. Action / Query возвращают только ответ `*ViewModel` | список | страницу | void. После записи Lifecycle обновляет кэш и публикует Application Event (`*Dispatcher`).
-4. **Infrastructure** реализует Port: MySQL (Doctrine), Redis, файлы. Application Event уходит в очередь RabbitMQ `messages`.
+4. **Infrastructure** реализует Port: PostgreSQL (Doctrine), Redis, файлы. Application Event уходит в очередь RabbitMQ `messages`.
 5. **messenger-worker** читает очередь: `*MessageHandler` вызывает Application-`*Service` (notifications, recalc). Тот же воркер исполняет scheduler.
 
 Соглашения по слоям: [`api/src/Application/CLAUDE.md`](api/src/Application/CLAUDE.md), [`api/src/Infrastructure/CLAUDE.md`](api/src/Infrastructure/CLAUDE.md).

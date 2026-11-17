@@ -22,3 +22,7 @@
 /.php-cs-fixer.php
 /.php-cs-fixer.cache
 ###< friendsofphp/php-cs-fixer ###
+
+# env-файлы окружений с реальными секретами (лежат на сервере, не в git)
+/.env.prod
+/.env.stage

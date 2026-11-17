@@ -183,7 +183,7 @@ final readonly class DoctrineTaskGroupRepository implements TaskGroupRepositoryI
         $taskCol = TaskGroupEntity::JOIN_COLUMN_TASK_ID;
 
         $sql = <<<SQL
-            INSERT IGNORE INTO {$joinTable} ({$groupCol}, {$taskCol}) VALUES (:{$groupCol}, :{$taskCol})
+            INSERT INTO {$joinTable} ({$groupCol}, {$taskCol}) VALUES (:{$groupCol}, :{$taskCol}) ON CONFLICT DO NOTHING
             SQL;
 
         $connection->executeStatement(

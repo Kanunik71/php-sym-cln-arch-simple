@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
     librabbitmq-dev \
     libssl-dev \
     libpq-dev \
-    && docker-php-ext-install pdo_mysql pdo_pgsql intl zip \
+    && docker-php-ext-install pdo_pgsql intl zip \
     && pecl channel-update pecl.php.net \
     && pecl install -f redis-6.2.0 \
     && pecl install -f amqp-2.1.2 \

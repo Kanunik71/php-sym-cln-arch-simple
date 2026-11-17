@@ -1,6 +1,6 @@
 # Symfony Clean Architecture API
 
-API-сервер на Symfony 7: чистая архитектура, JWT, MySQL, Redis, RabbitMQ.
+API-сервер на Symfony 7: чистая архитектура, JWT, PostgreSQL, Redis, RabbitMQ.
 
 Соглашения по именованию и слоям: [`CLAUDE.md`](CLAUDE.md). Тесты: [`tests/CLAUDE.md`](tests/CLAUDE.md).
 

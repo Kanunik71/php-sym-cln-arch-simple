@@ -47,7 +47,7 @@ Docker `php` при `AUTO_MIGRATE=1` выполняет миграции при 
 
 ## Окружение
 
-- docker-compose: nginx 8080→80, php (build), mysql :3306, redis :6380,
+- docker-compose: nginx 8080→80, php (build), postgres :5432, redis :6380,
   rabbitmq :5673/:15673; `messenger-worker` — профиль `workers`.
 - Env: `APP_SECRET`, `JWT_SECRET`, `DATABASE_URL`, `REDIS_URL`,
   `MESSENGER_TRANSPORT_DSN`, `MESSENGER_FAILURE_TRANSPORT_DSN`, `MAILER_FROM`,
