@@ -99,20 +99,39 @@ Application Model (criteria, pagination) читается в Infrastructure то
 
 #### Каскадные удаления
 
+Удаление видно в коде: БД не удаляет данные неявно, если из этого следует
+вычисляемое состояние другого агрегата.
+
+Каскад в БД (`ON DELETE CASCADE` / `SET NULL`) допустим, если удаление связи
+**не меняет вычисляемое состояние** другого агрегата (статус, счётчик, прогресс,
+кеш) и Application **не обязан реагировать** на её удаление. Тогда связь —
+чистая link-строка или nullable-ссылка, и каскад остаётся в схеме.
+
+| FK | Правило | Почему |
+|----|---------|--------|
+| `task_group_task.task_group_id` | `CASCADE` | удаляется сама группа, её статус никому не нужен; каскад покрывает bulk-удаление групп (DQL) в обход ORM |
+| `asset_task.asset_id` | `CASCADE` | удаляется сам ассет, его прогресс не важен |
+| `tasks.parent_id` | `SET NULL` | статус задачи из иерархии не вычисляется, кеша нет — подзадача остаётся корневой |
+| `users.avatar_file_id` | `SET NULL` | аватар — не вычисляемое поле; удаление файла не ломает удаление пользователя |
+| `task_group_task.task_id` | **NO ACTION** | удаление связи меняет статус группы → Application отвязывает явно и запрашивает пересчёт |
+| `asset_task.task_id` | **NO ACTION** | удаление связи меняет прогресс ассета → то же |
+| `*.owner_id` | **NO ACTION** | удаление агрегата — решение use case (`UserDeleteService` и др.) |
+
 Удаление и побочные эффекты **между агрегатами** — ответственность Application `*Service`, не FK и не молчаливый ORM cascade. Infrastructure отражает уже принятое решение и чистит **внутренности** одного агрегата.
 
 | Механизм | Где | Когда допустим |
 |----------|-----|----------------|
-| `onDelete: 'CASCADE'` на `JoinColumn` | FK в БД | **Запрещён** для межагрегатных FK (`User` → `Asset` / `File` / preferences и т.п.). Default / RESTRICT — чтобы забытая оркестрация падала с FK violation. Допустим только на FK **чистой M2M join-таблицы** (строка связи уходит вместе с любой стороной): `Asset`↔`Task`, `TaskGroup`↔`Task`. |
-| `onDelete: 'SET NULL'` | опциональный FK | Обнулить ссылку, не удаляя другую сторону: `Task.parent`, `User.avatarFile`. Это не замена явному delete. |
+| `onDelete: 'CASCADE'` на `JoinColumn` | FK в БД | только по таблице выше: link-строка без своих атрибутов, удаление которой ничего не вычисляет |
+| `onDelete: 'SET NULL'` | опциональный FK | только для nullable-ссылок, чьё значение не вычисляется из других данных: `Task.parent`, `User.avatarFile` |
 | `cascade: ['remove']` / `orphanRemoval: true` | Doctrine ORM | **Только** коллекции того же aggregate root: `Task` → `TaskUser`, `Asset` → `AssetFile`. |
 
 ```php
-// ❌ межагрегатный CASCADE — Application не видит удаление Asset при удалении User
-#[ORM\JoinColumn(..., onDelete: 'CASCADE')]
+// ❌ каскад по связи, удаление которой меняет вычисляемое состояние
+// Application не увидит, что связь исчезла, и не пересчитает статус группы
+#[ORM\InverseJoinColumn(name: self::JOIN_COLUMN_TASK_ID, referencedColumnName: TaskEntity::COLUMN_ID, onDelete: 'CASCADE')]
 
-// ✅ FK без cascade; UserDeleteService явно удаляет дочерние агрегаты
-#[ORM\JoinColumn(name: self::COLUMN_OWNER_ID, referencedColumnName: self::COLUMN_ID, nullable: false)]
+// ✅ FK без cascade; TaskDeleteService явно отвязывает задачу от групп и ассетов
+#[ORM\InverseJoinColumn(name: self::JOIN_COLUMN_TASK_ID, referencedColumnName: TaskEntity::COLUMN_ID)]
 ```
 
 ```php
@@ -123,6 +142,13 @@ private Collection $assetFiles;
 
 Side effects (object storage, cache, events) **никогда** не делегировать БД-cascade — только Application.
 Эталон: `AssetLifecycleService::delete` → `deleteRecords` (БД) и `FileLifecycleService::purgeStorage` после commit.
+
+Межагрегатные связи Application отвязывает **явно, до `delete()`**: `TaskDeleteService`
+снимает связь с группами и ассетами и удаляет задачу в одной транзакции — иначе
+FK violation вместо тихой потери связи.
+
+Проверка правила: `api/tests/Infrastructure/Persistence/Doctrine/CascadeDeleteRuleTest.php` —
+белый список `ON DELETE` в миграциях и в маппингах.
 
 Оркестрация delete — `api/src/Application/CLAUDE.md` → Delete orchestration.
 

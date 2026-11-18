@@ -103,6 +103,29 @@ final readonly class DoctrineAssetRepository implements AssetRepositoryInterface
         return $this->assetMapper->toModelArray($this->assetEntityFetcher->listByOwnerId($ownerId));
     }
 
+    public function listIdsByTaskId(string $taskId): array
+    {
+        $connection = $this->entityManager->getConnection();
+        $platform = $connection->getDatabasePlatform();
+
+        $joinTable = AssetEntity::JOIN_TABLE_TASK;
+        $assetCol = AssetEntity::JOIN_COLUMN_ASSET_ID;
+        $taskCol = AssetEntity::JOIN_COLUMN_TASK_ID;
+
+        $sql = <<<SQL
+            SELECT {$assetCol} FROM {$joinTable} WHERE {$taskCol} = :{$taskCol}
+            SQL;
+
+        /** @var list<string> $binaryAssetIds */
+        $binaryAssetIds = $connection->fetchFirstColumn(
+            $sql,
+            [$taskCol => DoctrineUuidUtils::toDatabaseValue($taskId, $platform)],
+            [$taskCol => DoctrineUuidUtils::bindingType()],
+        );
+
+        return DoctrineUuidUtils::binaryToStringArray($binaryAssetIds, $platform);
+    }
+
     public function listTaskIds(string $assetId): array
     {
         $entity = $this->assetEntityFetcher->findViewById($assetId);

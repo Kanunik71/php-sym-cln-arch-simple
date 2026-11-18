@@ -57,6 +57,8 @@ Integration/          # один тест на контроллер, зерка�
 ├── Task/TaskTaskGroupControllerTest.php
 ├── TaskGroup/TaskGroupControllerTest.php
 └── User/UserControllerTest.php
+
+Infrastructure/Persistence/Doctrine/CascadeDeleteRuleTest.php   # белый список ON DELETE в схеме и маппингах
 ```
 
 | Папка Service | Роль | Вход |

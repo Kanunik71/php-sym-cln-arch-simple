@@ -265,6 +265,10 @@ $policy->assertCodeAvailable($code);   // внутри репозиторий
 
 - Межагрегатный `onDelete: CASCADE` и скрытый ORM cascade запрещены: Application
   не должен «не знать» об удалении чужих данных.
+- Связи, удаление которых меняет вычисляемое состояние другого агрегата
+  (статус группы, прогресс ассета), в БД не каскадят: Application отвязывает их
+  **явно, до `delete()`** — иначе связь пропадёт молча и пересчёт не случится.
+  Белый список каскадов — в [`Infrastructure/CLAUDE.md`](../Infrastructure/CLAUDE.md#каскадные-удаления).
 - `cascade remove` / `orphanRemoval` допустимы только внутри одного агрегата
   (детали mapping — Infrastructure).
 - Несколько записей в одном use case — в `TransactionManagerInterface::run`.

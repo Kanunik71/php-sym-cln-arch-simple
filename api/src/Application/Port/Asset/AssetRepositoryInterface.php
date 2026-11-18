@@ -40,6 +40,9 @@ interface AssetRepositoryInterface
     /** @return list<AssetViewModel> */
     public function listViewsByTaskId(string $taskId): array;
 
+    /** @return list<string> */
+    public function listIdsByTaskId(string $taskId): array;
+
     /** @return list<AssetModel> */
     public function listByOwnerId(string $ownerId): array;
 

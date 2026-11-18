@@ -91,4 +91,38 @@ final class TaskDeleteServiceTest extends DatabaseTestCase
 
         $this->assertDispatched(TaskGroupsRecalculationByGroupIdsRequestedEvent::class, times: 0);
     }
+
+    public function testDeleteDetachesTaskFromItsGroups(): void
+    {
+        $owner = $this->bed->seedDefaultUser();
+        $task = $this->bed->createActiveTask($owner->getId(), 'Grouped task');
+        $group = $this->bed->createTaskGroupForTask($task->getId(), $owner->getId(), 'Release 1.0');
+
+        $this->bed->get(TaskDeleteService::class)->execute(
+            taskId: $task->getId(),
+            userId: $owner->getId(),
+        );
+
+        $this->bed->clear();
+        $this->assertFalse(
+            $this->bed->taskGroupRepository()->containsTask($group->getId(), $task->getId()),
+        );
+    }
+
+    public function testDeleteDetachesTaskFromItsAssets(): void
+    {
+        $owner = $this->bed->seedDefaultUser();
+        $task = $this->bed->createActiveTask($owner->getId(), 'Task with asset');
+        $asset = $this->bed->createAssetForTask($task->getId(), $owner->getId(), 'Laptop');
+
+        $this->bed->get(TaskDeleteService::class)->execute(
+            taskId: $task->getId(),
+            userId: $owner->getId(),
+        );
+
+        $this->bed->clear();
+        $this->assertFalse(
+            $this->bed->assetRepository()->belongsToTask($asset->id, $task->getId()),
+        );
+    }
 }

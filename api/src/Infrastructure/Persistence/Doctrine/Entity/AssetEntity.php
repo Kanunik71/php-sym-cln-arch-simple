@@ -59,7 +59,7 @@ class AssetEntity
     #[ORM\ManyToMany(targetEntity: TaskEntity::class, inversedBy: 'assets')]
     #[ORM\JoinTable(name: self::JOIN_TABLE_TASK)]
     #[ORM\JoinColumn(name: self::JOIN_COLUMN_ASSET_ID, referencedColumnName: self::COLUMN_ID, onDelete: 'CASCADE')]
-    #[ORM\InverseJoinColumn(name: self::JOIN_COLUMN_TASK_ID, referencedColumnName: TaskEntity::COLUMN_ID, onDelete: 'CASCADE')]
+    #[ORM\InverseJoinColumn(name: self::JOIN_COLUMN_TASK_ID, referencedColumnName: TaskEntity::COLUMN_ID)]
     private Collection $tasks;
 
     /** @var Collection<int, AssetFileEntity> */

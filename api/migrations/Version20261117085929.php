@@ -192,7 +192,7 @@ final class Version20261117085929 extends AbstractMigration
             ALTER TABLE
               asset_task
             ADD
-              CONSTRAINT FK_B61A1EED8DB60186 FOREIGN KEY (task_id) REFERENCES tasks (id) ON DELETE CASCADE NOT DEFERRABLE
+              CONSTRAINT FK_B61A1EED8DB60186 FOREIGN KEY (task_id) REFERENCES tasks (id) NOT DEFERRABLE
         SQL);
         $this->addSql(<<<'SQL'
             ALTER TABLE
@@ -222,7 +222,7 @@ final class Version20261117085929 extends AbstractMigration
             ALTER TABLE
               task_group_task
             ADD
-              CONSTRAINT FK_6737CBFA8DB60186 FOREIGN KEY (task_id) REFERENCES tasks (id) ON DELETE CASCADE NOT DEFERRABLE
+              CONSTRAINT FK_6737CBFA8DB60186 FOREIGN KEY (task_id) REFERENCES tasks (id) NOT DEFERRABLE
         SQL);
         $this->addSql(<<<'SQL'
             ALTER TABLE

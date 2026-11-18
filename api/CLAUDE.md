@@ -195,7 +195,7 @@ Infrastructure `Persistence/Doctrine/Mapper/`. Инфикс `Model` в имен�
 6. Enum — `Application/Enum/`, в поле Model — typed enum
 7. `*RepositoryInterface` — только в `Application/Port/`; наружу Model или скаляр
 8. `CacheInterface` — только в `*Cache`; кеш владеет ключом и TTL; async — через `Port\Messaging\MessageBusInterface`
-9. Межагрегатный `onDelete: CASCADE` — нет; `cascade remove` — только внутри одного агрегата
+9. Каскад в БД — только по белому списку `Infrastructure/CLAUDE.md`; `cascade remove` — только внутри одного агрегата
 10. Перебор больших коллекций — только в фоне, keyset + `BatchUtils::stream`; в HTTP — пагинация или `listByIds`
 11. Детальные правила Application — в [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md#чеклист)
 
