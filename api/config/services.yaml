@@ -81,6 +81,9 @@ services:
     App\Application\Port\CacheInterface:
         alias: App\Infrastructure\Cache\RedisCacheService
 
+    App\Application\Port\Messaging\MessageBusInterface:
+        alias: App\Infrastructure\Messaging\MessengerMessageBus
+
     App\Application\Port\TaskGroup\TaskGroupLockInterface:
         alias: App\Infrastructure\Lock\TaskGroupLock
 

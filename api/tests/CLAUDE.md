@@ -35,6 +35,7 @@ tests/
 Application/
 ├── ArchitectureTest.php                     # граница входа (сканирует src/, не зеркало)
 ├── Cache/{TaskGroup}/                       # *Cache: ключ, TTL, инвалидация
+├── Event/{TaskGroup}/                       # *Event: контракт payload
 ├── Service/{Asset,File,Notification,Task,TaskGroup,User}/
 │   ├── Action/      # write use case, execute()
 │   ├── Query/       # read use case, execute()

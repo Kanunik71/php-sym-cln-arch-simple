@@ -12,9 +12,9 @@ context: |
 
   Архитектура: слои Clean Architecture — Presentation (Controller/Console)
   → Application (Model → Service::execute, Action/Query/Lifecycle, Policy,
-  ViewModelMapper, Dispatcher) → Port (интерфейсы) → Infrastructure (Doctrine,
-  адаптеры). Слоя `Domain/` нет: персистентная модель, VO, enum, события и
-  исключения живут в `Application/`.
+  ViewModelMapper) → Port (интерфейсы, в т.ч. `Port/Messaging/MessageBusInterface`)
+  → Infrastructure (Doctrine, адаптеры). Слоя `Domain/` нет: персистентная модель,
+  VO, enum, события и исключения живут в `Application/`.
   Архитектурные правила — в `api/CLAUDE.md` (+ `api/src/Application/CLAUDE.md`,
   `api/src/Infrastructure/CLAUDE.md`, `api/tests/CLAUDE.md`) — читай нужные
   разделы перед планированием и реализацией (proposal, design, tasks, apply);

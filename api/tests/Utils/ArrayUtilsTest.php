@@ -41,6 +41,16 @@ final class ArrayUtilsTest extends TestCase
         $this->assertSame([], ArrayUtils::valuesMap([], static fn (mixed $item): mixed => $item));
     }
 
+    public function testUniqueSortedRemovesDuplicatesAndSorts(): void
+    {
+        $this->assertSame(['a', 'b', 'c'], ArrayUtils::uniqueSorted(['c', 'a', 'b', 'a']));
+    }
+
+    public function testUniqueSortedReturnsEmptyListForEmptyInput(): void
+    {
+        $this->assertSame([], ArrayUtils::uniqueSorted([]));
+    }
+
     private function identifiable(string $id): IdentifiableInterface
     {
         return new class($id) implements IdentifiableInterface {

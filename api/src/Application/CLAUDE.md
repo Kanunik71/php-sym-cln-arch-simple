@@ -30,7 +30,6 @@ Application/
 ├── Enum/           # закрытое множество
 ├── Mapper/         # persistence Model → response Model
 ├── Cache/          # {Entity}/*Cache — ключ, TTL, инвалидация
-├── Dispatcher/     # постановка async-работы
 ├── Policy/         # предусловия use case
 ├── Port/           # контракт к Infrastructure
 ├── Event/          # факт для очереди
@@ -70,7 +69,7 @@ Application/
 - Use case может вызывать use case — это межагрегатная оркестрация
   (`UserDelete → TaskDelete`). Service use case не вызывает: иначе кирпич
   обрастает сценарием.
-- `Policy`, `Mapper`, `Cache`, `Dispatcher` use case не вызывают.
+- `Policy`, `Mapper`, `Cache` use case не вызывают.
 - Транзакцию открывает вход — use case или job; Service участвует в чужой
   транзакции и `TransactionManagerInterface` не использует. Side effects
   (messenger, cache, object storage) — после commit, на уровне самого внешнего
@@ -192,6 +191,9 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) { ... }
   сигнатуре. Сборка критериев из `array` — забота Infrastructure, не Service.
 - Не заводить новый тип «под одну колонку», если хватает скаляра или уже
   существующей Model.
+- `Port/Messaging/MessageBusInterface` — единственный вход Application в async:
+  `dispatch(object $message): void`. Application не знает о Symfony Messenger;
+  адаптер — в Infrastructure.
 
 ```php
 // ✅ порт говорит на языке Application
@@ -212,7 +214,6 @@ public function findBy(array $criteria): array;   // и внутри Entity
 | Роль | Ответственность | Не делает |
 |------|-----------------|-----------|
 | `*Mapper` (App) | persistence Model → response Model; собирает URL | не ходит в БД |
-| `*Dispatcher` | решает, ставить ли async-задачу: `dispatch` | не выполняет работу, не обрабатывает очередь |
 | `*Policy` | предусловия use case: auth, uniqueness, exists, контракт | не персистит, не возвращает response Model |
 | `*Cache` | ключ, TTL и инвалидация кеша | не ходит в БД, не вызывает use case |
 | `*MessageHandler` (Infra) | реакция на Event | не use case |
@@ -239,8 +240,10 @@ $policy->assertCodeAvailable($code);   // внутри репозиторий
 
 **Event / Exception.**
 
-- Event диспатчит Lifecycle или Dispatcher. Обработчик очереди — Infrastructure
-  `*MessageHandler`, не Action.
+- Event диспатчит Lifecycle или use case — через Port `MessageBusInterface`.
+  Обработчик очереди — Infrastructure `*MessageHandler`, не Action.
+- Нормализация payload — в конструкторе Event: одинаковый набор значений даёт
+  одинаковое сообщение (`ArrayUtils::uniqueSorted`).
 - Исключение use case — `Exception/{Entity}/`, `DomainException` +
   `codeId` из `ErrorCodeEnum`. Наружу это контракт: он описан в спеках.
 - Нарушение контракта payload (тип, whitelist) — `InvalidArgumentException` на
@@ -350,6 +353,6 @@ $service->execute($request->getPayload());
 8. Policy с I/O — суффикс `Io`; Policy не персистит
 9. Delete — явные дети и side effects; cascade только внутри агрегата
 10. Перебор — пагинация/keyset; OFFSET и полный scan запрещены
-11. Async ставит `*Dispatcher`, выполняет Service или `*MessageHandler`
+11. Async ставит Application-событие через `Port\Messaging\MessageBusInterface`, выполняет Service или `*MessageHandler`
 12. `CacheInterface` — только в `*Cache`; `*Cache` владеет ключом и TTL, загрузчик получает от вызывающего
 

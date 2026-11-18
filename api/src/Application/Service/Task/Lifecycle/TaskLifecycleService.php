@@ -4,16 +4,15 @@ declare(strict_types=1);
 
 namespace App\Application\Service\Task\Lifecycle;
 
-use App\Application\Dispatcher\TaskGroup\TaskGroupRecalculationDispatcher;
 use App\Application\Event\Task\TaskCreatedEvent;
+use App\Application\Event\TaskGroup\TaskGroupsRecalculationByTaskRequestedEvent;
 use App\Application\Model\Task\TaskModel;
-use Symfony\Component\Messenger\MessageBusInterface;
+use App\Application\Port\Messaging\MessageBusInterface;
 
 final readonly class TaskLifecycleService
 {
     public function __construct(
         private MessageBusInterface $messageBus,
-        private TaskGroupRecalculationDispatcher $recalculationDispatcher,
     ) {
     }
 
@@ -30,6 +29,6 @@ final readonly class TaskLifecycleService
             return;
         }
 
-        $this->recalculationDispatcher->requestByTaskId($task->id);
+        $this->messageBus->dispatch(new TaskGroupsRecalculationByTaskRequestedEvent(taskId: $task->id));
     }
 }

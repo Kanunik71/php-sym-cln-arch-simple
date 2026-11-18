@@ -72,7 +72,16 @@ final class ArchitectureTest extends TestCase
         self::assertNoImports(
             from: self::isCollaborator(...),
             to: self::isUseCase(...),
-            message: 'Policy/Mapper/Cache/Dispatcher must not call a use case.',
+            message: 'Policy/Mapper/Cache must not call a use case.',
+        );
+    }
+
+    public function testApplicationDoesNotDependOnSymfonyMessenger(): void
+    {
+        self::assertNoImports(
+            from: static fn (string $class): bool => str_starts_with($class, 'App\\Application\\'),
+            to: static fn (string $class): bool => str_starts_with($class, 'Symfony\\Component\\Messenger\\'),
+            message: 'Application must reach the message bus through Application\\Port\\Messaging\\MessageBusInterface, not Symfony Messenger.',
         );
     }
 
@@ -137,7 +146,7 @@ final class ArchitectureTest extends TestCase
 
     private static function isCollaborator(string $class): bool
     {
-        foreach (['Policy', 'Mapper', 'Cache', 'Dispatcher'] as $namespace) {
+        foreach (['Policy', 'Mapper', 'Cache'] as $namespace) {
             if (str_starts_with($class, 'App\\Application\\'.$namespace.'\\')) {
                 return true;
             }

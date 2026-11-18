@@ -34,4 +34,22 @@ final class ArrayUtils
             static fn (IdentifiableInterface $entity): string => $entity->getId(),
         );
     }
+
+    /**
+     * Канонический список: без дублей, в детерминированном порядке.
+     *
+     * Одинаковый набор значений даёт одинаковый список — payload сообщения
+     * не зависит от порядка исходных данных.
+     *
+     * @param list<string> $items
+     *
+     * @return list<string>
+     */
+    public static function uniqueSorted(array $items): array
+    {
+        $unique = array_values(array_unique($items));
+        sort($unique, SORT_STRING);
+
+        return $unique;
+    }
 }

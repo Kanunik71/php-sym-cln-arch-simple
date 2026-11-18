@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Application\Service\Task\Action;
 
-use App\Application\Dispatcher\TaskGroup\TaskGroupRecalculationDispatcher;
+use App\Application\Event\TaskGroup\TaskGroupsRecalculationByGroupIdsRequestedEvent;
 use App\Application\Policy\Task\TaskAccessPolicy;
+use App\Application\Port\Messaging\MessageBusInterface;
 use App\Application\Port\Task\TaskRepositoryInterface;
 use App\Application\Port\TaskGroup\TaskGroupRepositoryInterface;
 use App\Shared\Utils\ArrayUtils;
@@ -16,7 +17,7 @@ final readonly class TaskDeleteService
         private TaskAccessPolicy $taskAccessPolicy,
         private TaskRepositoryInterface $taskRepository,
         private TaskGroupRepositoryInterface $taskGroupRepository,
-        private TaskGroupRecalculationDispatcher $recalculationDispatcher,
+        private MessageBusInterface $messageBus,
     ) {
     }
 
@@ -32,6 +33,12 @@ final readonly class TaskDeleteService
 
         $this->taskRepository->delete($task);
 
-        $this->recalculationDispatcher->requestByGroupIds($affectedGroupIds);
+        if ($affectedGroupIds === []) {
+            return;
+        }
+
+        $this->messageBus->dispatch(new TaskGroupsRecalculationByGroupIdsRequestedEvent(
+            taskGroupIds: $affectedGroupIds,
+        ));
     }
 }

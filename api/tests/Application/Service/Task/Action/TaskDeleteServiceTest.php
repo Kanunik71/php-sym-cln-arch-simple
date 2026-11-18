@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace App\Tests\Application\Service\Task\Action;
 
 use App\Application\Enum\Task\TaskUserStatusEnum;
+use App\Application\Event\TaskGroup\TaskGroupsRecalculationByGroupIdsRequestedEvent;
 use App\Application\Exception\Task\UnauthorizedTaskAccessException;
 use App\Application\Model\Task\TaskUserModel;
 use App\Application\Service\Task\Action\TaskDeleteService;
 use App\Tests\DatabaseTestCase;
+use App\Tests\Support\Trait\Common\AssertMessengerTrait;
 
 final class TaskDeleteServiceTest extends DatabaseTestCase
 {
+    use AssertMessengerTrait;
+
     public function testOwnerDeletesTaskWithoutBeingParticipant(): void
     {
         $owner = $this->bed->seedDefaultUser();
@@ -56,5 +60,35 @@ final class TaskDeleteServiceTest extends DatabaseTestCase
         $this->expectException(UnauthorizedTaskAccessException::class);
 
         $this->bed->get(TaskDeleteService::class)->execute(taskId: $task->getId(), userId: $other->getId());
+    }
+
+    public function testDeleteRequestsRecalculationOfAffectedGroups(): void
+    {
+        $owner = $this->bed->seedDefaultUser();
+        $task = $this->bed->createActiveTask($owner->getId(), 'Grouped task');
+        $group = $this->bed->createTaskGroupForTask($task->getId(), $owner->getId(), 'Release 1.0');
+
+        $this->bed->get(TaskDeleteService::class)->execute(
+            taskId: $task->getId(),
+            userId: $owner->getId(),
+        );
+
+        $this->assertDispatched(
+            TaskGroupsRecalculationByGroupIdsRequestedEvent::class,
+            predicate: fn (TaskGroupsRecalculationByGroupIdsRequestedEvent $event): bool => $event->taskGroupIds === [$group->getId()],
+        );
+    }
+
+    public function testDeleteWithoutGroupsRequestsNoRecalculation(): void
+    {
+        $owner = $this->bed->seedDefaultUser();
+        $task = $this->bed->createActiveTask($owner->getId(), 'Standalone task');
+
+        $this->bed->get(TaskDeleteService::class)->execute(
+            taskId: $task->getId(),
+            userId: $owner->getId(),
+        );
+
+        $this->assertDispatched(TaskGroupsRecalculationByGroupIdsRequestedEvent::class, times: 0);
     }
 }

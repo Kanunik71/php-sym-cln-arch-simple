@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Application\Event\TaskGroup;
 
 /**
- * Пересчёт групп, в которые входит задача.
+ * Пересчёт групп задачи.
  */
 final readonly class TaskGroupsRecalculationByTaskRequestedEvent
 {

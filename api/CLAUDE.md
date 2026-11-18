@@ -15,7 +15,7 @@
 
 ```
 api/src/
-├── Application/     # use case'ы: Service, Model, Policy, Port, Mapper, Cache, Dispatcher, Event, Exception, Enum, ValueObject
+├── Application/     # use case'ы: Service, Model, Policy, Port, Mapper, Cache, Event, Exception, Enum, ValueObject
 ├── Infrastructure/  # Doctrine, Redis, RabbitMQ, JWT, storage, адаптеры
 ├── Presentation/    # HTTP-контроллеры и консольные команды
 └── Shared/Utils/    # статические утилиты (Asserts, Filter, Http)
@@ -61,7 +61,6 @@ Presentation  ──►  Application  ──►  Port  ◄──  Infrastructure
 | **Service** | `Action`/`Query` — use case, оркестрация; прочие подпапки — переиспользуемый шаг | `UserUpdateService`, `RefreshTokenService` |
 | **Policy** | Предусловия use case (auth, uniqueness, exists) | `UpdateUserPolicy`, `TaskAccessPolicy` |
 | **Cache** | Политика ключей и TTL | `TaskGroupSummaryCache` |
-| **Dispatcher** | Постановка async-работы: `dispatch` | `TaskGroupRecalculationDispatcher` |
 | **Mapper** | Application `*Model` → response `*Model` | `UserViewModelMapper`, `FileItemModelMapper` |
 
 ### Infrastructure
@@ -179,7 +178,7 @@ Infrastructure `Persistence/Doctrine/Mapper/`. Инфикс `Model` в имен�
 | Service: Action / Query / Lifecycle, `list` ≠ `query` | [Service](src/Application/CLAUDE.md#service) |
 | Model, Enum, ValueObject | [Model](src/Application/CLAUDE.md#model) |
 | Port: что и когда возвращает | [Port](src/Application/CLAUDE.md#port) |
-| Mapper, Cache, Dispatcher, Policy, Event, Exception | [Оркестрация](src/Application/CLAUDE.md#оркестрация) |
+| Mapper, Cache, Policy, Event, Exception | [Оркестрация](src/Application/CLAUDE.md#оркестрация) |
 | Удаление агрегатов и транзакции | [Delete orchestration](src/Application/CLAUDE.md#delete-orchestration) |
 | Масштаб, keyset, стриминг | [Масштаб и batch-переборы](src/Application/CLAUDE.md#масштаб-и-batch-переборы) |
 | `array`/`mixed` только на wire | [Границы типизации](src/Application/CLAUDE.md#границы-типизации) |
@@ -195,7 +194,7 @@ Infrastructure `Persistence/Doctrine/Mapper/`. Инфикс `Model` в имен�
 5. Persistence `*Model` отдельно от request (`Action/`) и response (`Read/`); Entity не выходит из Infrastructure
 6. Enum — `Application/Enum/`, в поле Model — typed enum
 7. `*RepositoryInterface` — только в `Application/Port/`; наружу Model или скаляр
-8. `CacheInterface` — только в `*Cache`; кеш владеет ключом и TTL; async ставит `*Dispatcher`
+8. `CacheInterface` — только в `*Cache`; кеш владеет ключом и TTL; async — через `Port\Messaging\MessageBusInterface`
 9. Межагрегатный `onDelete: CASCADE` — нет; `cascade remove` — только внутри одного агрегата
 10. Перебор больших коллекций — только в фоне, keyset + `BatchUtils::stream`; в HTTP — пагинация или `listByIds`
 11. Детальные правила Application — в [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md#чеклист)

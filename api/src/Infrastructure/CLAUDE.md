@@ -153,6 +153,7 @@ Side effects (object storage, cache, events) **никогда** не делег�
 
 ```
 Messaging/
+├── MessengerMessageBus.php       # MessageBusInterface (Port) на Symfony Messenger
 ├── Task/Handler/TaskCreatedMessageHandler.php
 ├── TaskGroup/Handler/
 │   ├── RecalculateTaskGroupsByTaskMessageHandler.php
@@ -164,6 +165,7 @@ Messaging/
 
 | Класс | Роль |
 |-------|------|
+| `MessengerMessageBus` | Реализация Application-порта `MessageBusInterface`: единственная точка, где Application достаёт Symfony Messenger |
 | `TaskCreatedMessageHandler` | Логирует `TaskCreatedEvent` |
 | `RecalculateTaskGroupsByTaskMessageHandler` | Пересчёт групп задачи: лок канала «по задаче», `release()` в `finally` |
 | `RecalculateTaskGroupsByGroupIdsMessageHandler` | Пересчёт указанных групп: лок канала «по набору групп», `release()` в `finally` |
@@ -222,7 +224,7 @@ Notification/
 
 1. Первый уровень — технический слой, не `Task/` / `User/` / `Asset/`
 2. Persistence: технология (`Doctrine/`), затем роль (`Entity/` / `Mapper/` / `Repository/` / `Query/`)
-3. Messaging: сущность (`Task/`), затем роль (`Handler/`)
+3. Messaging: адаптер порта — в корне слоя (`MessengerMessageBus`); обработчики — сущность (`Task/`), затем роль (`Handler/`)
 4. Репозиторий реализует интерфейс из Application `Port/`; наружу — Application Model / скаляр по роли метода, **не** Entity
 5. Mapper не уходит за пределы Persistence; направление — `*Model` ↔ Entity (`toModel` / `toEntity`)
 6. `*MessageHandler` — не use case; побочный эффект через Application `*Service`

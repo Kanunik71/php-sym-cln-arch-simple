@@ -7,7 +7,7 @@ namespace App\Application\Service\User\Lifecycle;
 use App\Application\Event\User\UserRegisteredEvent;
 use App\Application\Event\User\UserUpdatedEvent;
 use App\Application\Model\User\UserModel;
-use Symfony\Component\Messenger\MessageBusInterface;
+use App\Application\Port\Messaging\MessageBusInterface;
 
 final readonly class UserLifecycleService
 {

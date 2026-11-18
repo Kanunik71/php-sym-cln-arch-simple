@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Application\Service\TaskGroup\Action;
 
-use App\Application\Dispatcher\TaskGroup\TaskGroupRecalculationDispatcher;
+use App\Application\Event\TaskGroup\TaskGroupsRecalculationByGroupIdsRequestedEvent;
 use App\Application\Mapper\TaskGroup\TaskGroupViewModelMapper;
 use App\Application\Model\TaskGroup\Read\TaskGroupViewModel;
 use App\Application\Policy\Task\TaskAccessPolicy;
 use App\Application\Policy\TaskGroup\TaskGroupAccessPolicy;
+use App\Application\Port\Messaging\MessageBusInterface;
 use App\Application\Port\Task\TaskRepositoryInterface;
 use App\Application\Port\TaskGroup\TaskGroupRepositoryInterface;
 
@@ -19,7 +20,7 @@ final readonly class TaskGroupAttachTaskService
         private TaskGroupAccessPolicy $taskGroupAccessPolicy,
         private TaskRepositoryInterface $taskRepository,
         private TaskGroupRepositoryInterface $taskGroupRepository,
-        private TaskGroupRecalculationDispatcher $recalculationDispatcher,
+        private MessageBusInterface $messageBus,
     ) {
     }
 
@@ -37,7 +38,9 @@ final readonly class TaskGroupAttachTaskService
         }
 
         $this->taskGroupRepository->attachTask($taskGroupId, $taskId);
-        $this->recalculationDispatcher->requestByGroupIds([$taskGroupId]);
+        $this->messageBus->dispatch(new TaskGroupsRecalculationByGroupIdsRequestedEvent(
+            taskGroupIds: [$taskGroupId],
+        ));
 
         return TaskGroupViewModelMapper::fromModel($taskGroup);
     }
