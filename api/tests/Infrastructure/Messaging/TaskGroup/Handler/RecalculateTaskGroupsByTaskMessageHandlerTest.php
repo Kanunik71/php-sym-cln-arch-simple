@@ -15,6 +15,7 @@ use App\Application\Port\TaskGroup\TaskGroupRepositoryInterface;
 use App\Application\Service\TaskGroup\Lifecycle\TaskGroupRecalculationService;
 use App\Infrastructure\Messaging\TaskGroup\Handler\RecalculateTaskGroupsByTaskMessageHandler;
 use DateTimeImmutable;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -126,7 +127,7 @@ final class RecalculateTaskGroupsByTaskMessageHandlerTest extends TestCase
         );
     }
 
-    private function createLockHandle(): LockHandleInterface
+    private function createLockHandle(): LockHandleInterface&MockObject
     {
         return $this->createMock(LockHandleInterface::class);
     }
