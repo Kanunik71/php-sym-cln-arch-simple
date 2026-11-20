@@ -9,8 +9,8 @@ use App\Application\Model\Common\ArrayableModelListInterface;
 use App\Application\Model\Common\Filter\DateTimeFilterModel;
 use App\Application\Model\Common\Filter\IntFilterModel;
 use App\Application\Model\Common\Filter\StringFilterModel;
-use App\Shared\Utils\Filter\FilterCriteriaUtils;
-use App\Shared\Utils\Filter\FilterFieldUtils;
+use App\Application\Utils\Wire\FilterCriteriaUtils;
+use App\Application\Utils\Wire\FilterFieldUtils;
 
 final readonly class UserFilterCriterionModel implements ArrayableModelListInterface
 {

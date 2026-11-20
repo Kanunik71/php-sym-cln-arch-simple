@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Application\Model\Common\Filter;
 
 use App\Application\Enum\Common\FilterOperatorEnum;
-use App\Shared\Utils\Asserts\InputAssertUtils;
+use App\Application\Utils\Wire\InputAssertUtils;
 use DateTimeImmutable;
 use Exception;
 use InvalidArgumentException;

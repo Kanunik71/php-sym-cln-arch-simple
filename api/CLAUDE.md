@@ -5,10 +5,10 @@
 
 | Файл | Про что |
 |------|---------|
-| [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md) | правила слоя Application: роли Service, три роли Model, VO, Port, оркестрация, delete, масштаб |
+| [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md) | правила слоя Application: роли Service, три роли Model, VO, Port, оркестрация, delete, масштаб, `Utils` |
 | [`src/Infrastructure/CLAUDE.md`](src/Infrastructure/CLAUDE.md) | Doctrine, кэш, очереди, security, storage, роутинг, notification |
 | [`src/Presentation/CLAUDE.md`](src/Presentation/CLAUDE.md) | правила слоя Presentation: тонкий вход, границы импортов, маршруты и доступ, маппинг исключений → HTTP, формы команд |
-| [`src/Shared/CLAUDE.md`](src/Shared/CLAUDE.md) | правила слоя Shared: раскладка утилит по объекту разбора, «когда Utils, а когда нет», контракты вместо реализаций |
+| [`src/Shared/CLAUDE.md`](src/Shared/CLAUDE.md) | Shared: какие хелперы имеют право быть общими, что уехало в `Application/Utils` и `Presentation/Http` |
 | [`tests/CLAUDE.md`](tests/CLAUDE.md) | базы тестов, фикстуры, правила интеграционных проверок |
 
 ---
@@ -17,10 +17,10 @@
 
 ```
 api/src/
-├── Application/     # use case'ы: Service, Model, Policy, Port, Mapper, Cache, Event, Exception, Enum, ValueObject
+├── Application/     # use case'ы: Service, Model, Policy, Port, Mapper, Cache, Event, Exception, Enum, ValueObject, Utils
 ├── Infrastructure/  # Doctrine, Redis, RabbitMQ, JWT, storage, адаптеры
 ├── Presentation/    # HTTP-контроллеры и консольные команды
-└── Shared/Utils/    # статические утилиты (Asserts, Filter, Http)
+└── Shared/Utils/    # кросс-слойная техника: UidUtils, DateUtils, CacheKeyUtils, ContainerUtils
 ```
 
 Внутри `Application/` персистентная модель, Value Object, enum, события и
@@ -38,8 +38,10 @@ Presentation  ──►  Application  ──►  Port  ◄──  Infrastructure
 - `Infrastructure` реализует `Port/`, наружу отдаёт `Application/Model`.
 - `Presentation/Controller` вызывает `Action`/`Query::execute`; `Console` и
   `MessageHandler` входят в Service.
-- `Shared/Utils` — статические хелперы; знают **контракты** Application
-  (interface, enum, Model), но не его реализации и не `Infrastructure`.
+- `Shared/Utils` — техника без привязки к слою (`UidUtils`, `DateUtils`,
+  `CacheKeyUtils`, `ContainerUtils`); про домен и про wire-форматы не знает,
+  `Application` не импортирует. Разбор wire-значений живёт в
+  `Application/Utils/Wire`.
 
 Проверка: `grep -rn "use App\\Infrastructure" api/src/Application` — пусто;
 граница входа — `tests/Application/ArchitectureTest.php`.
@@ -66,6 +68,7 @@ Presentation  ──►  Application  ──►  Port  ◄──  Infrastructure
 | **Policy** | Предусловия use case (auth, uniqueness, exists) | `UpdateUserPolicy`, `TaskAccessPolicy` |
 | **Cache** | Политика ключей и TTL | `TaskGroupSummaryCache` |
 | **Mapper** | Application `*Model` → response `*Model` | `UserViewModelMapper`, `FileItemModelMapper` |
+| **Utils** | Чистые функции: `Utils/Wire` — разбор wire-значений и whitelist, `Utils/Collection` — массивы, батчи, enum | `InputAssertUtils`, `ArrayUtils` |
 
 ### Infrastructure
 
@@ -85,7 +88,7 @@ Presentation  ──►  Application  ──►  Port  ◄──  Infrastructure
 |---------|-----------|--------|
 | **Controller** | HTTP | `UserController` |
 | **Console** | CLI | `RecalculateTaskGroupsConsole` |
-| **Utils** | Статические утилиты | `UidUtils`, `BatchUtils` |
+| **Utils** | Статические хелперы (живут только в `Shared`) | `UidUtils`, `DateUtils` |
 
 ### Без суффикса
 

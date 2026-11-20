@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Utils\Asserts;
+namespace App\Tests\Application\Utils\Wire;
 
-use App\Shared\Utils\Asserts\StringAssertUtils;
+use App\Application\Utils\Wire\StringAssertUtils;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 

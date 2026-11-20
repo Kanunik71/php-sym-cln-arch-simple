@@ -16,7 +16,6 @@ use App\Application\Service\User\Action\UserLogoutService;
 use App\Application\Service\User\Action\UserRefreshService;
 use App\Application\Service\User\Action\UserRegisterService;
 use App\Presentation\Controller\BaseController;
-use App\Shared\Utils\Http\ErrorResponseUtils;
 use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -42,9 +41,9 @@ final class AuthController extends BaseController
                 UserRegisterModel::fromArray($this->requestPayload($request)),
             );
         } catch (UserAlreadyExistsException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_CONFLICT);
+            return $this->errorResponse($exception, Response::HTTP_CONFLICT);
         } catch (InvalidArgumentException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_BAD_REQUEST);
+            return $this->errorResponse($exception, Response::HTTP_BAD_REQUEST);
         }
 
         return $this->json($result, Response::HTTP_CREATED);
@@ -58,9 +57,9 @@ final class AuthController extends BaseController
                 UserLoginModel::fromArray($this->requestPayload($request)),
             );
         } catch (InvalidCredentialsException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_UNAUTHORIZED);
+            return $this->errorResponse($exception, Response::HTTP_UNAUTHORIZED);
         } catch (InvalidArgumentException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_BAD_REQUEST);
+            return $this->errorResponse($exception, Response::HTTP_BAD_REQUEST);
         }
 
         return $this->json($result);
@@ -74,9 +73,9 @@ final class AuthController extends BaseController
                 UserRefreshModel::fromArray($this->requestPayload($request)),
             );
         } catch (InvalidRefreshTokenException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_UNAUTHORIZED);
+            return $this->errorResponse($exception, Response::HTTP_UNAUTHORIZED);
         } catch (InvalidArgumentException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_BAD_REQUEST);
+            return $this->errorResponse($exception, Response::HTTP_BAD_REQUEST);
         }
 
         return $this->json($result);
@@ -90,7 +89,7 @@ final class AuthController extends BaseController
                 UserLogoutModel::fromArray($this->requestPayload($request)),
             );
         } catch (InvalidArgumentException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_BAD_REQUEST);
+            return $this->errorResponse($exception, Response::HTTP_BAD_REQUEST);
         }
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);

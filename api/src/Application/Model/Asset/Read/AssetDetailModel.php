@@ -8,7 +8,7 @@ use App\Application\Enum\Asset\AssetTypeEnum;
 use App\Application\Model\Common\ArrayableModelInterface;
 use App\Application\Model\Common\FileItemModel;
 use App\Application\Model\Task\Read\TaskLightModel;
-use App\Shared\Utils\Asserts\InputAssertUtils;
+use App\Application\Utils\Wire\InputAssertUtils;
 
 final readonly class AssetDetailModel implements ArrayableModelInterface
 {

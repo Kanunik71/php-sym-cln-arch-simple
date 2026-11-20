@@ -8,7 +8,6 @@ use App\Application\Model\Notification\Action\UpdateNotificationPreferencesModel
 use App\Application\Service\Notification\Action\NotificationUpdateService;
 use App\Application\Service\Notification\Query\NotificationQueryService;
 use App\Presentation\Controller\BaseController;
-use App\Shared\Utils\Http\ErrorResponseUtils;
 use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -45,7 +44,7 @@ final class NotificationPreferenceController extends BaseController
                 currentUserId: $this->getCurrentUserId(),
             );
         } catch (InvalidArgumentException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_BAD_REQUEST);
+            return $this->errorResponse($exception, Response::HTTP_BAD_REQUEST);
         }
 
         return $this->json($preferences);

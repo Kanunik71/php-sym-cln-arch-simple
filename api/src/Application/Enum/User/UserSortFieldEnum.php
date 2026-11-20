@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Enum\User;
 
-use App\Shared\Utils\EnumUtils;
+use App\Application\Utils\Collection\EnumUtils;
 
 enum UserSortFieldEnum: string
 {

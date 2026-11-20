@@ -2,7 +2,7 @@
 
 ```
 tests/
-├── Application/    # Service / Model / ValueObject — зеркало src/Application/
+├── Application/    # Service / Model / ValueObject / Utils — зеркало src/Application/
 ├── Utils/          # зеркало src/Shared/Utils/
 ├── Integration/    # HTTP-контроллеры (Presentation; KernelBrowser + БД)
 ├── Support/        # TestBed, traits
@@ -26,7 +26,7 @@ tests/
 | Слой | Базовый класс | Что проверять |
 |------|----------------|---------------|
 | **`Application/Service/{Entity}/{Action,Query,Lifecycle}`** | `DatabaseTestCase`, если есть БД / cache / messenger; иначе `PHPUnit\Framework\TestCase` | один `*Service` через `$this->bed->get(…)`; ответ `*ViewModel` vs персистентная `*Model` (`Asserts*ModelTrait`); search filter/sort; `clear()` + `find*` |
-| **`Application/Model` / `ValueObject` / `Utils`** | `TestCase` | `fromArray` / whitelist, инварианты VO и утилит — без БД |
+| **`Application/{Model,ValueObject,Utils}` и `Utils/` (Shared)** | `TestCase` | `fromArray` / whitelist, инварианты VO и утилит — без БД; HTTP-обёртку отказа (`BaseController::errorResponse`) юнит-тестом не покрываем: форма — в `Model/Http/ErrorResponseModelTest`, ответ — в Integration |
 | **`Application/Cache/{Entity}`** | `TestCase` | ключ и TTL, попадание / промах / инвалидация — порт подменяется double'ом |
 | **Integration `{Name}ControllerTest`** | `AuthenticatedWebTestCase` или `DatabaseWebTestCase` | HTTP status + error `codeId` |
 | **`Application/Mapper` отдельно** | — | не тестируем |
@@ -43,7 +43,7 @@ Application/
 ├── Model/{Asset,File,Task,TaskGroup,User}/   # + SortModelTest в корне Model/
 └── ValueObject/Common/                       # EmailVo, PhoneVo, MoneyVo
 
-Utils/                # ArrayUtils, BatchUtils, CacheKeyUtils, DateUtils, EnumUtils, UidUtils
+Utils/                # CacheKeyUtils, DateUtils
 ├── Asserts/
 └── Http/
 

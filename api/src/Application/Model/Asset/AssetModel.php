@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Application\Model\Asset;
 
 use App\Application\Enum\Asset\AssetTypeEnum;
+use App\Application\Utils\Wire\StringAssertUtils;
 use App\Application\ValueObject\Common\MoneyVo;
-use App\Shared\Utils\Asserts\StringAssertUtils;
 use DateTimeImmutable;
 
 /**

@@ -62,6 +62,6 @@ The API SHALL принимать в path-параметре `{id}` 36-симво
 
 ## Notes
 
-- Источники: `api/src/Presentation/Controller/BaseController.php`, `api/src/Infrastructure/Http/ApiExceptionSubscriber.php`, `api/src/Shared/Utils/Http/ErrorResponseUtils.php`, `api/src/Application/Model/Http/ErrorResponseModel.php`, `api/src/Application/Exception/**`.
+- Источники: `api/src/Presentation/Controller/BaseController.php`, `api/src/Infrastructure/Http/ApiExceptionSubscriber.php`, `api/src/Application/Model/Http/ErrorResponseModel.php`, `api/src/Application/Exception/**`.
 - Перечень `codeId` намеренно не дублируется здесь: каждый домен перечисляет свои коды в `## Notes` своей спеки (например, [tasks](../tasks/spec.md), [files](../files/spec.md), [assets](../assets/spec.md)).
 - Доменная ошибка конкретного use case (например, недопустимый переход статуса задачи) описана в спеке этого use case, а не здесь.

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Event\TaskGroup;
 
-use App\Shared\Utils\ArrayUtils;
+use App\Application\Utils\Collection\ArrayUtils;
 
 final readonly class TaskGroupRecalculationByGroupIdsRequestedEvent
 {

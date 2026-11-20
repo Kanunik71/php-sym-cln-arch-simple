@@ -17,7 +17,6 @@ use App\Application\Service\Asset\Action\AssetUpdateService;
 use App\Application\Service\Asset\Query\AssetListQueryService;
 use App\Application\Service\Asset\Query\AssetQueryService;
 use App\Presentation\Controller\BaseController;
-use App\Shared\Utils\Http\ErrorResponseUtils;
 use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -47,7 +46,7 @@ final class AssetController extends BaseController
                 pagination: PaginationModel::fromArray($request->query->all()),
             );
         } catch (InvalidArgumentException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_BAD_REQUEST);
+            return $this->errorResponse($exception, Response::HTTP_BAD_REQUEST);
         }
 
         return $this->json($page);
@@ -62,11 +61,11 @@ final class AssetController extends BaseController
                 userId: $this->getCurrentUserId(),
             );
         } catch (FileNotFoundException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
+            return $this->errorResponse($exception, Response::HTTP_NOT_FOUND);
         } catch (UnauthorizedFileAccessException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_FORBIDDEN);
+            return $this->errorResponse($exception, Response::HTTP_FORBIDDEN);
         } catch (InvalidArgumentException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_BAD_REQUEST);
+            return $this->errorResponse($exception, Response::HTTP_BAD_REQUEST);
         }
 
         return $this->json($asset, Response::HTTP_CREATED);
@@ -81,9 +80,9 @@ final class AssetController extends BaseController
                 assetId: $id,
             );
         } catch (AssetNotFoundException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
+            return $this->errorResponse($exception, Response::HTTP_NOT_FOUND);
         } catch (UnauthorizedAssetAccessException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_FORBIDDEN);
+            return $this->errorResponse($exception, Response::HTTP_FORBIDDEN);
         }
 
         return $this->json($asset);
@@ -99,15 +98,15 @@ final class AssetController extends BaseController
                 assetId: $id,
             );
         } catch (AssetNotFoundException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
+            return $this->errorResponse($exception, Response::HTTP_NOT_FOUND);
         } catch (UnauthorizedAssetAccessException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_FORBIDDEN);
+            return $this->errorResponse($exception, Response::HTTP_FORBIDDEN);
         } catch (FileNotFoundException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
+            return $this->errorResponse($exception, Response::HTTP_NOT_FOUND);
         } catch (UnauthorizedFileAccessException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_FORBIDDEN);
+            return $this->errorResponse($exception, Response::HTTP_FORBIDDEN);
         } catch (InvalidArgumentException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_BAD_REQUEST);
+            return $this->errorResponse($exception, Response::HTTP_BAD_REQUEST);
         }
 
         return $this->json($asset);
@@ -122,9 +121,9 @@ final class AssetController extends BaseController
                 assetId: $id,
             );
         } catch (AssetNotFoundException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
+            return $this->errorResponse($exception, Response::HTTP_NOT_FOUND);
         } catch (UnauthorizedAssetAccessException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_FORBIDDEN);
+            return $this->errorResponse($exception, Response::HTTP_FORBIDDEN);
         }
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);

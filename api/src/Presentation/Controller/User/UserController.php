@@ -19,7 +19,6 @@ use App\Application\Service\User\Query\UserQueryService;
 use App\Application\Service\User\Query\UserSearchMetaQueryService;
 use App\Application\Service\User\Query\UserSearchQueryService;
 use App\Presentation\Controller\BaseController;
-use App\Shared\Utils\Http\ErrorResponseUtils;
 use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -47,7 +46,7 @@ final class UserController extends BaseController
         try {
             $page = $this->listUsers->execute(PaginationModel::fromArray($request->query->all()));
         } catch (InvalidArgumentException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_BAD_REQUEST);
+            return $this->errorResponse($exception, Response::HTTP_BAD_REQUEST);
         }
 
         return $this->json($page);
@@ -61,7 +60,7 @@ final class UserController extends BaseController
                 UserSearchModel::fromArray($request->query->all()),
             );
         } catch (InvalidArgumentException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_BAD_REQUEST);
+            return $this->errorResponse($exception, Response::HTTP_BAD_REQUEST);
         }
 
         return $this->json($page);
@@ -81,7 +80,7 @@ final class UserController extends BaseController
         try {
             $user = $this->getUser->execute(userId: $id);
         } catch (UserNotFoundException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
+            return $this->errorResponse($exception, Response::HTTP_NOT_FOUND);
         }
 
         return $this->json($user);
@@ -97,17 +96,17 @@ final class UserController extends BaseController
                 currentUserId: $this->getCurrentUserId(),
             );
         } catch (UserNotFoundException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
+            return $this->errorResponse($exception, Response::HTTP_NOT_FOUND);
         } catch (UnauthorizedUserAccessException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_FORBIDDEN);
+            return $this->errorResponse($exception, Response::HTTP_FORBIDDEN);
         } catch (UserAlreadyExistsException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_CONFLICT);
+            return $this->errorResponse($exception, Response::HTTP_CONFLICT);
         } catch (FileNotFoundException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
+            return $this->errorResponse($exception, Response::HTTP_NOT_FOUND);
         } catch (UnauthorizedFileAccessException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_FORBIDDEN);
+            return $this->errorResponse($exception, Response::HTTP_FORBIDDEN);
         } catch (InvalidArgumentException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_BAD_REQUEST);
+            return $this->errorResponse($exception, Response::HTTP_BAD_REQUEST);
         }
 
         return $this->json($user);
@@ -122,9 +121,9 @@ final class UserController extends BaseController
                 currentUserId: $this->getCurrentUserId(),
             );
         } catch (UserNotFoundException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
+            return $this->errorResponse($exception, Response::HTTP_NOT_FOUND);
         } catch (UnauthorizedUserAccessException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_FORBIDDEN);
+            return $this->errorResponse($exception, Response::HTTP_FORBIDDEN);
         }
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);

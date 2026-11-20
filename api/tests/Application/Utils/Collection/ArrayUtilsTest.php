@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Utils;
+namespace App\Tests\Application\Utils\Collection;
 
 use App\Application\Model\Common\IdentifiableInterface;
-use App\Shared\Utils\ArrayUtils;
+use App\Application\Utils\Collection\ArrayUtils;
 use PHPUnit\Framework\TestCase;
 
 final class ArrayUtilsTest extends TestCase

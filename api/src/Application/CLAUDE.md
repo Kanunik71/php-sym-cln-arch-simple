@@ -33,12 +33,15 @@ Application/
 ├── Policy/         # предусловия use case
 ├── Port/           # контракт к Infrastructure
 ├── Event/          # факт для очереди
-└── Exception/      # coded-исключение
+├── Exception/      # coded-исключение
+└── Utils/          # чистые функции: Wire (разбор wire-значений), Collection (массивы, батчи)
 ```
 
 - **Зависимости:** `Presentation → Application → Port ← Infrastructure`.
 - `Application` не импортирует `Infrastructure`; внешний мир — только через `Port/`.
-- `Application` может использовать `Shared/Utils` — чистые статические хелперы.
+- `Application` может использовать `Shared/Utils` — кросс-слойную технику
+  (`UidUtils`, `DateUtils`); хелперы, обслуживающие use case'ы, живут в
+  `Application/Utils`.
 
 ✅ `Application/Service/{Entity}/Action/FooService.php` — роль → сущность.
 
@@ -341,6 +344,38 @@ BatchUtils::each($ids, fn (array $chunk) => $service->recalculate($repo->listByI
 
 ---
 
+## Utils
+
+Чистые функции слоя: `final`, `public static`, без состояния и без I/O —
+сигнатура принимает данные и возвращает данные. Первый уровень внутри `Utils/` —
+назначение:
+
+| Папка | Что | Примеры |
+|-------|-----|---------|
+| `Wire/` | разбор и whitelist wire-значений (`array` → скаляр/enum), форма `filter` / `sort` | `InputAssertUtils`, `StringAssertUtils`, `FilterFieldUtils` |
+| `Collection/` | структуры данных: маппинг списков, батчи и keyset, значения enum | `ArrayUtils`, `BatchUtils`, `EnumUtils` |
+
+`Utils` — не пятая роль входа и не место для логики:
+
+- Инвариант **поля** — VO, а не функция проверки: ✅ `new EmailVo($raw)`,
+  ❌ `EmailAssertUtils::assertValid($raw)`.
+- Предусловие с I/O — `Policy`; шаг с репозиторием, шиной или файлами —
+  `Service`. В `Utils` их быть не может: нет зависимостей.
+- Вызывается одним классом — приватный метод в этом классе, ❌ `Utils`.
+- Знает имена полей конкретного домена — в request Model домена; `Wire/`
+  получает whitelist аргументом
+  (`FilterFieldUtils::isAllowed($name, UserFilterFieldEnum::class)`), чтобы не
+  перечислять ресурсы: иначе общий хелпер становится точкой сборки всех
+  фильтров, а whitelist заводится во втором месте рядом с `Application/Enum`.
+- presentation-вход (`BaseController::requestPayload`, разбор CLI-аргументов)
+  зовёт `Wire/` — направление `Presentation → Application` этим не расширяется:
+  это тот же слой, что и request Model.
+
+Тексты `InvalidArgumentException` из `Wire/` доезжают до клиента в `400`: менять
+их можно только вместе со спекой эндпоинта и интеграционным тестом.
+
+---
+
 ## Границы типизации
 
 `array` и `mixed` — **только на wire-границе**: HTTP body, JSON decode, serde.
@@ -375,4 +410,5 @@ $service->execute($request->getPayload());
 10. Перебор — пагинация/keyset; OFFSET и полный scan запрещены
 11. Async ставит Application-событие через `Port\Messaging\MessageBusInterface`, выполняет Service или `*MessageHandler`
 12. `CacheInterface` — только в `*Cache`; `*Cache` владеет ключом и TTL, загрузчик получает от вызывающего
+13. `Application/Utils` — чистые функции (`Wire` / `Collection`): инвариант поля — VO, предусловие с I/O — Policy, шаг с репозиторием — Service
 

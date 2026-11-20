@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Shared\Utils\Asserts;
+namespace App\Application\Utils\Wire;
 
-use App\Shared\Utils\ArrayUtils;
-use App\Shared\Utils\EnumUtils;
+use App\Application\Utils\Collection\ArrayUtils;
+use App\Application\Utils\Collection\EnumUtils;
 use BackedEnum;
 use InvalidArgumentException;
 

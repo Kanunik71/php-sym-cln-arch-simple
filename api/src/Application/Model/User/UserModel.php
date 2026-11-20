@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Application\Model\User;
 
+use App\Application\Utils\Wire\StringAssertUtils;
 use App\Application\ValueObject\Common\EmailVo;
 use App\Application\ValueObject\Common\PhoneVo;
-use App\Shared\Utils\Asserts\StringAssertUtils;
 use App\Shared\Utils\UidUtils;
 use DateTimeImmutable;
 

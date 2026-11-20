@@ -7,7 +7,7 @@ namespace App\Application\Mapper\Task;
 use App\Application\Model\Task\Read\TaskViewModel;
 use App\Application\Model\Task\TaskModel;
 use App\Application\Model\Task\TaskUserModel;
-use App\Shared\Utils\ArrayUtils;
+use App\Application\Utils\Collection\ArrayUtils;
 use App\Shared\Utils\DateUtils;
 
 final class TaskViewModelMapper

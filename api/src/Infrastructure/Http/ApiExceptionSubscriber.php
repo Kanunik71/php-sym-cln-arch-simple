@@ -6,7 +6,6 @@ namespace App\Infrastructure\Http;
 
 use App\Application\Exception\ErrorCodeEnum;
 use App\Application\Model\Http\ErrorResponseModel;
-use App\Shared\Utils\Http\ErrorResponseUtils;
 use InvalidArgumentException;
 use JsonException;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -99,7 +98,7 @@ final readonly class ApiExceptionSubscriber implements EventSubscriberInterface
             ))->toArray(), $status);
         }
 
-        return ErrorResponseUtils::json($throwable, $status);
+        return new JsonResponse(ErrorResponseModel::fromThrowable($throwable)->toArray(), $status);
     }
 
     private function status(Throwable $throwable): int

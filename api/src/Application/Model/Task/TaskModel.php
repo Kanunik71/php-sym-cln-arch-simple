@@ -6,8 +6,8 @@ namespace App\Application\Model\Task;
 
 use App\Application\Enum\Task\TaskStatusEnum;
 use App\Application\Exception\Task\InvalidTaskStatusTransitionException;
-use App\Shared\Utils\Asserts\NumberAssertUtils;
-use App\Shared\Utils\Asserts\StringAssertUtils;
+use App\Application\Utils\Wire\NumberAssertUtils;
+use App\Application\Utils\Wire\StringAssertUtils;
 use App\Shared\Utils\UidUtils;
 use DateTimeImmutable;
 use InvalidArgumentException;

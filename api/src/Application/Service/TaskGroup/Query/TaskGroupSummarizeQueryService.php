@@ -9,8 +9,8 @@ use App\Application\Mapper\TaskGroup\TaskGroupSummaryModelMapper;
 use App\Application\Model\TaskGroup\Read\TaskGroupSummaryModel;
 use App\Application\Model\TaskGroup\Read\TaskStatusCountsModel;
 use App\Application\Port\TaskGroup\TaskGroupRepositoryInterface;
-use App\Shared\Utils\ArrayUtils;
-use App\Shared\Utils\BatchUtils;
+use App\Application\Utils\Collection\ArrayUtils;
+use App\Application\Utils\Collection\BatchUtils;
 
 final readonly class TaskGroupSummarizeQueryService
 {

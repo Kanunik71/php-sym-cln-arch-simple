@@ -7,7 +7,7 @@ namespace App\Application\Model\Asset\Read;
 use App\Application\Enum\Asset\AssetTypeEnum;
 use App\Application\Model\Common\ArrayableModelInterface;
 use App\Application\Model\Common\FileItemModel;
-use App\Shared\Utils\Asserts\InputAssertUtils;
+use App\Application\Utils\Wire\InputAssertUtils;
 
 final readonly class AssetViewModel implements ArrayableModelInterface
 {

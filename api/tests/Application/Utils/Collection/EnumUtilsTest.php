@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Utils;
+namespace App\Tests\Application\Utils\Collection;
 
 use App\Application\Enum\Notification\NotificationChannelEnum;
-use App\Shared\Utils\EnumUtils;
+use App\Application\Utils\Collection\EnumUtils;
 use PHPUnit\Framework\TestCase;
 
 final class EnumUtilsTest extends TestCase

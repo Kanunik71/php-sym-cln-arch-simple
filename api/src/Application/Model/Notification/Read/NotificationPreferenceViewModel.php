@@ -7,8 +7,8 @@ namespace App\Application\Model\Notification\Read;
 use App\Application\Enum\Notification\NotificationChannelEnum;
 use App\Application\Enum\Notification\NotificationTypeEnum;
 use App\Application\Model\Common\ArrayableModelInterface;
-use App\Shared\Utils\Asserts\InputAssertUtils;
-use App\Shared\Utils\EnumUtils;
+use App\Application\Utils\Collection\EnumUtils;
+use App\Application\Utils\Wire\InputAssertUtils;
 
 final readonly class NotificationPreferenceViewModel implements ArrayableModelInterface
 {

@@ -7,7 +7,7 @@ namespace App\Application\Model\Task\Read;
 use App\Application\Enum\Task\TaskStatusEnum;
 use App\Application\Model\Common\ArrayableModelInterface;
 use App\Application\Model\Task\TaskUserModel;
-use App\Shared\Utils\Asserts\InputAssertUtils;
+use App\Application\Utils\Wire\InputAssertUtils;
 
 final readonly class TaskViewModel implements ArrayableModelInterface
 {

@@ -2,14 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Shared\Utils\Filter;
+namespace App\Application\Utils\Wire;
 
-use App\Shared\Utils\Asserts\InputAssertUtils;
 use InvalidArgumentException;
 
 /**
- * Shared HTTP `filter` bag parsing for Search*Query criteria.
- * Entity *FilterCriterionModel supplies the per-field builder.
+ * Generic HTTP `filter` bag parsing for Search*Query criteria.
+ * Entity *FilterCriterionModel supplies the per-field builder and the field whitelist.
  */
 final class FilterCriteriaUtils
 {

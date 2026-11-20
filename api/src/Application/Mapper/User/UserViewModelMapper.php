@@ -9,7 +9,7 @@ use App\Application\Model\User\Read\UserViewModel;
 use App\Application\Model\User\UserLocationModel;
 use App\Application\Model\User\UserModel;
 use App\Application\Port\File\FileDownloadUrlProviderInterface;
-use App\Shared\Utils\ArrayUtils;
+use App\Application\Utils\Collection\ArrayUtils;
 use App\Shared\Utils\DateUtils;
 
 final class UserViewModelMapper

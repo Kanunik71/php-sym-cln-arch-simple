@@ -11,7 +11,7 @@ use App\Application\Model\Common\Query\QueryDefaultSortMetaModel;
 use App\Application\Model\Common\Query\QueryFilterFieldMetaModel;
 use App\Application\Model\Common\Query\QueryPaginationMetaModel;
 use App\Application\Model\Common\Query\SearchQueryMetaModel;
-use App\Shared\Utils\EnumUtils;
+use App\Application\Utils\Collection\EnumUtils;
 use BackedEnum;
 use LogicException;
 

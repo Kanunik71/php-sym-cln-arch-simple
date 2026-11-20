@@ -10,7 +10,6 @@ use App\Application\Model\TaskGroup\Action\TaskGroupCreateModel;
 use App\Application\Service\TaskGroup\Action\TaskGroupCreateService;
 use App\Application\Service\TaskGroup\Query\TaskGroupSummarizeQueryService;
 use App\Presentation\Controller\BaseController;
-use App\Shared\Utils\Http\ErrorResponseUtils;
 use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -45,11 +44,11 @@ final class TaskGroupController extends BaseController
                 userId: $this->getCurrentUserId(),
             );
         } catch (TaskNotFoundException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
+            return $this->errorResponse($exception, Response::HTTP_NOT_FOUND);
         } catch (UnauthorizedTaskAccessException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_FORBIDDEN);
+            return $this->errorResponse($exception, Response::HTTP_FORBIDDEN);
         } catch (InvalidArgumentException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_BAD_REQUEST);
+            return $this->errorResponse($exception, Response::HTTP_BAD_REQUEST);
         }
 
         return $this->json($taskGroup, Response::HTTP_CREATED);

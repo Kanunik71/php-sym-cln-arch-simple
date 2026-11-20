@@ -13,7 +13,7 @@ parameters:
     ignoreErrors:
         -
             identifier: return.type
-            path: tests/Utils/Asserts/InputAssertUtilsTest.php
+            path: tests/Application/Utils/Wire/InputAssertUtilsTest.php
         # Fixture props assigned in setUp / create* helpers, not constructors
         -
             identifier: property.uninitialized

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Utils\Asserts;
+namespace App\Tests\Application\Utils\Wire;
 
 use App\Application\Enum\Task\TaskStatusEnum;
-use App\Shared\Utils\Asserts\InputAssertUtils;
+use App\Application\Utils\Wire\InputAssertUtils;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 

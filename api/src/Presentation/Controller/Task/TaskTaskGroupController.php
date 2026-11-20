@@ -16,7 +16,6 @@ use App\Application\Service\TaskGroup\Action\TaskGroupRemoveTaskService;
 use App\Application\Service\TaskGroup\Query\TaskGroupListQueryService;
 use App\Application\Service\TaskGroup\Query\TaskGroupQueryService;
 use App\Presentation\Controller\BaseController;
-use App\Shared\Utils\Http\ErrorResponseUtils;
 use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -47,9 +46,9 @@ final class TaskTaskGroupController extends BaseController
                 taskId: $taskId,
             );
         } catch (TaskNotFoundException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
+            return $this->errorResponse($exception, Response::HTTP_NOT_FOUND);
         } catch (UnauthorizedTaskAccessException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_FORBIDDEN);
+            return $this->errorResponse($exception, Response::HTTP_FORBIDDEN);
         }
 
         return $this->json($taskGroups);
@@ -65,11 +64,11 @@ final class TaskTaskGroupController extends BaseController
                 userId: $this->getCurrentUserId(),
             );
         } catch (TaskNotFoundException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
+            return $this->errorResponse($exception, Response::HTTP_NOT_FOUND);
         } catch (UnauthorizedTaskAccessException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_FORBIDDEN);
+            return $this->errorResponse($exception, Response::HTTP_FORBIDDEN);
         } catch (InvalidArgumentException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_BAD_REQUEST);
+            return $this->errorResponse($exception, Response::HTTP_BAD_REQUEST);
         }
 
         return $this->json($taskGroup, Response::HTTP_CREATED);
@@ -85,9 +84,9 @@ final class TaskTaskGroupController extends BaseController
                 taskGroupId: $id,
             );
         } catch (TaskNotFoundException|TaskGroupNotFoundException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
+            return $this->errorResponse($exception, Response::HTTP_NOT_FOUND);
         } catch (UnauthorizedTaskAccessException|UnauthorizedTaskGroupAccessException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_FORBIDDEN);
+            return $this->errorResponse($exception, Response::HTTP_FORBIDDEN);
         }
 
         return $this->json($taskGroup);
@@ -103,9 +102,9 @@ final class TaskTaskGroupController extends BaseController
                 taskGroupId: $id,
             );
         } catch (TaskNotFoundException|TaskGroupNotFoundException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
+            return $this->errorResponse($exception, Response::HTTP_NOT_FOUND);
         } catch (UnauthorizedTaskAccessException|UnauthorizedTaskGroupAccessException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_FORBIDDEN);
+            return $this->errorResponse($exception, Response::HTTP_FORBIDDEN);
         }
 
         return $this->json($taskGroup);
@@ -121,9 +120,9 @@ final class TaskTaskGroupController extends BaseController
                 taskGroupId: $id,
             );
         } catch (TaskNotFoundException|TaskGroupNotFoundException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
+            return $this->errorResponse($exception, Response::HTTP_NOT_FOUND);
         } catch (UnauthorizedTaskAccessException|UnauthorizedTaskGroupAccessException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_FORBIDDEN);
+            return $this->errorResponse($exception, Response::HTTP_FORBIDDEN);
         }
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
@@ -140,9 +139,9 @@ final class TaskTaskGroupController extends BaseController
                 removeTaskId: $removeTaskId,
             );
         } catch (TaskNotFoundException|TaskGroupNotFoundException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
+            return $this->errorResponse($exception, Response::HTTP_NOT_FOUND);
         } catch (UnauthorizedTaskAccessException|UnauthorizedTaskGroupAccessException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_FORBIDDEN);
+            return $this->errorResponse($exception, Response::HTTP_FORBIDDEN);
         }
 
         return $this->json($taskGroup);

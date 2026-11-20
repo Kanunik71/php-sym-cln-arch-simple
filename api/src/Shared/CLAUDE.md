@@ -1,99 +1,57 @@
-# Shared: слой утилит
+# Shared: кросс-слойная техника
 
-Правила слоя, а не список классов. Смежные документы: карта слоёв и суффиксы —
-[`api/CLAUDE.md`](../../CLAUDE.md), роли Application —
-[`Application/CLAUDE.md`](../Application/CLAUDE.md), wire-ошибки —
-[`Presentation/CLAUDE.md`](../Presentation/CLAUDE.md), тесты —
-[`tests/CLAUDE.md`](../../tests/CLAUDE.md).
+Слой держит то, что нужно нескольким слоям и не знает ни о домене, ни о
+wire-контрактах. Карта слоёв — [`api/CLAUDE.md`](../../CLAUDE.md), разбор
+wire-значений и правила `Utils` — [`Application/CLAUDE.md`](../Application/CLAUDE.md#utils),
+тесты — [`tests/CLAUDE.md`](../../tests/CLAUDE.md).
 
-## Форма слоя
+## Что живёт в слое
 
 ```
-Shared/
-└── Utils/
-    ├── (корень)   # вычисления и форматы: ArrayUtils, BatchUtils, CacheKeyUtils, DateUtils, EnumUtils, UidUtils, ContainerUtils
-    ├── Asserts/   # разбор wire-значений: InputAssertUtils, NumberAssertUtils, StringAssertUtils
-    ├── Filter/    # разбор wire-критериев поиска: FilterCriteriaUtils, FilterFieldUtils, SortFieldUtils
-    └── Http/      # форма error-ответа: ErrorResponseUtils
+Shared/Utils/
+├── UidUtils.php        # UUID v7: генерация, строковый формат, nil-идентификатор
+├── DateUtils.php       # атомарный формат даты (wire и БД)
+├── CacheKeyUtils.php   # стабильный отпечаток набора id — курсор ключа кеша/лока
+└── ContainerUtils.php  # типизированный доступ к контейнеру
 ```
 
-- Группа выбирается по тому, **что разбирается или считается**, а не по тому,
-  кто зовёт: `InputAssertUtils` нужен и `Application/Model`, и
-  `Presentation/Console` — он в `Asserts/`, а не около одного из них.
-- `Asserts/`, `Filter/`, `Http/` — про wire-границу: невалидный вход бросает
-  `InvalidArgumentException` и становится `400`. Корневые утилиты про HTTP и
-  JSON не знают.
-- ❌ `Shared/{Entity}/` — сущность на первом уровне: хелпер, знающий про `Task`,
-  общим не бывает.
-- ❌ новая подпапка под одного потребителя и ❌ метод, который вызывает один
-  класс: такое живёт приватным методом в вызывающем. Общий код для одного —
-  скрытая связь слоёв.
+Класс: `final`, только `public static`, без состояния и конструктора, суффикс
+`Utils`. Никаких текстов ошибок для клиента: `400`-контракт формирует
+`Application/Utils/Wire`.
 
-Класс: `final`, только `public static` методы, без состояния и конструктора,
-суффикс `Utils`. Состояние, I/O и решение о доступе невозможны по определению —
-это `Service`, `Policy` или `*Cache`.
+## Порог: почему класс общий
 
-## Когда Utils, а когда нет
+| Класс | Потребители | Основание |
+|-------|-------------|-----------|
+| `UidUtils` | Application (Model, Service) + Infrastructure (Entity, Mapper, Fetcher) | ≥ 2 слоя |
+| `DateUtils` | Application/Mapper + Infrastructure/Persistence | ≥ 2 слоя |
+| `CacheKeyUtils` | Infrastructure/Lock | общий **формат** ключа: завтра его требует `Application/Cache` (роль пуста) |
+| `ContainerUtils` | `tests/Support/TestBed` | тесты — потребитель наравне со слоями |
 
-| Код... | Место |
-|--------|-------|
-| приводит wire-значение к типу и бросает на невалидном | `Shared/Utils/Asserts/*` |
-| считает или форматирует без доменных правил (батчи, fingerprint, atom-date, uuid) | `Shared/Utils/*` |
-| разбирает `filter` / `sort`, не зная whitelist полей | `Shared/Utils/Filter/*` |
-| хранит инвариант **поля** (email, телефон, сумма) | `Application/ValueObject/*Vo` |
-| требует I/O: доступ, уникальность, существование | `Application/Policy/*` |
-| это шаг use case с репозиторием, шиной или файлами | `Application/Service/**` |
-| обёртка над библиотекой или внешний ресурс | `Infrastructure/**` (`*Adapter`, `*Provider`) |
+Правило: класс остаётся в Shared, если его зовут ≥ 2 src-слоя **или** он задаёт
+формат, который слои делят (формат id, формат даты, отпечаток ключа). Единственный
+потребитель в одном слое → переезд в этот слой: `Application/Utils` или
+соответствующий технический слой `Infrastructure`.
 
-Порог входа в Shared: код одинаково нужен **≥ 2 слоям** и не знает про домен.
-Ниже порога — остаётся в слое-потребителе. Тесты — потребитель наравне со
-слоями: `ContainerUtils` нужен только `tests/Support/TestBed` и это единственный
-хелпер слоя без src-вызова.
+## Границы
 
-Исключений из «не знает про домен» в слое нет; то, что раньше выглядело
-исключением, — misplaced:
+Shared не импортирует `App\Application` и `App\Infrastructure` — ни реализаций,
+ни контрактов. Направление строго вниз: слои знают про Shared, Shared не знает
+ни про кто. Разрешены только внешние типы-значения без I/O (`Symfony\Uid\Uuid`,
+`DateTimeInterface`).
 
-- деньги — `Application/ValueObject/Common/MoneyVo`: в нём и `PRECISION` /
-  `SCALE` / `MAX_AMOUNT` (из них же берёт форму колонка
-  `#[ORM\Column(precision: MoneyVo::PRECISION, ...)]`, по образцу
-  `EmailVo::MAX_LENGTH`), и нормализация, и `toString` / `fromString` для
-  decimal-колонки.
-- `Filter/*` — не знание о домене, а форма wire-контракта: `filter`-bag и
-  sort-строка одинаковы для всех ресурсов, whitelist даёт вызывающий —
-  `FilterFieldUtils::isAllowed($name, {Entity}FilterFieldEnum::class)` получает
-  enum из Application **аргументом**. ❌ импортировать `Application/Enum/**`
-  внутри `Filter/*` и ❌ `match` по именам полей: тогда Shared начнёт знать
-  домены.
+Отсюда — что уехало из слоя и куда:
 
-## Границы зависимостей
-
-| Можно | Что |
-|------|-----|
-| PHP и чистые типы библиотек | `BackedEnum`, `DateTimeInterface`, `Generator`, `Symfony\Uid\Uuid`, `HttpFoundation\JsonResponse` |
-| **контракты** Application | `Model\Common\IdentifiableInterface` (`ArrayUtils::ids`), `Exception\CodedExceptionInterface`, `Exception\ErrorCodeEnum`, `Model\Http\ErrorResponseModel` (`ErrorResponseUtils`) |
-
-Нельзя: `Application/Service/**`, `Policy/**`, `Mapper/**`, `Cache/**`, что-либо
-из `Infrastructure/**`, Doctrine, контейнер как сервис (единственный легальный
-вход — `ContainerInterface` **аргументом**, как в `ContainerUtils`) и глобальное
-состояние: mutable-статика, `$_ENV`, `date()` без входных данных.
-
-Правило читается по импорту: импортируется **тип-данные** (interface, enum,
-Model) — это контракт; импортируется **поведение** (Service, Mapper, адаптер) —
-это логика чужого уровня, и ей место там же. Кольцо `Application ↔ Shared`
-замкнуто только контрактами.
-
-Расширение слоя — новый метод, а не правка существующего: у `InputAssertUtils`
-150+ вызовов в `Application/Model`, у `ErrorResponseUtils` — 76 в контроллерах,
-`UidUtils` и `DateUtils` держат Persistence, а тексты `InvalidArgumentException`
-попадают в `400`.
+| Было в Shared | Стало | Почему |
+|---------------|-------|--------|
+| `Utils/Asserts/*`, `Utils/Filter/*` | `Application/Utils/Wire/*` | это wire-контракт Application (у `InputAssertUtils` 151 из 153 вызовов — в `Application/Model::fromArray`), а не общая техника |
+| `Utils/ArrayUtils`, `BatchUtils`, `EnumUtils` | `Application/Utils/Collection/*` | потребители только в Application; `ArrayUtils` к тому же импортировал `IdentifiableInterface` |
+| `Utils/Http/ErrorResponseUtils` | `BaseController::errorResponse` (Presentation) + `ErrorResponseModel::fromThrowable` (Application) | HTTP-обёртка нужна только контроллерам, а формат конверта — контракт Application; в Shared импорта `JsonResponse` не осталось |
 
 ## Чеклист
 
 1. `final`, `public static`, без состояния и конструктора, суффикс `Utils`.
-2. Группа — по объекту разбора (`Asserts/`, `Filter/`, `Http/`), не по потребителю; сущности на первом уровне нет.
-3. В Shared попадает то, что нужно ≥ 2 слоям; для одного — приватный метод в слое.
-4. Инвариант поля — VO; предусловие с I/O — Policy; шаг use case — Service; обёртка библиотеки — Infrastructure.
-5. Из Application — только контракты (interface, enum, Model); реализаций и `Infrastructure` нет.
-6. Денег в Shared нет — это `Application/ValueObject/Common/MoneyVo`; у `Filter/*` enum полей приходит аргументом.
-7. Никакого глобального состояния и скрытого I/O.
-8. Новый метод вместо правки сигнатуры: вызовов много, тексты ошибок — часть `400`.
+2. Основание быть в Shared: ≥ 2 слоя-потребителя или общий формат; иначе — переезд в слой.
+3. Ни одного импорта `App\Application` и `App\Infrastructure`.
+4. Имя и сигнатура не называют домен: `fingerprintIds`, а не `taskGroupKey`.
+5. Новые wire-ассерты и разбор `filter`/`sort` — в `Application/Utils/Wire`, не сюда.

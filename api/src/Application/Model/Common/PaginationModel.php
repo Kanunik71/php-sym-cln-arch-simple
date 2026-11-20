@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Model\Common;
 
-use App\Shared\Utils\Asserts\InputAssertUtils;
+use App\Application\Utils\Wire\InputAssertUtils;
 use InvalidArgumentException;
 
 final readonly class PaginationModel implements ArrayableModelInterface

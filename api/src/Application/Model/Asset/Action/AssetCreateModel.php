@@ -6,7 +6,7 @@ namespace App\Application\Model\Asset\Action;
 
 use App\Application\Enum\Asset\AssetTypeEnum;
 use App\Application\Model\Common\ArrayableModelInterface;
-use App\Shared\Utils\Asserts\InputAssertUtils;
+use App\Application\Utils\Wire\InputAssertUtils;
 
 final readonly class AssetCreateModel implements ArrayableModelInterface
 {

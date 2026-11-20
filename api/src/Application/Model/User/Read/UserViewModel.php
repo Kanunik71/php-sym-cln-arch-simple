@@ -7,7 +7,7 @@ namespace App\Application\Model\User\Read;
 use App\Application\Model\Common\ArrayableModelInterface;
 use App\Application\Model\Common\FileItemModel;
 use App\Application\Model\User\UserLocationModel;
-use App\Shared\Utils\Asserts\InputAssertUtils;
+use App\Application\Utils\Wire\InputAssertUtils;
 
 final readonly class UserViewModel implements ArrayableModelInterface
 {

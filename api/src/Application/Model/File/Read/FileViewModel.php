@@ -6,7 +6,7 @@ namespace App\Application\Model\File\Read;
 
 use App\Application\Enum\File\FileStatusEnum;
 use App\Application\Model\Common\ArrayableModelInterface;
-use App\Shared\Utils\Asserts\InputAssertUtils;
+use App\Application\Utils\Wire\InputAssertUtils;
 
 final readonly class FileViewModel implements ArrayableModelInterface
 {

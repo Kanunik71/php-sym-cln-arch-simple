@@ -10,7 +10,6 @@ use App\Application\Service\File\Action\FileUploadTmpService;
 use App\Application\Service\File\Query\FileDownloadQueryService;
 use App\Application\Service\File\Query\FileQueryService;
 use App\Presentation\Controller\BaseController;
-use App\Shared\Utils\Http\ErrorResponseUtils;
 use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -37,7 +36,7 @@ final class FileController extends BaseController
         $uploadedFile = $request->files->get('file');
 
         if (!$uploadedFile instanceof UploadedFile) {
-            return ErrorResponseUtils::json(
+            return $this->errorResponse(
                 new InvalidArgumentException('Field "file" is required.'),
                 Response::HTTP_BAD_REQUEST,
             );
@@ -57,7 +56,7 @@ final class FileController extends BaseController
                 contents: $contents,
             );
         } catch (InvalidArgumentException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_BAD_REQUEST);
+            return $this->errorResponse($exception, Response::HTTP_BAD_REQUEST);
         }
 
         return $this->json($file, Response::HTTP_CREATED);
@@ -106,9 +105,9 @@ final class FileController extends BaseController
                 fileId: $id,
             );
         } catch (FileNotFoundException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
+            return $this->errorResponse($exception, Response::HTTP_NOT_FOUND);
         } catch (UnauthorizedFileAccessException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_FORBIDDEN);
+            return $this->errorResponse($exception, Response::HTTP_FORBIDDEN);
         }
 
         return $this->json($file);
@@ -124,9 +123,9 @@ final class FileController extends BaseController
                 signature: $request->query->getString('sig'),
             );
         } catch (FileNotFoundException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
+            return $this->errorResponse($exception, Response::HTTP_NOT_FOUND);
         } catch (UnauthorizedFileAccessException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_FORBIDDEN);
+            return $this->errorResponse($exception, Response::HTTP_FORBIDDEN);
         }
 
         $stream = $download->stream;

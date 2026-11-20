@@ -9,8 +9,8 @@ use App\Application\Enum\TaskGroup\TaskGroupStatusEnum;
 use App\Application\Model\TaskGroup\TaskGroupMembershipFactsModel;
 use App\Application\Model\TaskGroup\TaskGroupModel;
 use App\Application\Port\TaskGroup\TaskGroupRepositoryInterface;
-use App\Shared\Utils\ArrayUtils;
-use App\Shared\Utils\BatchUtils;
+use App\Application\Utils\Collection\ArrayUtils;
+use App\Application\Utils\Collection\BatchUtils;
 
 final readonly class TaskGroupRecalculationService
 {

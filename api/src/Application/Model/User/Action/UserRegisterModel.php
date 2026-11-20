@@ -6,7 +6,7 @@ namespace App\Application\Model\User\Action;
 
 use App\Application\Model\Common\ArrayableModelInterface;
 use App\Application\Model\User\UserLocationModel;
-use App\Shared\Utils\Asserts\InputAssertUtils;
+use App\Application\Utils\Wire\InputAssertUtils;
 
 final readonly class UserRegisterModel implements ArrayableModelInterface
 {

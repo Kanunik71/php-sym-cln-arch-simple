@@ -6,7 +6,7 @@ namespace App\Application\Mapper\TaskGroup;
 
 use App\Application\Model\TaskGroup\Read\TaskGroupViewModel;
 use App\Application\Model\TaskGroup\TaskGroupModel;
-use App\Shared\Utils\ArrayUtils;
+use App\Application\Utils\Collection\ArrayUtils;
 use App\Shared\Utils\DateUtils;
 
 final class TaskGroupViewModelMapper

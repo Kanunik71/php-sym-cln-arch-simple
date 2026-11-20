@@ -8,21 +8,25 @@ Application — [`Application/CLAUDE.md`](../Application/CLAUDE.md), wire-кон
 
 ## Форма слоя и зависимости
 
-`Controller/{Entity}/*Controller` (HTTP) и `Console/{Entity}/*Console` (CLI);
-общий код — только `Controller/BaseController` (идентичность + разбор JSON-body):
-второй общий класс означает, что логика уезжает из Presentation. Первый уровень —
+`Controller/{Entity}/*Controller` (HTTP) и `Console/{Entity}/*Console` (CLI).
+Общий код — только `Controller/BaseController`: идентичность (`getCurrentUserId`),
+разбор тела (`requestPayload`), оформление отказа (`errorResponse`). Второй общий
+класс означал бы, что логика уезжает из Presentation. Первый уровень —
 **сущность**, роль задаёт суффикс: в тонком слое «какой ресурс» важнее «какая
 роль» (в `Application` первый уровень — роль, в `Infrastructure` — технология).
-Вложенный ресурс — в папке родителя: ✅ `Controller/Task/TaskAssetController`
+Вложенный ресурс — в папке родителя:
+✅ `Controller/Task/TaskAssetController`
 для `/api/tasks/{taskId}/assets`, ❌ `Controller/Asset/TaskAssetController`.
 
 Можно: `Application/Service/**/{Action,Query}` (единственный вход HTTP),
 `Application/Model/**` (`fromArray` на входе, response Model на выходе),
-`Application/Exception/**`, `Shared/Utils/**` (`InputAssertUtils`,
-`ErrorResponseUtils`), Symfony (`HttpFoundation`, `Route`, `IsGranted`,
-`Console\*`). Нельзя: `Application/Service/**` вне `Action`/`Query`, `Port/`,
-`Policy/`, `Cache/`, `TransactionManagerInterface`, Doctrine,
-`Infrastructure/**`. Проверки — `ArchitectureTest` (`testControllerEntersThroughUseCase`,
+`Application/Exception/**`, `Application/Utils/Wire/**` (`InputAssertUtils`:
+разбор payload и CLI-аргументов), Symfony
+(`HttpFoundation`, `Route`, `IsGranted`, `Console\*`). Нельзя:
+`Application/Service/**` вне `Action`/`Query`, `Port/`, `Policy/`, `Cache/`,
+`TransactionManagerInterface`, Doctrine, `Infrastructure/**`,
+`Application/Utils/Collection/**` (это внутренность use case'ов). Проверки —
+`ArchitectureTest` (`testControllerEntersThroughUseCase`,
 `testJobEntersThroughService`, `testPresentationDoesNotDependOnInfrastructure`).
 
 Идентичность приходит через контракт Symfony: `BaseController::getCurrentUserId()`
@@ -83,10 +87,12 @@ keyset и `BatchUtils::stream` — в Service (❌ `while` с батчами в 
 | Контроллер | нарушение формы payload (`InvalidArgumentException` из `fromArray` / `requestPayload`) | 400 |
 | Subscriber | что дошло до ядра: `HttpExceptionInterface`, security, непереведённое | 400/401/403, 500 (в prod текст маскируется) |
 
-- Статус и `codeId` — из спеки эндпоинта, это один контракт. Тело — только
-  `ErrorResponseUtils::json($exception, $status)`: ❌ конструировать
-  `ErrorResponseModel` вручную и ❌ `catch (Throwable)` (неизвестное обязано стать
-  500). Одинаковый статус у нескольких исключений — один `catch` через `|`.
+- Статус и `codeId` — из спеки эндпоинта, это один контракт. Тело отказа — только
+  `$this->errorResponse($exception, $status)`: это HTTP-обёртка над
+  `ErrorResponseModel::fromThrowable` (Application), ❌ собирать конверт в
+  контроллере вручную и ❌ `catch (Throwable)` (неизвестное обязано стать 500).
+  Одинаковый статус у нескольких исключений — один `catch` через `|`.
+  `ApiExceptionSubscriber` строит конверт сам и в Presentation не заходит.
 - Новое исключение ⇒ `catch` в затронутых контроллерах + запись в спеке +
   интеграционный тест на `codeId`. 400 намеренно в двух местах: явный `catch`
   держит контракт метода на месте, fallback страхует забытое исключение.
@@ -99,5 +105,5 @@ keyset и `BatchUtils::stream` — в Service (❌ `while` с батчами в 
 4. Нет репозиториев, Policy, Cache, транзакций, Doctrine, `Infrastructure/**` — идентичность только через `UserInterface`.
 5. Маршрут: `/api/{resource}`, `{resource}_{action}`, явные `methods`, UUID в `requirements`, `IsGranted` на классе.
 6. Команда: `app:{domain}:{action}`, `configure()` + `InputAssertUtils`, `SUCCESS`/`FAILURE`, без обходов.
-7. Ошибки: статус из спеки, тело только через `ErrorResponseUtils`, без `catch (Throwable)`.
+7. Ошибки: статус из спеки, тело только через `$this->errorResponse`, без `catch (Throwable)`.
 8. Каждый контракт ошибки покрыт интеграционным тестом (status + `codeId`).

@@ -11,7 +11,7 @@ use App\Application\Port\Messaging\MessageBusInterface;
 use App\Application\Port\Task\TaskRepositoryInterface;
 use App\Application\Port\TaskGroup\TaskGroupRepositoryInterface;
 use App\Application\Port\TransactionManagerInterface;
-use App\Shared\Utils\ArrayUtils;
+use App\Application\Utils\Collection\ArrayUtils;
 
 final readonly class TaskDeleteService
 {

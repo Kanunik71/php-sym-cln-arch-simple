@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\ValueObject\Common;
 
-use App\Shared\Utils\Asserts\StringAssertUtils;
+use App\Application\Utils\Wire\StringAssertUtils;
 use InvalidArgumentException;
 
 final class EmailVo

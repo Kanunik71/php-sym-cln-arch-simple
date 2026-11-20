@@ -6,7 +6,7 @@ namespace App\Application\Model\TaskGroup\Read;
 
 use App\Application\Enum\TaskGroup\TaskGroupStatusEnum;
 use App\Application\Model\Common\ArrayableModelInterface;
-use App\Shared\Utils\Asserts\InputAssertUtils;
+use App\Application\Utils\Wire\InputAssertUtils;
 
 final readonly class TaskGroupViewModel implements ArrayableModelInterface
 {

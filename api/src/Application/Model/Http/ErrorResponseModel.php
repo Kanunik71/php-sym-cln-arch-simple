@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Application\Model\Http;
 
+use App\Application\Exception\CodedExceptionInterface;
 use App\Application\Exception\ErrorCodeEnum;
 use App\Application\Model\Common\ArrayableModelInterface;
-use App\Shared\Utils\Asserts\InputAssertUtils;
+use App\Application\Utils\Wire\InputAssertUtils;
 use InvalidArgumentException;
+use Throwable;
 
 final readonly class ErrorResponseModel implements ArrayableModelInterface
 {
@@ -15,6 +17,18 @@ final readonly class ErrorResponseModel implements ArrayableModelInterface
         public string $error,
         public ErrorCodeEnum $codeId,
     ) {
+    }
+
+    /**
+     * Формирует конверт ошибки из исключения: `codeId` own кода — у
+     * `CodedExceptionInterface`, всё прочее — `VALIDATION_ERROR`.
+     */
+    public static function fromThrowable(Throwable $exception): self
+    {
+        return new self(
+            error: $exception->getMessage(),
+            codeId: $exception instanceof CodedExceptionInterface ? $exception->getCodeId() : ErrorCodeEnum::ValidationError,
+        );
     }
 
     /** @param array<string, mixed> $data */

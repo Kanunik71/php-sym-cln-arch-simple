@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Shared\Utils\Filter;
+namespace App\Application\Utils\Wire;
 
 use InvalidArgumentException;
 

@@ -12,7 +12,7 @@ use App\Application\Model\User\Action\UserSearchModel;
 use App\Application\Model\User\Read\UserPageModel;
 use App\Application\Port\File\FileDownloadUrlProviderInterface;
 use App\Application\Port\User\UserRepositoryInterface;
-use App\Shared\Utils\Filter\SortFieldUtils;
+use App\Application\Utils\Wire\SortFieldUtils;
 
 final readonly class UserSearchQueryService
 {

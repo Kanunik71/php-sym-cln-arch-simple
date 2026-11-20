@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Application\Model\TaskGroup;
 
 use App\Application\Enum\TaskGroup\TaskGroupStatusEnum;
-use App\Shared\Utils\Asserts\StringAssertUtils;
+use App\Application\Utils\Wire\StringAssertUtils;
 use App\Shared\Utils\UidUtils;
 use DateTimeImmutable;
 

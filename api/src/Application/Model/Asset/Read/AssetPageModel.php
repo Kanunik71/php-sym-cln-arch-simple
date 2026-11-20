@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Application\Model\Asset\Read;
 
 use App\Application\Model\Common\ArrayableModelInterface;
-use App\Shared\Utils\Asserts\InputAssertUtils;
+use App\Application\Utils\Wire\InputAssertUtils;
 
 final readonly class AssetPageModel implements ArrayableModelInterface
 {

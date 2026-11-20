@@ -6,7 +6,7 @@ namespace App\Application\Model\Notification\Action;
 
 use App\Application\Model\Common\ArrayableModelInterface;
 use App\Application\Model\Notification\Read\NotificationPreferenceViewModel;
-use App\Shared\Utils\Asserts\InputAssertUtils;
+use App\Application\Utils\Wire\InputAssertUtils;
 
 final readonly class UpdateNotificationPreferencesModel implements ArrayableModelInterface
 {

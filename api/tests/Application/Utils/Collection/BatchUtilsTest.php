@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Utils;
+namespace App\Tests\Application\Utils\Collection;
 
-use App\Shared\Utils\BatchUtils;
+use App\Application\Utils\Collection\BatchUtils;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 

@@ -16,7 +16,6 @@ use App\Application\Service\Task\Action\TaskDeleteService;
 use App\Application\Service\Task\Query\TaskListQueryService;
 use App\Application\Service\Task\Query\TaskQueryService;
 use App\Presentation\Controller\BaseController;
-use App\Shared\Utils\Http\ErrorResponseUtils;
 use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -46,7 +45,7 @@ final class TaskController extends BaseController
                 pagination: PaginationModel::fromArray($request->query->all()),
             );
         } catch (InvalidArgumentException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_BAD_REQUEST);
+            return $this->errorResponse($exception, Response::HTTP_BAD_REQUEST);
         }
 
         return $this->json($page);
@@ -61,9 +60,9 @@ final class TaskController extends BaseController
                 userId: $this->getCurrentUserId(),
             );
         } catch (TaskNotFoundException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
+            return $this->errorResponse($exception, Response::HTTP_NOT_FOUND);
         } catch (InvalidArgumentException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_BAD_REQUEST);
+            return $this->errorResponse($exception, Response::HTTP_BAD_REQUEST);
         }
 
         return $this->json($task, Response::HTTP_CREATED);
@@ -78,9 +77,9 @@ final class TaskController extends BaseController
                 userId: $this->getCurrentUserId(),
             );
         } catch (TaskNotFoundException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
+            return $this->errorResponse($exception, Response::HTTP_NOT_FOUND);
         } catch (UnauthorizedTaskAccessException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_FORBIDDEN);
+            return $this->errorResponse($exception, Response::HTTP_FORBIDDEN);
         }
 
         return $this->json($task);
@@ -96,13 +95,13 @@ final class TaskController extends BaseController
                 userId: $this->getCurrentUserId(),
             );
         } catch (TaskNotFoundException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
+            return $this->errorResponse($exception, Response::HTTP_NOT_FOUND);
         } catch (UnauthorizedTaskAccessException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_FORBIDDEN);
+            return $this->errorResponse($exception, Response::HTTP_FORBIDDEN);
         } catch (InvalidTaskStatusTransitionException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_CONFLICT);
+            return $this->errorResponse($exception, Response::HTTP_CONFLICT);
         } catch (InvalidArgumentException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_BAD_REQUEST);
+            return $this->errorResponse($exception, Response::HTTP_BAD_REQUEST);
         }
 
         return $this->json($task);
@@ -117,9 +116,9 @@ final class TaskController extends BaseController
                 userId: $this->getCurrentUserId(),
             );
         } catch (TaskNotFoundException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_NOT_FOUND);
+            return $this->errorResponse($exception, Response::HTTP_NOT_FOUND);
         } catch (UnauthorizedTaskAccessException $exception) {
-            return ErrorResponseUtils::json($exception, Response::HTTP_FORBIDDEN);
+            return $this->errorResponse($exception, Response::HTTP_FORBIDDEN);
         }
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);

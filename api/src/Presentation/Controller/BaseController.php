@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Presentation\Controller;
 
-use App\Shared\Utils\Asserts\InputAssertUtils;
+use App\Application\Model\Http\ErrorResponseModel;
+use App\Application\Utils\Wire\InputAssertUtils;
 use InvalidArgumentException;
 use LogicException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Throwable;
 
 abstract class BaseController extends AbstractController
 {
@@ -34,5 +37,14 @@ abstract class BaseController extends AbstractController
         }
 
         return InputAssertUtils::stringKeyedArray($data, 'payload');
+    }
+
+    /**
+     * Отказ эндпоинта: тело формирует `ErrorResponseModel::fromThrowable` (Application),
+     * здесь только HTTP-обёртка и статус из спеки метода.
+     */
+    protected function errorResponse(Throwable $exception, int $status): JsonResponse
+    {
+        return new JsonResponse(ErrorResponseModel::fromThrowable($exception)->toArray(), $status);
     }
 }

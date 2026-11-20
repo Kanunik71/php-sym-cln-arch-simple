@@ -6,7 +6,7 @@ namespace App\Application\Mapper\Task;
 
 use App\Application\Model\Task\Read\TaskLightModel;
 use App\Application\Model\Task\TaskModel;
-use App\Shared\Utils\ArrayUtils;
+use App\Application\Utils\Collection\ArrayUtils;
 use App\Shared\Utils\DateUtils;
 
 final class TaskLightModelMapper
