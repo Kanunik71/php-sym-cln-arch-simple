@@ -72,7 +72,7 @@ Infrastructure/Persistence/Doctrine/CascadeDeleteRuleTest.php   # белый с�
 - Транспорты `async` и `failed` — `in-memory://`; кэш — array (см. `config/packages/messenger.yaml`, `when@test`).
 - Password cost 4; схема БД пересоздаётся на `setUp` в `DatabaseTestCase`/`DatabaseWebTestCase`.
 - Suites: `Unit` (`tests/Application`, `tests/Infrastructure`, `tests/Utils`) и `Integration` (`tests/Integration`); интеграционные проверки — HTTP-статус **и** `codeId`.
-- `tests/Application/ArchitectureTest.php` — единственное исключение из «зеркало `src/Application`»: сканирует `src/` целиком и проверяет границу входа (Controller → Action/Query, job → Service, Service не зовёт use case, Service не открывает транзакцию). Роль класса определяется по папке: `Action`/`Query` — use case, остальное в `Application/Service/**` — Service.
+- `tests/Application/ArchitectureTest.php` — единственное исключение из «зеркало `src/Application`»: сканирует `src/` целиком и проверяет границу входа (Controller → Action/Query, job → Service, Service не зовёт use case, Service не открывает транзакцию) и границу слоёв (Presentation не импортирует Infrastructure, идентичность — через `UserInterface`). Роль класса определяется по папке: `Action`/`Query` — use case, остальное в `Application/Service/**` — Service.
 
 ### Application Service
 1. С БД, cache или messenger — `extends DatabaseTestCase`. Репозитории, MessageBus и Cache **не** мокать; seed через `$this->bed->…`. Чистая логика без IO (`statusFromMembership`, search meta, `TaskUserListService`) — `PHPUnit\Framework\TestCase`, сервис собирается через `new`.

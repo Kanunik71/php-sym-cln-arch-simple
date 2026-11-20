@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Presentation\Controller;
 
-use App\Infrastructure\Security\SecurityUser;
 use App\Shared\Utils\Asserts\InputAssertUtils;
 use InvalidArgumentException;
 use LogicException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 abstract class BaseController extends AbstractController
 {
@@ -17,11 +17,11 @@ abstract class BaseController extends AbstractController
     {
         $user = $this->getUser();
 
-        if (!$user instanceof SecurityUser) {
+        if (!$user instanceof UserInterface) {
             throw new LogicException('Authenticated user is missing.');
         }
 
-        return $user->getId();
+        return $user->getUserIdentifier();
     }
 
     /** @return array<string, mixed> */

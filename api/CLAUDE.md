@@ -7,6 +7,7 @@
 |------|---------|
 | [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md) | правила слоя Application: роли Service, три роли Model, VO, Port, оркестрация, delete, масштаб |
 | [`src/Infrastructure/CLAUDE.md`](src/Infrastructure/CLAUDE.md) | Doctrine, кэш, очереди, security, storage, роутинг, notification |
+| [`src/Presentation/CLAUDE.md`](src/Presentation/CLAUDE.md) | правила слоя Presentation: тонкий вход, границы импортов, маршруты и доступ, маппинг исключений → HTTP, формы команд |
 | [`tests/CLAUDE.md`](tests/CLAUDE.md) | базы тестов, фикстуры, правила интеграционных проверок |
 
 ---

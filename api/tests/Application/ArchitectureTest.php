@@ -9,7 +9,7 @@ use LogicException;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Граница входа Application.
+ * Граница входа Application и граница зависимостей слоёв.
  *
  * Use case — это `Action` и `Query`: они вызываются из Controller и из другого
  * Action/Query. Всё остальное в `Application/Service/**` — Service
@@ -19,6 +19,9 @@ use PHPUnit\Framework\TestCase;
  *
  * Job'ы (Console, MessageHandler) входят в Service напрямую: у них нет актора,
  * Policy и response Model.
+ *
+ * `Presentation` не импортирует `Infrastructure`: идентичность приходит через
+ * контракт Symfony `UserInterface`, а не через `SecurityUser`.
  */
 final class ArchitectureTest extends TestCase
 {
@@ -94,6 +97,15 @@ final class ArchitectureTest extends TestCase
         );
     }
 
+    public function testPresentationDoesNotDependOnInfrastructure(): void
+    {
+        self::assertNoImports(
+            from: self::isPresentation(...),
+            to: self::isInfrastructure(...),
+            message: 'Presentation must not import Infrastructure: identity arrives through the Symfony UserInterface contract.',
+        );
+    }
+
     /**
      * @param callable(string): bool $from
      * @param callable(string): bool $to
@@ -153,6 +165,16 @@ final class ArchitectureTest extends TestCase
         }
 
         return false;
+    }
+
+    private static function isPresentation(string $class): bool
+    {
+        return str_starts_with($class, 'App\\Presentation\\');
+    }
+
+    private static function isInfrastructure(string $class): bool
+    {
+        return str_starts_with($class, 'App\\Infrastructure\\');
     }
 
     /**
