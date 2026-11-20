@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Utils\Collection;
 
+use App\Shared\Utils\UidUtils;
 use Generator;
 use InvalidArgumentException;
 
@@ -13,8 +14,11 @@ final class BatchUtils
 
     /**
      * Lowest possible cursor — the starting point of a forward keyset walk.
+     *
+     * Курсор keyset'а — это id агрегата (uuid), поэтому нижняя граница — nil UUID,
+     * единственный источник значения — `UidUtils::NIL`.
      */
-    public const FIRST_CURSOR = '00000000-0000-0000-0000-000000000000';
+    public const FIRST_CURSOR = UidUtils::NIL;
 
     /**
      * Highest possible cursor — the starting point of a backward keyset walk.

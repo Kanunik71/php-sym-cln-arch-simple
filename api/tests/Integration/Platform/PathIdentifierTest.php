@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Integration\Platform;
 
 use App\Application\Exception\ErrorCodeEnum;
+use App\Shared\Utils\UidUtils;
 use App\Tests\AuthenticatedWebTestCase;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -52,7 +53,7 @@ final class PathIdentifierTest extends AuthenticatedWebTestCase
 
         $this->client->request(
             'GET',
-            '/api/users/00000000-0000-0000-0000-000000000000',
+            '/api/users/'.UidUtils::NIL,
             server: $this->demoAuthorizedServer(),
         );
 
