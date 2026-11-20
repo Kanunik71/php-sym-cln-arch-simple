@@ -6,6 +6,7 @@ namespace App\Tests\Application\Model\Asset;
 
 use App\Application\Enum\Asset\AssetTypeEnum;
 use App\Application\Model\Asset\AssetModel;
+use App\Application\ValueObject\Common\MoneyVo;
 use App\Shared\Utils\UidUtils;
 use DateTimeImmutable;
 use InvalidArgumentException;
@@ -51,10 +52,10 @@ final class AssetModelTest extends TestCase
     public function testWithNameAndPriceReturnsUpdatedCopy(): void
     {
         $asset = $this->newAsset(name: 'Laptop', price: 100.0);
-        $updated = $asset->withNameAndPrice('Desktop', 200.5);
+        $updated = $asset->withNameAndPrice('Desktop', new MoneyVo(200.5));
 
         $this->assertSame('Desktop', $updated->name);
-        $this->assertSame(200.5, $updated->price);
+        $this->assertSame(200.5, $updated->price->toFloat());
         $this->assertSame($asset->id, $updated->id);
         $this->assertSame('Laptop', $asset->name);
     }
@@ -66,7 +67,7 @@ final class AssetModelTest extends TestCase
         return new AssetModel(
             id: UidUtils::generateString(),
             name: $name,
-            price: $price,
+            price: new MoneyVo($price),
             type: AssetTypeEnum::Physical,
             ownerId: UidUtils::generateString(),
             createdAt: $now,

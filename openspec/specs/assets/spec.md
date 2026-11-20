@@ -31,7 +31,7 @@ The API SHALL возвращать ассет в JSON-объекте с поля
 
 ## Notes
 
-- `price` в БД — `NUMERIC(10,2)`, неотрицательное, до 2 знаков (`MoneyUtils`); тип неизменяем после создания.
+- `price` в БД — `NUMERIC(10,2)`, неотрицательное, до 2 знаков (`MoneyVo`); тип неизменяем после создания.
 - `codeId`: `VALIDATION_ERROR` (400), `UNAUTHORIZED_ASSET_ACCESS`/`UNAUTHORIZED_TASK_ACCESS`/`UNAUTHORIZED_FILE_ACCESS` (403), `ASSET_NOT_FOUND`/`TASK_NOT_FOUND`/`FILE_NOT_FOUND` (404).
 - Событий Messenger для ассетов нет.
 - Источники: `api/src/Presentation/Controller/Asset/AssetController.php`, `api/src/Presentation/Controller/Task/TaskAssetController.php`, `api/src/Application/Service/Asset/**`, `api/tests/Integration/Asset/**`.

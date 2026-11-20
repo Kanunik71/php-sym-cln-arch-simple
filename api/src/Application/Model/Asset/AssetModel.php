@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Application\Model\Asset;
 
 use App\Application\Enum\Asset\AssetTypeEnum;
+use App\Application\ValueObject\Common\MoneyVo;
 use App\Shared\Utils\Asserts\StringAssertUtils;
-use App\Shared\Utils\MoneyUtils;
 use DateTimeImmutable;
 
 /**
- * Persistence model — mirrors assets table columns (scalars only).
+ * Persistence model — mirrors assets table columns.
+ *
+ * Fields with an invariant are Value Objects (MoneyVo); the rest are scalars.
  */
 final readonly class AssetModel
 {
@@ -18,22 +20,22 @@ final readonly class AssetModel
     public const NAME_MAX_LENGTH = 255;
 
     public string $name;
-    public float $price;
+    public MoneyVo $price;
 
     public function __construct(
         public string $id,
         string $name,
-        float $price,
+        MoneyVo $price,
         public AssetTypeEnum $type,
         public string $ownerId,
         public DateTimeImmutable $createdAt,
         public DateTimeImmutable $updatedAt,
     ) {
         $this->name = StringAssertUtils::notBlankMaxLength($name, self::NAME_MAX_LENGTH, 'Asset name');
-        $this->price = MoneyUtils::normalize($price);
+        $this->price = $price;
     }
 
-    public function withNameAndPrice(string $name, float $price): self
+    public function withNameAndPrice(string $name, MoneyVo $price): self
     {
         return new self(
             id: $this->id,

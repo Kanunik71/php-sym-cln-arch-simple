@@ -41,9 +41,9 @@ Application/
 │   ├── Query/       # read use case, execute()
 │   └── Lifecycle/   # Service: side effects после persist, пересчёт, cleanup
 ├── Model/{Asset,File,Task,TaskGroup,User}/   # + SortModelTest в корне Model/
-└── ValueObject/Common/                       # EmailVo, PhoneVo
+└── ValueObject/Common/                       # EmailVo, PhoneVo, MoneyVo
 
-Utils/                # ArrayUtils, BatchUtils, CacheKeyUtils, DateUtils, EnumUtils, MoneyUtils
+Utils/                # ArrayUtils, BatchUtils, CacheKeyUtils, DateUtils, EnumUtils, UidUtils
 ├── Asserts/
 └── Http/
 

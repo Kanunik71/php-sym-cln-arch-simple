@@ -9,6 +9,7 @@ use App\Application\Model\Asset\Read\AssetViewModel;
 use App\Application\Policy\Asset\AssetAccessPolicy;
 use App\Application\Port\Asset\AssetRepositoryInterface;
 use App\Application\Service\File\Lifecycle\FileLifecycleService;
+use App\Application\ValueObject\Common\MoneyVo;
 
 final readonly class AssetUpdateService
 {
@@ -27,7 +28,7 @@ final readonly class AssetUpdateService
 
         $oldFileIds = $this->assetRepository->listImageFileIds($asset->id);
 
-        $updated = $asset->withNameAndPrice($model->name, $model->price);
+        $updated = $asset->withNameAndPrice($model->name, new MoneyVo($model->price));
 
         $savedAsset = $this->assetRepository->save(
             $updated,

@@ -8,6 +8,7 @@
 | [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md) | правила слоя Application: роли Service, три роли Model, VO, Port, оркестрация, delete, масштаб |
 | [`src/Infrastructure/CLAUDE.md`](src/Infrastructure/CLAUDE.md) | Doctrine, кэш, очереди, security, storage, роутинг, notification |
 | [`src/Presentation/CLAUDE.md`](src/Presentation/CLAUDE.md) | правила слоя Presentation: тонкий вход, границы импортов, маршруты и доступ, маппинг исключений → HTTP, формы команд |
+| [`src/Shared/CLAUDE.md`](src/Shared/CLAUDE.md) | правила слоя Shared: раскладка утилит по объекту разбора, «когда Utils, а когда нет», контракты вместо реализаций |
 | [`tests/CLAUDE.md`](tests/CLAUDE.md) | базы тестов, фикстуры, правила интеграционных проверок |
 
 ---
@@ -37,7 +38,8 @@ Presentation  ──►  Application  ──►  Port  ◄──  Infrastructure
 - `Infrastructure` реализует `Port/`, наружу отдаёт `Application/Model`.
 - `Presentation/Controller` вызывает `Action`/`Query::execute`; `Console` и
   `MessageHandler` входят в Service.
-- `Shared/Utils` — чистые статические хелперы, о доменах не знают.
+- `Shared/Utils` — статические хелперы; знают **контракты** Application
+  (interface, enum, Model), но не его реализации и не `Infrastructure`.
 
 Проверка: `grep -rn "use App\\Infrastructure" api/src/Application` — пусто;
 граница входа — `tests/Application/ArchitectureTest.php`.
@@ -55,7 +57,7 @@ Presentation  ──►  Application  ──►  Port  ◄──  Infrastructure
 |---------|-----------|--------|
 | **Model** | Wire-структура: persistence, request, response, criteria, pagination, page | `UserModel`, `UserUpdateModel`, `UserPageModel`, `PaginationModel` |
 | **Enum** | Закрытое множество значений | `TaskStatusEnum`, `FilterOperatorEnum` |
-| **Vo** | Value Object: инвариант поля | `EmailVo`, `PhoneVo` |
+| **Vo** | Value Object: инвариант поля | `EmailVo`, `PhoneVo`, `MoneyVo` |
 | **Exception** | Исключение use case с `codeId` | `TaskNotFoundException` |
 | **Event** | Факт для Messenger | `UserUpdatedEvent` |
 | **RepositoryInterface** | Контракт репозитория (Port) | `UserRepositoryInterface` |

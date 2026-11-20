@@ -11,6 +11,7 @@ use App\Application\Policy\Task\TaskAccessPolicy;
 use App\Application\Port\Asset\AssetRepositoryInterface;
 use App\Application\Port\Task\TaskRepositoryInterface;
 use App\Application\Service\File\Lifecycle\FileLifecycleService;
+use App\Application\ValueObject\Common\MoneyVo;
 use App\Shared\Utils\UidUtils;
 use DateTimeImmutable;
 
@@ -66,7 +67,7 @@ final readonly class AssetCreateService
         $asset = new AssetModel(
             id: UidUtils::generateString(),
             name: $model->name,
-            price: $model->price,
+            price: new MoneyVo($model->price),
             type: $model->type,
             ownerId: $userId,
             createdAt: $now,

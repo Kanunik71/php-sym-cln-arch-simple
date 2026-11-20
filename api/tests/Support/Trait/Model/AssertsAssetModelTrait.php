@@ -22,7 +22,7 @@ trait AssertsAssetModelTrait
         $this->assertSame($asset->ownerId, $view->ownerId);
         $this->assertSame($asset->name, $view->name);
         $this->assertSame($repo->listTaskIds($asset->id), $view->taskIds);
-        $this->assertSame($asset->price, $view->price);
+        $this->assertSame($asset->price->toFloat(), $view->price);
         $this->assertSame($asset->type, $view->type);
         $this->assertSame(DateUtils::toAtom($asset->createdAt), $view->createdAt);
 

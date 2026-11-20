@@ -9,6 +9,7 @@ use App\Application\Model\Asset\AssetModel;
 use App\Application\Model\Asset\Read\AssetDetailModel;
 use App\Application\Model\Asset\Read\AssetViewModel;
 use App\Application\Port\File\FileDownloadUrlProviderInterface;
+use App\Application\ValueObject\Common\MoneyVo;
 use App\Infrastructure\Persistence\Doctrine\Entity\AssetEntity;
 use App\Infrastructure\Persistence\Doctrine\Entity\AssetFileEntity;
 use App\Infrastructure\Persistence\Doctrine\Entity\FileEntity;
@@ -17,7 +18,6 @@ use App\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use App\Infrastructure\Persistence\Doctrine\EntityReferenceAdapter;
 use App\Infrastructure\Persistence\Doctrine\Utils\DoctrineCollectionAssertUtils;
 use App\Shared\Utils\DateUtils;
-use App\Shared\Utils\MoneyUtils;
 use App\Shared\Utils\UidUtils;
 use Symfony\Component\Uid\Uuid;
 
@@ -34,7 +34,7 @@ final readonly class AssetMapper
         return new AssetModel(
             id: UidUtils::toString($entity->getId()),
             name: $entity->getName(),
-            price: MoneyUtils::fromString($entity->getPrice()),
+            price: MoneyVo::fromString($entity->getPrice()),
             type: $entity->getType(),
             ownerId: UidUtils::toString($entity->getOwnerId()),
             createdAt: $entity->getCreatedAt(),
@@ -64,7 +64,7 @@ final readonly class AssetMapper
             ownerId: UidUtils::toString($entity->getOwnerId()),
             name: $entity->getName(),
             taskIds: $this->extractTaskIds($entity),
-            price: MoneyUtils::fromString($entity->getPrice()),
+            price: MoneyVo::fromString($entity->getPrice())->toFloat(),
             type: $entity->getType(),
             createdAt: DateUtils::toAtom($entity->getCreatedAt()),
             inProgress: $this->isInProgress($entity->getTasks()),
@@ -119,7 +119,7 @@ final readonly class AssetMapper
             ownerId: UidUtils::toString($entity->getOwnerId()),
             name: $entity->getName(),
             tasks: $tasks,
-            price: MoneyUtils::fromString($entity->getPrice()),
+            price: MoneyVo::fromString($entity->getPrice())->toFloat(),
             type: $entity->getType(),
             createdAt: DateUtils::toAtom($entity->getCreatedAt()),
             inProgress: $this->isInProgress($entity->getTasks()),
@@ -166,7 +166,7 @@ final readonly class AssetMapper
         $entity
             ->setOwner($this->entityReference->getReference(UserEntity::class, Uuid::fromString($asset->ownerId)))
             ->setName($asset->name)
-            ->setPrice(MoneyUtils::toString($asset->price))
+            ->setPrice($asset->price->toString())
             ->setType($asset->type)
             ->setCreatedAt($asset->createdAt)
             ->setUpdatedAt($asset->updatedAt);

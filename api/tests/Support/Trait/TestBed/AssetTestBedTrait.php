@@ -7,6 +7,7 @@ namespace App\Tests\Support\Trait\TestBed;
 use App\Application\Enum\Asset\AssetTypeEnum;
 use App\Application\Model\Asset\AssetModel;
 use App\Application\Port\Asset\AssetRepositoryInterface;
+use App\Application\ValueObject\Common\MoneyVo;
 use App\Shared\Utils\UidUtils;
 use DateTimeImmutable;
 
@@ -39,7 +40,7 @@ trait AssetTestBedTrait
             new AssetModel(
                 id: $id ?? UidUtils::generateString(),
                 name: $name,
-                price: $price,
+                price: new MoneyVo($price),
                 type: $type,
                 ownerId: $ownerId,
                 createdAt: $now,

@@ -6,7 +6,7 @@ namespace App\Infrastructure\Persistence\Doctrine\Entity;
 
 use App\Application\Enum\Asset\AssetTypeEnum;
 use App\Application\Model\Asset\AssetModel;
-use App\Shared\Utils\MoneyUtils;
+use App\Application\ValueObject\Common\MoneyVo;
 use App\Shared\Utils\UidUtils;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -41,7 +41,7 @@ class AssetEntity
     #[ORM\Column(length: AssetModel::NAME_MAX_LENGTH)]
     private string $name = '';
 
-    #[ORM\Column(type: 'decimal', precision: MoneyUtils::PRECISION, scale: MoneyUtils::SCALE)]
+    #[ORM\Column(type: 'decimal', precision: MoneyVo::PRECISION, scale: MoneyVo::SCALE)]
     private string $price = '0.00';
 
     #[ORM\Column(type: 'string', enumType: AssetTypeEnum::class)]

@@ -25,7 +25,7 @@ trait AssertsAssetDetailModelTrait
         $this->assertSame($asset->id, $model->id);
         $this->assertSame($asset->ownerId, $model->ownerId);
         $this->assertSame($asset->name, $model->name);
-        $this->assertSame($asset->price, $model->price);
+        $this->assertSame($asset->price->toFloat(), $model->price);
         $this->assertSame($asset->type, $model->type);
         $this->assertSame(DateUtils::toAtom($asset->createdAt), $model->createdAt);
         $this->assertCount(count($expectedTasks), $model->tasks);
