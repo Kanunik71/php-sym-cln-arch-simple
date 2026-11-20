@@ -23,5 +23,5 @@ The API SHALL позволять владельцу `DELETE /api/tasks/{id}` с 
 ## Notes
 
 - Правила доступа и владения — в [access](../access/spec.md); удаление аккаунта — в [users/delete](../../users/delete/spec.md).
-- Связи с ассетами и группами снимает Application до удаления задачи — в БД таких каскадов нет; правило — в `api/src/Infrastructure/CLAUDE.md` → «Каскадные удаления».
+- Связи с ассетами и группами снимает Application до удаления задачи — в БД таких каскадов нет; правило — в `api/src/Infrastructure/AGENTS.md` → «Каскадные удаления».
 - Источники: `api/src/Presentation/Controller/Task/TaskController.php`, `api/src/Application/Service/Task/Action/TaskDeleteService.php`, `api/src/Application/Service/User/Action/UserDeleteService.php`, `api/tests/Integration/Task/TaskControllerTest.php`.

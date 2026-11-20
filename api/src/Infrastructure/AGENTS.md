@@ -150,7 +150,7 @@ FK violation вместо тихой потери связи.
 Проверка правила: `api/tests/Infrastructure/Persistence/Doctrine/CascadeDeleteRuleTest.php` —
 белый список `ON DELETE` в миграциях и в маппингах.
 
-Оркестрация delete — `api/src/Application/CLAUDE.md` → Delete orchestration.
+Оркестрация delete — `api/src/Application/AGENTS.md` → Delete orchestration.
 
 ### Cache
 
@@ -254,7 +254,7 @@ Notification/
 4. Репозиторий реализует интерфейс из Application `Port/`; наружу — Application Model / скаляр по роли метода, **не** Entity
 5. Mapper не уходит за пределы Persistence; направление — `*Model` ↔ Entity (`toModel` / `toEntity`)
 6. `*MessageHandler` — не use case; побочный эффект через Application `*Service`
-7. Именование классов — `api/CLAUDE.md`
+7. Именование классов — `api/AGENTS.md`
 8. В DQL / QueryBuilder — `*Entity::FIELD_*`, не сырые имена свойств
 9. В SQL / DBAL — `*Entity::TABLE` / `COLUMN_*` / `JOIN_*`, не литералы имён таблиц и колонок
 10. Межагрегатный `onDelete: CASCADE` — нет (кроме M2M join-таблицы); ORM `cascade remove` / `orphanRemoval` — только внутри одного агрегата

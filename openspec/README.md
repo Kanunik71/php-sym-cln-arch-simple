@@ -82,8 +82,8 @@ Docker `php` при `AUTO_MIGRATE=1` выполняет миграции при 
 
 - Спеки в `openspec/specs/` описывают **фактическое поведение** кода (`api/src`)
   и тестов (`api/tests`) — это источник истины о текущем поведении системы.
-- `api/CLAUDE.md` (+ `api/src/Application/CLAUDE.md`,
-  `api/src/Infrastructure/CLAUDE.md`, `api/tests/CLAUDE.md`) описывают
+- `api/AGENTS.md` (+ `api/src/Application/AGENTS.md`,
+  `api/src/Infrastructure/AGENTS.md`, `api/tests/AGENTS.md`) описывают
   **текущие архитектурные соглашения**: слои, именование, вход/выход use case'ов.
   Они используются при проектировании изменений, а не как описание поведения.
 - Changes в `openspec/changes/` описывают будущие изменения (дельты

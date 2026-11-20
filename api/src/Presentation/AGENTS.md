@@ -1,10 +1,10 @@
 # Presentation: тонкий слой входа
 
 Правила слоя, а не карта классов; примеры на `{Entity}` / `Foo`. Смежные
-документы: карта слоёв и суффиксы — [`api/CLAUDE.md`](../../CLAUDE.md), роли
-Application — [`Application/CLAUDE.md`](../Application/CLAUDE.md), wire-контракт
+документы: карта слоёв и суффиксы — [`api/AGENTS.md`](../../AGENTS.md), роли
+Application — [`Application/AGENTS.md`](../Application/AGENTS.md), wire-контракт
 (поля JSON, статусы, `codeId`) — [`openspec/specs/`](../../../openspec/specs/),
-покрытие тестами — [`tests/CLAUDE.md`](../../tests/CLAUDE.md).
+покрытие тестами — [`tests/AGENTS.md`](../../tests/AGENTS.md).
 
 ## Форма слоя и зависимости
 

@@ -7,8 +7,8 @@
 | Здесь | Не здесь |
 |-------|----------|
 | роли классов и их ответственность | HTTP-методы, поля JSON, статусы, `codeId` → [`openspec/specs/`](../../../openspec/specs/) |
-| правила зависимостей и границ | карта слоёв и таблица суффиксов → [`api/CLAUDE.md`](../../CLAUDE.md) |
-| инварианты, которые нельзя нарушать | Doctrine, Redis, Messenger, storage → [`src/Infrastructure/CLAUDE.md`](../Infrastructure/CLAUDE.md) |
+| правила зависимостей и границ | карта слоёв и таблица суффиксов → [`api/AGENTS.md`](../../AGENTS.md) |
+| инварианты, которые нельзя нарушать | Doctrine, Redis, Messenger, storage → [`src/Infrastructure/AGENTS.md`](../Infrastructure/AGENTS.md) |
 
 Примеры построены на плейсхолдерах (`{Entity}`, `Foo`, `Bar`): документ
 описывает правило, а не текущий набор классов. Конкретные имена появляются
@@ -287,7 +287,7 @@ $policy->assertCodeAvailable($code);   // внутри репозиторий
 - Связи, удаление которых меняет вычисляемое состояние другого агрегата
   (статус группы, прогресс ассета), в БД не каскадят: Application отвязывает их
   **явно, до `delete()`** — иначе связь пропадёт молча и пересчёт не случится.
-  Белый список каскадов — в [`Infrastructure/CLAUDE.md`](../Infrastructure/CLAUDE.md#каскадные-удаления).
+  Белый список каскадов — в [`Infrastructure/AGENTS.md`](../Infrastructure/AGENTS.md#каскадные-удаления).
 - `cascade remove` / `orphanRemoval` допустимы только внутри одного агрегата
   (детали mapping — Infrastructure).
 - Несколько записей в одном use case — в `TransactionManagerInterface::run`.

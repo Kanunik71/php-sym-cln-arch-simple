@@ -20,5 +20,5 @@ The API SHALL использовать UUID v7 как идентификатор
 
 - В БД идентификаторы хранятся как `BINARY(16)`; наружу отдаются только строкой — см. `api/src/Infrastructure/Persistence/Doctrine/Utils/DoctrineUuidUtils.php`.
 - Денежные значения — свойство домена [assets](../assets/spec.md) (`NUMERIC(10,2)`, неотрицательные, ≤ 2 знаков).
-- Наружу отдаются только `*ViewModel`/`*PageModel`; правила архитектуры — `api/CLAUDE.md`, `api/src/Application/CLAUDE.md`.
+- Наружу отдаются только `*ViewModel`/`*PageModel`; правила архитектуры — `api/AGENTS.md`, `api/src/Application/AGENTS.md`.
 - Источники: `api/src/Shared/Utils/**` (`UidUtils`, `DateUtils`), `api/config/packages/**`.

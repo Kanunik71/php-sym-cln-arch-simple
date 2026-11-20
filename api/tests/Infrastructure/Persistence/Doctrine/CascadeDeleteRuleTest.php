@@ -14,7 +14,7 @@ use PHPUnit\Framework\TestCase;
  * реагировать. Всё, что меняет вычисляемое состояние, Application отвязывает
  * явно — значит, такой FK в схеме быть не должно.
  *
- * Правило: `api/src/Infrastructure/CLAUDE.md` → «Каскадные удаления».
+ * Правило: `api/src/Infrastructure/AGENTS.md` → «Каскадные удаления».
  */
 final class CascadeDeleteRuleTest extends TestCase
 {

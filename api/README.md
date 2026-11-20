@@ -2,7 +2,7 @@
 
 API-сервер на Symfony 7: чистая архитектура, JWT, PostgreSQL, Redis, RabbitMQ.
 
-Соглашения по именованию и слоям: [`CLAUDE.md`](CLAUDE.md). Тесты: [`tests/CLAUDE.md`](tests/CLAUDE.md).
+Соглашения по именованию и слоям: [`AGENTS.md`](AGENTS.md). Тесты: [`tests/AGENTS.md`](tests/AGENTS.md).
 
 Локальный Docker-стек: [`docker/README.md`](../docker/README.md) (`up -d --build` сам делает `composer install` + migrate).
 

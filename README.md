@@ -47,9 +47,9 @@ openspec/changes/<change-id>/proposal.md + specs/ + design.md + tasks.md → к�
 `### Requirement:`, `#### Scenario:`, GIVEN/WHEN/THEN) и ключевые слова
 SHALL/MUST — на английском.
 
-Архитектурные правила (конституция) — в [`api/CLAUDE.md`](api/CLAUDE.md) и
-вложенных файлах (`api/src/Application/CLAUDE.md`,
-`api/src/Infrastructure/CLAUDE.md`, `api/tests/CLAUDE.md`). Спеки не
+Архитектурные правила (конституция) — в [`api/AGENTS.md`](api/AGENTS.md) и
+вложенных файлах (`api/src/Application/AGENTS.md`,
+`api/src/Infrastructure/AGENTS.md`, `api/tests/AGENTS.md`). Спеки не
 дублируют правила, а ссылаются на разделы. Расхождения фактического
 поведения с задокументированным контрактом фиксируются в `## Notes` спек.
 
@@ -156,7 +156,7 @@ Change считается сделанным, когда:
 - [ ] `composer phpstan` проходит;
 - [ ] добавлены/обновлены тесты и `php bin/phpunit` проходит;
 - [ ] дельты спек отражают итоговое поведение (и влиты в `specs/` при archive);
-- [ ] при изменении поведения обновлён `README.md` / `CLAUDE.md`.
+- [ ] при изменении поведения обновлён `README.md` / `AGENTS.md`.
 
 Команды выполняются из `api/` (в Docker — через
 `docker compose -f ../docker/docker-compose.yml exec php ...`, см.
@@ -253,4 +253,4 @@ flowchart TB
 4. **Infrastructure** реализует Port: PostgreSQL (Doctrine), Redis, файлы. Application Event уходит в очередь RabbitMQ `messages`.
 5. **messenger-worker** читает очередь: `*MessageHandler` вызывает Application-`*Service` (notifications, recalc). Тот же воркер исполняет scheduler.
 
-Соглашения по слоям: [`api/src/Application/CLAUDE.md`](api/src/Application/CLAUDE.md), [`api/src/Infrastructure/CLAUDE.md`](api/src/Infrastructure/CLAUDE.md).
+Соглашения по слоям: [`api/src/Application/AGENTS.md`](api/src/Application/AGENTS.md), [`api/src/Infrastructure/AGENTS.md`](api/src/Infrastructure/AGENTS.md).

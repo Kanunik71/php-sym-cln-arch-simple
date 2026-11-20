@@ -5,11 +5,11 @@
 
 | Файл | Про что |
 |------|---------|
-| [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md) | правила слоя Application: роли Service, три роли Model, VO, Port, оркестрация, delete, масштаб, `Utils` |
-| [`src/Infrastructure/CLAUDE.md`](src/Infrastructure/CLAUDE.md) | Doctrine, кэш, очереди, security, storage, роутинг, notification |
-| [`src/Presentation/CLAUDE.md`](src/Presentation/CLAUDE.md) | правила слоя Presentation: тонкий вход, границы импортов, маршруты и доступ, маппинг исключений → HTTP, формы команд |
-| [`src/Shared/CLAUDE.md`](src/Shared/CLAUDE.md) | Shared: какие хелперы имеют право быть общими, что уехало в `Application/Utils` и `Presentation/Http` |
-| [`tests/CLAUDE.md`](tests/CLAUDE.md) | базы тестов, фикстуры, правила интеграционных проверок |
+| [`src/Application/AGENTS.md`](src/Application/AGENTS.md) | правила слоя Application: роли Service, три роли Model, VO, Port, оркестрация, delete, масштаб, `Utils` |
+| [`src/Infrastructure/AGENTS.md`](src/Infrastructure/AGENTS.md) | Doctrine, кэш, очереди, security, storage, роутинг, notification |
+| [`src/Presentation/AGENTS.md`](src/Presentation/AGENTS.md) | правила слоя Presentation: тонкий вход, границы импортов, маршруты и доступ, маппинг исключений → HTTP, формы команд |
+| [`src/Shared/AGENTS.md`](src/Shared/AGENTS.md) | Shared: какие хелперы имеют право быть общими, что уехало в `Application/Utils` и `Presentation/Http` |
+| [`tests/AGENTS.md`](tests/AGENTS.md) | базы тестов, фикстуры, правила интеграционных проверок |
 
 ---
 
@@ -134,7 +134,7 @@ Service не вызывает use case, Controller не вызывает Service
 use case. Транзакцию открывает вход (use case или job), Service — только
 участвует. Проверяется тестом `tests/Application/ArchitectureTest.php`.
 
-Подробности — в [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md).
+Подробности — в [`src/Application/AGENTS.md`](src/Application/AGENTS.md).
 
 ---
 
@@ -157,7 +157,7 @@ use case. Транзакцию открывает вход (use case или job)
 - Entity не покидают Infrastructure; в поле Model — typed enum, не `string`.
 - Роли различаются именами: `*ResponseModel` — один из вариантов, не шаблон.
 
-Правила Model, Enum и VO — в [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md#model).
+Правила Model, Enum и VO — в [`src/Application/AGENTS.md`](src/Application/AGENTS.md#model).
 
 ---
 
@@ -180,17 +180,17 @@ Infrastructure `Persistence/Doctrine/Mapper/`. Инфикс `Model` в имен�
 
 ## Детали Application
 
-Карта тем; правила — в [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md).
+Карта тем; правила — в [`src/Application/AGENTS.md`](src/Application/AGENTS.md).
 
 | Тема | Раздел |
 |------|--------|
-| Service: Action / Query / Lifecycle, `list` ≠ `query` | [Service](src/Application/CLAUDE.md#service) |
-| Model, Enum, ValueObject | [Model](src/Application/CLAUDE.md#model) |
-| Port: что и когда возвращает | [Port](src/Application/CLAUDE.md#port) |
-| Mapper, Cache, Policy, Event, Exception | [Оркестрация](src/Application/CLAUDE.md#оркестрация) |
-| Удаление агрегатов и транзакции | [Delete orchestration](src/Application/CLAUDE.md#delete-orchestration) |
-| Масштаб, keyset, стриминг | [Масштаб и batch-переборы](src/Application/CLAUDE.md#масштаб-и-batch-переборы) |
-| `array`/`mixed` только на wire | [Границы типизации](src/Application/CLAUDE.md#границы-типизации) |
+| Service: Action / Query / Lifecycle, `list` ≠ `query` | [Service](src/Application/AGENTS.md#service) |
+| Model, Enum, ValueObject | [Model](src/Application/AGENTS.md#model) |
+| Port: что и когда возвращает | [Port](src/Application/AGENTS.md#port) |
+| Mapper, Cache, Policy, Event, Exception | [Оркестрация](src/Application/AGENTS.md#оркестрация) |
+| Удаление агрегатов и транзакции | [Delete orchestration](src/Application/AGENTS.md#delete-orchestration) |
+| Масштаб, keyset, стриминг | [Масштаб и batch-переборы](src/Application/AGENTS.md#масштаб-и-batch-переборы) |
+| `array`/`mixed` только на wire | [Границы типизации](src/Application/AGENTS.md#границы-типизации) |
 
 ---
 
@@ -204,9 +204,9 @@ Infrastructure `Persistence/Doctrine/Mapper/`. Инфикс `Model` в имен�
 6. Enum — `Application/Enum/`, в поле Model — typed enum
 7. `*RepositoryInterface` — только в `Application/Port/`; наружу Model или скаляр
 8. `CacheInterface` — только в `*Cache`; кеш владеет ключом и TTL; async — через `Port\Messaging\MessageBusInterface`
-9. Каскад в БД — только по белому списку `Infrastructure/CLAUDE.md`; `cascade remove` — только внутри одного агрегата
+9. Каскад в БД — только по белому списку `Infrastructure/AGENTS.md`; `cascade remove` — только внутри одного агрегата
 10. Перебор больших коллекций — только в фоне, keyset + `BatchUtils::stream`; в HTTP — пагинация или `listByIds`
-11. Детальные правила Application — в [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md#чеклист)
+11. Детальные правила Application — в [`src/Application/AGENTS.md`](src/Application/AGENTS.md#чеклист)
 
 ---
 
