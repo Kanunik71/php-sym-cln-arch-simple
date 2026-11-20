@@ -15,10 +15,10 @@ trait AssertsUserModelTrait
         $this->assertSame($user->id, $model->id);
         $this->assertSame($user->fname, $model->fname);
         $this->assertSame($user->lname, $model->lname);
-        $this->assertSame($user->email, $model->email);
+        $this->assertSame($user->email->toString(), $model->email);
         $this->assertSame(DateUtils::toAtom($user->createdAt), $model->createdAt);
         $this->assertSame($user->city, $model->location?->city);
-        $this->assertSame($user->phone, $model->phone);
+        $this->assertSame($user->phone?->toString(), $model->phone);
 
         $avatarFileId = $user->avatarFileId;
 

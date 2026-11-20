@@ -18,9 +18,9 @@ final class UserRegisterModelMapper
             id: $user->id,
             fname: $user->fname,
             lname: $user->lname,
-            email: $user->email,
+            email: $user->email->toString(),
             location: $city !== null ? new UserLocationModel(city: $city) : null,
-            phone: $user->phone,
+            phone: $user->phone?->toString(),
         );
     }
 }

@@ -22,11 +22,11 @@ final class UserViewModelMapper
             id: $user->id,
             fname: $user->fname,
             lname: $user->lname,
-            email: $user->email,
+            email: $user->email->toString(),
             createdAt: DateUtils::toAtom($user->createdAt),
             location: $city !== null ? new UserLocationModel(city: $city) : null,
             avatar: FileItemModelMapper::fromFileId($user->avatarFileId, $urlProvider),
-            phone: $user->phone,
+            phone: $user->phone?->toString(),
         );
     }
 

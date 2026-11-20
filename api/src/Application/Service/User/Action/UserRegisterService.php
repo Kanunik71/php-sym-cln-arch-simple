@@ -14,6 +14,7 @@ use App\Application\Port\PasswordHasherInterface;
 use App\Application\Port\User\UserRepositoryInterface;
 use App\Application\Service\User\Lifecycle\UserLifecycleService;
 use App\Application\ValueObject\Common\Email;
+use App\Application\ValueObject\Common\Phone;
 
 final readonly class UserRegisterService
 {
@@ -39,7 +40,7 @@ final readonly class UserRegisterService
             fname: $model->fname,
             lname: $model->lname,
             city: $model->location?->city,
-            phone: $model->phone,
+            phone: $model->phone !== null ? new Phone($model->phone) : null,
         );
 
         $savedUser = $this->userRepository->save($user);

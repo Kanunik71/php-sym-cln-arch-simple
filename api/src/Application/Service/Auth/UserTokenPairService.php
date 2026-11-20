@@ -27,7 +27,7 @@ final readonly class UserTokenPairService
     public function build(UserModel $user, string $refreshToken): UserLoginResponseModel
     {
         return new UserLoginResponseModel(
-            token: $this->tokenProvider->generateToken($user->id, $user->email),
+            token: $this->tokenProvider->generateToken($user->id, $user->email->toString()),
             refreshToken: $refreshToken,
             tokenType: 'Bearer',
             expiresIn: $this->accessTtl,

@@ -10,6 +10,7 @@ use App\Application\Model\User\UserModel;
 use App\Application\Port\Notification\NotificationPreferenceRepositoryInterface;
 use App\Application\Port\User\UserRepositoryInterface;
 use App\Application\ValueObject\Common\Email;
+use App\Application\ValueObject\Common\Phone;
 use App\Shared\Utils\UidUtils;
 use App\Tests\Support\TestBed;
 use DateTimeImmutable;
@@ -43,12 +44,12 @@ trait UserTestBedTrait
             id: $id ?? UidUtils::generateString(),
             fname: $fname,
             lname: $lname,
-            email: $email ?? ('user-'.UidUtils::generateString().'@example.com'),
+            email: new Email($email ?? ('user-'.UidUtils::generateString().'@example.com')),
             passwordHash: $passwordHash ?? $this->passwordHasher->hash($password ?? TestBed::DEMO_PASSWORD),
             createdAt: $now,
             updatedAt: $now,
             city: $city,
-            phone: $phone,
+            phone: $phone !== null ? new Phone($phone) : null,
         );
 
         $saved = $this->users->save($user);

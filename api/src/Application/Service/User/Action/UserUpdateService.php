@@ -18,6 +18,7 @@ use App\Application\Service\Auth\RefreshTokenService;
 use App\Application\Service\File\Lifecycle\FileLifecycleService;
 use App\Application\Service\User\Lifecycle\UserLifecycleService;
 use App\Application\ValueObject\Common\Email;
+use App\Application\ValueObject\Common\Phone;
 
 final readonly class UserUpdateService
 {
@@ -59,7 +60,7 @@ final readonly class UserUpdateService
             passwordHash: $passwordHash,
             city: $model->location?->city,
             avatarFileId: $model->avatarFileId,
-            phone: $model->phone,
+            phone: $model->phone !== null ? new Phone($model->phone) : null,
         );
 
         if ($model->password !== null) {

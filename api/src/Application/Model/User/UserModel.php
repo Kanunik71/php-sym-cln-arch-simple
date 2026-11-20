@@ -11,7 +11,9 @@ use App\Shared\Utils\UidUtils;
 use DateTimeImmutable;
 
 /**
- * Persistence model — mirrors users table columns (scalars only).
+ * Persistence model — mirrors users table columns.
+ *
+ * Fields with an invariant are Value Objects (Email, Phone); the rest are scalars.
  */
 final readonly class UserModel
 {
@@ -29,22 +31,20 @@ final readonly class UserModel
 
     public ?string $fname;
     public ?string $lname;
-    public string $email;
     public string $passwordHash;
     public ?string $city;
-    public ?string $phone;
 
     public function __construct(
         public string $id,
         ?string $fname,
         ?string $lname,
-        Email|string $email,
+        public Email $email,
         string $passwordHash,
         public DateTimeImmutable $createdAt,
         public DateTimeImmutable $updatedAt,
         ?string $city = null,
         public ?string $avatarFileId = null,
-        Phone|string|null $phone = null,
+        public ?Phone $phone = null,
     ) {
         $this->fname = StringAssertUtils::maxLengthOrNull(
             StringAssertUtils::nullIfBlank($fname),
@@ -56,7 +56,6 @@ final readonly class UserModel
             self::LNAME_MAX_LENGTH,
             'Last name',
         );
-        $this->email = ($email instanceof Email ? $email : new Email($email))->toString();
         $this->passwordHash = StringAssertUtils::notBlankMaxLength(
             $passwordHash,
             self::PASSWORD_HASH_MAX_LENGTH,
@@ -67,18 +66,15 @@ final readonly class UserModel
             self::CITY_MAX_LENGTH,
             'City',
         );
-        $this->phone = $phone === null || $phone === ''
-            ? null
-            : ($phone instanceof Phone ? $phone : new Phone($phone))->toString();
     }
 
     public static function create(
-        Email|string $email,
+        Email $email,
         string $passwordHash,
         ?string $fname = null,
         ?string $lname = null,
         ?string $city = null,
-        Phone|string|null $phone = null,
+        ?Phone $phone = null,
     ): self {
         $now = new DateTimeImmutable();
 
@@ -118,7 +114,7 @@ final readonly class UserModel
 
     public function getEmail(): Email
     {
-        return new Email($this->email);
+        return $this->email;
     }
 
     public function getPasswordHash(): string
@@ -148,17 +144,17 @@ final readonly class UserModel
 
     public function getPhone(): ?Phone
     {
-        return $this->phone !== null ? new Phone($this->phone) : null;
+        return $this->phone;
     }
 
     public function withProfile(
         ?string $fname,
         ?string $lname,
-        Email|string $email,
+        Email $email,
         string $passwordHash,
         ?string $city,
         ?string $avatarFileId,
-        Phone|string|null $phone = null,
+        ?Phone $phone = null,
     ): self {
         return new self(
             id: $this->id,

@@ -24,7 +24,7 @@ final readonly class UpdateUserPolicy
 
     public function assertEmailAvailableIo(Email $email, UserModel $user): void
     {
-        if ($email->toString() !== $user->email && $this->userRepository->existsByEmail($email)) {
+        if (!$email->equals($user->email) && $this->userRepository->existsByEmail($email)) {
             throw UserAlreadyExistsException::withEmail($email->toString());
         }
     }
