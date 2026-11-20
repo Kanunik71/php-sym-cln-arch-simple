@@ -11,7 +11,6 @@ tests/
 │       ├── TestBed/   — *TestBedTrait (seed через репозиторий)
 │       ├── Model/     — Asserts*ModelTrait
 │       └── Common/    — AssertMessengerTrait
-├── fixtures/       # бинарные файлы (avatar.jpg)
 ├── DatabaseTestCase.php          # Kernel + TestBed, схема на setUp
 ├── DatabaseWebTestCase.php       # HTTP без заранее залогиненного пользователя
 └── AuthenticatedWebTestCase.php  # демо-пользователь + логин
