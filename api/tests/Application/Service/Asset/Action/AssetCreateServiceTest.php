@@ -85,7 +85,7 @@ final class AssetCreateServiceTest extends DatabaseTestCase
             );
             self::fail('Attach of a foreign file must fail.');
         } catch (UnauthorizedFileAccessException) {
-            // ожидаемая ошибка прикрепления — ассет к этому моменту уже сохранён
+            // the expected attach failure — the asset is already persisted by this point
         }
 
         $assets = $this->bed->assetRepository();

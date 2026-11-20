@@ -40,8 +40,8 @@ abstract class BaseController extends AbstractController
     }
 
     /**
-     * Отказ эндпоинта: тело формирует `ErrorResponseModel::fromThrowable` (Application),
-     * здесь только HTTP-обёртка и статус из спеки метода.
+     * Endpoint failure: the body is built by `ErrorResponseModel::fromThrowable` (Application);
+     * here only the HTTP wrapper and the status from the method's spec.
      */
     protected function errorResponse(Throwable $exception, int $status): JsonResponse
     {

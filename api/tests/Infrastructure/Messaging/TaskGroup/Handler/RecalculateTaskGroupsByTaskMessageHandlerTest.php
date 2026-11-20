@@ -4,87 +4,130 @@ declare(strict_types=1);
 
 namespace App\Tests\Infrastructure\Messaging\TaskGroup\Handler;
 
+use App\Application\Cache\TaskGroup\TaskGroupSummaryCache;
 use App\Application\Enum\TaskGroup\TaskGroupStatusEnum;
 use App\Application\Event\TaskGroup\TaskGroupRecalculationByTaskRequestedEvent;
+use App\Application\Model\TaskGroup\TaskGroupModel;
+use App\Application\Port\CacheInterface;
+use App\Application\Port\LockHandleInterface;
 use App\Application\Port\TaskGroup\TaskGroupLockInterface;
+use App\Application\Port\TaskGroup\TaskGroupRepositoryInterface;
 use App\Application\Service\TaskGroup\Lifecycle\TaskGroupRecalculationService;
 use App\Infrastructure\Messaging\TaskGroup\Handler\RecalculateTaskGroupsByTaskMessageHandler;
-use App\Tests\DatabaseTestCase;
+use DateTimeImmutable;
+use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
-final class RecalculateTaskGroupsByTaskMessageHandlerTest extends DatabaseTestCase
+final class RecalculateTaskGroupsByTaskMessageHandlerTest extends TestCase
 {
-    public function testRecalculatesGroupsOfTask(): void
+    private const TASK_ID = 'task-1';
+
+    public function testAcquiresLockByTaskIdAndDelegatesToService(): void
     {
-        $user = $this->bed->seedDefaultUser();
-        $task = $this->bed->createFinishedTask($user->getId(), 'Build feature', 60);
-        $group = $this->bed->createTaskGroup(
-            ownerId: $user->getId(),
-            name: 'Release',
-            status: TaskGroupStatusEnum::InProgress,
-        );
-        $this->bed->linkTaskGroupToTask($group, $task->getId());
+        $repository = $this->createMock(TaskGroupRepositoryInterface::class);
+        $repository
+            ->expects($this->once())
+            ->method('listByTaskId')
+            ->with(self::TASK_ID)
+            ->willReturn([]);
 
-        ($this->handler())(new TaskGroupRecalculationByTaskRequestedEvent(taskId: $task->getId()));
+        $lock = $this->createMock(TaskGroupLockInterface::class);
+        $lock
+            ->expects($this->once())
+            ->method('acquireByTaskId')
+            ->with(self::TASK_ID)
+            ->willReturn($this->createLockHandle());
 
-        $this->bed->clear();
-        $this->assertSame(
-            TaskGroupStatusEnum::Completed,
-            $this->bed->findTaskGroupById($group->getId())?->getStatus(),
-        );
+        ($this->handler($repository, $lock))($this->event());
     }
 
-    public function testSkipsRecalculationWhileChannelIsLocked(): void
+    public function testDoesNotCallServiceWhenChannelIsLocked(): void
     {
-        $user = $this->bed->seedDefaultUser();
-        $task = $this->bed->createFinishedTask($user->getId(), 'Build feature', 60);
-        $group = $this->bed->createTaskGroup(
-            ownerId: $user->getId(),
-            name: 'Release',
-            status: TaskGroupStatusEnum::InProgress,
-        );
-        $this->bed->linkTaskGroupToTask($group, $task->getId());
+        $repository = $this->createMock(TaskGroupRepositoryInterface::class);
+        $repository->expects($this->never())->method('listByTaskId');
 
-        $held = $this->bed->get(TaskGroupLockInterface::class)->acquireByTaskId($task->getId());
-        $this->assertNotNull($held);
+        $lock = $this->createMock(TaskGroupLockInterface::class);
+        $lock->method('acquireByTaskId')->willReturn(null);
 
-        ($this->handler())(new TaskGroupRecalculationByTaskRequestedEvent(taskId: $task->getId()));
+        ($this->handler($repository, $lock))($this->event());
+    }
 
-        $this->bed->clear();
-        $this->assertSame(
-            TaskGroupStatusEnum::InProgress,
-            $this->bed->findTaskGroupById($group->getId())?->getStatus(),
-            'Пока канал занят, второй пересчёт запускаться не должен.',
-        );
+    public function testPassesCallbackThatRefreshesLockToService(): void
+    {
+        $repository = $this->createMock(TaskGroupRepositoryInterface::class);
+        $repository->method('listByTaskId')->willReturn([$this->taskGroup()]);
+        $repository->method('listMembershipFactsByIds')->willReturn([]);
 
-        $held->release();
+        $handle = $this->createLockHandle();
+        $handle->expects($this->atLeastOnce())->method('refresh');
 
-        ($this->handler())(new TaskGroupRecalculationByTaskRequestedEvent(taskId: $task->getId()));
+        $lock = $this->createMock(TaskGroupLockInterface::class);
+        $lock->method('acquireByTaskId')->willReturn($handle);
 
-        $this->bed->clear();
-        $this->assertSame(
-            TaskGroupStatusEnum::Completed,
-            $this->bed->findTaskGroupById($group->getId())?->getStatus(),
-        );
+        ($this->handler($repository, $lock))($this->event());
     }
 
     public function testReleasesLockAfterRecalculation(): void
     {
-        $user = $this->bed->seedDefaultUser();
-        $task = $this->bed->createFinishedTask($user->getId(), 'Build feature', 60);
+        $repository = $this->createMock(TaskGroupRepositoryInterface::class);
+        $repository->method('listByTaskId')->willReturn([]);
 
-        ($this->handler())(new TaskGroupRecalculationByTaskRequestedEvent(taskId: $task->getId()));
+        $handle = $this->createLockHandle();
+        $handle->expects($this->once())->method('release');
 
-        $handle = $this->bed->get(TaskGroupLockInterface::class)->acquireByTaskId($task->getId());
-        $this->assertNotNull($handle, 'Лок должен быть освобождён после пересчёта.');
+        $lock = $this->createMock(TaskGroupLockInterface::class);
+        $lock->method('acquireByTaskId')->willReturn($handle);
 
-        $handle->release();
+        ($this->handler($repository, $lock))($this->event());
     }
 
-    private function handler(): RecalculateTaskGroupsByTaskMessageHandler
+    public function testReleasesLockWhenServiceFails(): void
     {
-        return new RecalculateTaskGroupsByTaskMessageHandler(
-            recalculationService: $this->bed->get(TaskGroupRecalculationService::class),
-            taskGroupLock: $this->bed->get(TaskGroupLockInterface::class),
+        $repository = $this->createMock(TaskGroupRepositoryInterface::class);
+        $repository->method('listByTaskId')->willThrowException(new RuntimeException('recalculation failed'));
+
+        $handle = $this->createLockHandle();
+        $handle->expects($this->once())->method('release');
+
+        $lock = $this->createMock(TaskGroupLockInterface::class);
+        $lock->method('acquireByTaskId')->willReturn($handle);
+
+        $this->expectException(RuntimeException::class);
+
+        ($this->handler($repository, $lock))($this->event());
+    }
+
+    private function event(): TaskGroupRecalculationByTaskRequestedEvent
+    {
+        return new TaskGroupRecalculationByTaskRequestedEvent(taskId: self::TASK_ID);
+    }
+
+    private function taskGroup(): TaskGroupModel
+    {
+        return new TaskGroupModel(
+            id: 'group-1',
+            ownerId: 'owner-1',
+            name: 'Release',
+            status: TaskGroupStatusEnum::Initial,
+            createdAt: new DateTimeImmutable(),
         );
+    }
+
+    private function handler(
+        TaskGroupRepositoryInterface $repository,
+        TaskGroupLockInterface $lock,
+    ): RecalculateTaskGroupsByTaskMessageHandler {
+        return new RecalculateTaskGroupsByTaskMessageHandler(
+            recalculationService: new TaskGroupRecalculationService(
+                $repository,
+                new TaskGroupSummaryCache($this->createMock(CacheInterface::class)),
+            ),
+            taskGroupLock: $lock,
+        );
+    }
+
+    private function createLockHandle(): LockHandleInterface
+    {
+        return $this->createMock(LockHandleInterface::class);
     }
 }

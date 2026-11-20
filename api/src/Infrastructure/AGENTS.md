@@ -147,9 +147,6 @@ Side effects (object storage, cache, events) **никогда** не делег�
 снимает связь с группами и ассетами и удаляет задачу в одной транзакции — иначе
 FK violation вместо тихой потери связи.
 
-Проверка правила: `api/tests/Infrastructure/Persistence/Doctrine/CascadeDeleteRuleTest.php` —
-белый список `ON DELETE` в миграциях и в маппингах.
-
 Оркестрация delete — `api/src/Application/AGENTS.md` → Delete orchestration.
 
 ### Cache

@@ -59,7 +59,7 @@ final class BatchUtilsTest extends TestCase
 
     public function testStreamWalksBatchesUntilEmptyOne(): void
     {
-        // Курсор = смещение следующей выборки; строки нумеруются с 1.
+        // The cursor is the offset of the next slice; rows are numbered from 1.
         $rows = range(1, 25);
         $seen = [];
         $cursors = [];
@@ -79,7 +79,7 @@ final class BatchUtilsTest extends TestCase
         );
 
         $this->assertSame(range(1, 25), $seen);
-        // курсоры: стартовый, затем по одному на каждый полный батч и на последний неполный
+        // cursors: the start one, then one per full batch plus one for the trailing partial batch
         $this->assertSame([BatchUtils::FIRST_CURSOR, '10', '20', '30'], $cursors);
     }
 

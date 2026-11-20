@@ -10,8 +10,8 @@ use App\Tests\AuthenticatedWebTestCase;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Presentation: идентификатор в path — 404, если не совпадает с маршрутом,
- * 400, если совпадает, но не разбирается как UUID.
+ * Presentation: an identifier in the path is 404 when it does not match the route,
+ * and 400 when it matches but does not parse as a UUID.
  */
 final class PathIdentifierTest extends AuthenticatedWebTestCase
 {
@@ -34,7 +34,7 @@ final class PathIdentifierTest extends AuthenticatedWebTestCase
     {
         $this->createAuthenticatedClient();
 
-        // 36 hex-символов без дефисов — совпадает с форматом маршрута, но не UUID.
+        // 36 hex characters without hyphens — matches the route format but is not a UUID.
         $this->client->request(
             'GET',
             '/api/users/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',

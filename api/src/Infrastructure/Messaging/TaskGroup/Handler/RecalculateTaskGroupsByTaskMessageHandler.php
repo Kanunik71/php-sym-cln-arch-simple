@@ -10,11 +10,11 @@ use App\Application\Service\TaskGroup\Lifecycle\TaskGroupRecalculationService;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 /**
- * Пересчёт групп задачи.
+ * Recalculates the groups of a task.
  *
- * Одновременно считается только один канал: лок берёт потребитель, а не
- * продюсер (HTTP-запрос не может удерживать лок до конца async-работы).
- * Если лок занят, запрос пропускается — пересчёт уже идёт.
+ * Only one channel is processed at a time: the consumer takes the lock, not the
+ * producer (an HTTP request cannot hold the lock until the async work finishes).
+ * If the lock is held, the message is skipped — a recalculation is already running.
  */
 #[AsMessageHandler]
 final readonly class RecalculateTaskGroupsByTaskMessageHandler

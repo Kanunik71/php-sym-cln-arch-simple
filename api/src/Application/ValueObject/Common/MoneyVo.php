@@ -19,8 +19,8 @@ final class MoneyVo
     private readonly float $value;
 
     /**
-     * Тексты исключений — часть wire-контракта `400` эндпоинтов ассетов,
-     * менять их можно только вместе со спекой и тестами.
+     * Exception texts are part of the `400` wire contract of the asset endpoints;
+     * change them only together with the spec and the tests.
      */
     public function __construct(float $value)
     {

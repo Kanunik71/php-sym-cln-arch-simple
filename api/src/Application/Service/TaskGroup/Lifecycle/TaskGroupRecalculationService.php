@@ -22,8 +22,7 @@ final readonly class TaskGroupRecalculationService
     }
 
     /**
-     * @param callable(): void|null $onBatch вызывается перед каждым батчем,
-     *                                       чтобы вызывающий мог продлить лок
+     * @param callable(): void|null $onBatch called before each batch so the caller can extend the lock
      */
     public function recalculateByTaskId(string $taskId, ?callable $onBatch = null): void
     {
@@ -44,8 +43,7 @@ final readonly class TaskGroupRecalculationService
 
     /**
      * @param list<string>          $taskGroupIds
-     * @param callable(): void|null $onBatch      вызывается перед каждым батчем,
-     *                                            чтобы вызывающий мог продлить лок
+     * @param callable(): void|null $onBatch      called before each batch so the caller can extend the lock
      */
     public function recalculateByGroupIds(array $taskGroupIds, ?callable $onBatch = null): void
     {

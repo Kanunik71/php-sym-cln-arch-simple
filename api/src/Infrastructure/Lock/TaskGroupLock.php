@@ -10,15 +10,15 @@ use App\Shared\Utils\CacheKeyUtils;
 use Symfony\Component\Lock\LockFactory;
 
 /**
- * Лок пересчёта TaskGroup на symfony/lock.
+ * TaskGroup recalculation mutex built on symfony/lock.
  *
- * Ресурс лока — ключ в общем хранилище: `task_group_recalc.task.{taskId}`
- * либо `task_group_recalc.groups.{sha256(sorted ids)}`.
+ * The lock resource is a key in the shared store: `task_group_recalc.task.{taskId}`
+ * or `task_group_recalc.groups.{sha256(sorted ids)}`.
  */
 final readonly class TaskGroupLock implements TaskGroupLockInterface
 {
     /**
-     * Лок продлевается хендлером перед каждым батчем пересчёта.
+     * The lock is extended by the handler before each recalculation batch.
      */
     private const LOCK_TTL_SECONDS = 120;
 

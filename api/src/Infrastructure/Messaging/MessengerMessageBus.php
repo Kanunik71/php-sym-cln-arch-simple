@@ -8,9 +8,9 @@ use App\Application\Port\Messaging\MessageBusInterface;
 use Symfony\Component\Messenger\MessageBusInterface as SymfonyMessageBusInterface;
 
 /**
- * Адаптер Application-порта на Symfony Messenger.
+ * Adapter of the Application port over Symfony Messenger.
  *
- * Маршрутизация сообщений по транспортам — в `config/packages/messenger.yaml`.
+ * Routing messages to transports lives in `config/packages/messenger.yaml`.
  */
 final readonly class MessengerMessageBus implements MessageBusInterface
 {

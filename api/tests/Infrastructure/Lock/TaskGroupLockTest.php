@@ -82,7 +82,7 @@ final class TaskGroupLockTest extends KernelTestCase
     }
 
     /**
-     * true — канал занят (повторный захват не удался).
+     * true — the channel is busy (the second acquire failed).
      *
      * @param callable(): ?LockHandleInterface $acquire
      */

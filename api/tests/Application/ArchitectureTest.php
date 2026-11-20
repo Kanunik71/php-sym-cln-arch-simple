@@ -9,19 +9,19 @@ use LogicException;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Граница входа Application и граница зависимостей слоёв.
+ * The Application entry boundary and the cross-layer dependency boundary.
  *
- * Use case — это `Action` и `Query`: они вызываются из Controller и из другого
- * Action/Query. Всё остальное в `Application/Service/**` — Service
- * (переиспользуемый шаг): Policy не проверяет, response Model не собирает,
- * транзакцию не открывает и из use case не вызывается. Имена прочих подпапок
- * (`Lifecycle`, `Auth`, `Common`, новые) роли не задают — это навигация.
+ * Use cases are `Action` and `Query`: they are called from a Controller and from
+ * another Action/Query. Everything else under `Application/Service/**` is a Service
+ * (a reusable step): it runs no Policy, builds no response Model, opens no
+ * transaction, and is not called from a use case. Names of the other subfolders
+ * (`Lifecycle`, `Auth`, `Common`, new ones) do not define a role — they are navigation.
  *
- * Job'ы (Console, MessageHandler) входят в Service напрямую: у них нет актора,
- * Policy и response Model.
+ * Jobs (Console, MessageHandler) enter a Service directly: they have no actor,
+ * Policy, or response Model.
  *
- * `Presentation` не импортирует `Infrastructure`: идентичность приходит через
- * контракт Symfony `UserInterface`, а не через `SecurityUser`.
+ * `Presentation` does not import `Infrastructure`: identity arrives through
+ * the Symfony `UserInterface` contract, not through `SecurityUser`.
  */
 final class ArchitectureTest extends TestCase
 {

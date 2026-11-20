@@ -20,8 +20,8 @@ final readonly class ErrorResponseModel implements ArrayableModelInterface
     }
 
     /**
-     * Формирует конверт ошибки из исключения: `codeId` own кода — у
-     * `CodedExceptionInterface`, всё прочее — `VALIDATION_ERROR`.
+     * Builds the error envelope from an exception: `codeId` comes from the
+     * exception's own code (`CodedExceptionInterface`); everything else is `VALIDATION_ERROR`.
      */
     public static function fromThrowable(Throwable $exception): self
     {

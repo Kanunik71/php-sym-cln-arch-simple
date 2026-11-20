@@ -84,7 +84,7 @@ final class TaskGroupCreateServiceTest extends DatabaseTestCase
     {
         $owner = $this->bed->seedDefaultUser();
         $otherUser = $this->bed->createUser(email: 'other@example.com');
-        // задача с участниками — иначе она открыта всем
+        // a task with participants — otherwise it is open to everyone
         $task = $this->bed->createTask(
             ownerId: $owner->getId(),
             name: 'Foreign task',

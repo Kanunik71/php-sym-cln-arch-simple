@@ -15,8 +15,8 @@ final class BatchUtils
     /**
      * Lowest possible cursor — the starting point of a forward keyset walk.
      *
-     * Курсор keyset'а — это id агрегата (uuid), поэтому нижняя граница — nil UUID,
-     * единственный источник значения — `UidUtils::NIL`.
+     * The keyset cursor is the aggregate id (uuid), so the lower bound is the nil UUID;
+     * the single source of the value is `UidUtils::NIL`.
      */
     public const FIRST_CURSOR = UidUtils::NIL;
 

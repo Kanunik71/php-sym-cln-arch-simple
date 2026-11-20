@@ -36,10 +36,10 @@ final class ArrayUtils
     }
 
     /**
-     * Канонический список: без дублей, в детерминированном порядке.
+     * Canonical list: no duplicates, in a deterministic order.
      *
-     * Одинаковый набор значений даёт одинаковый список — payload сообщения
-     * не зависит от порядка исходных данных.
+     * The same set of values yields the same list — the message payload
+     * does not depend on the order of the source data.
      *
      * @param list<string> $items
      *
