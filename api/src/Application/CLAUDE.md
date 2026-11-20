@@ -159,13 +159,6 @@ final class FooViewModel { /* Read: typed → wire */ }
 final class FooModel { public array $payload; }
 ```
 
-Файл на входе и в хранении — скаляр `*FileId`: в write-payload передаётся
-только id. В response файл — отдельная структура `FileItemModel` (`id` + `url`),
-а не пара `*FileId` + `*Url` в одной Model. URL не собирается в Service и не
-хранится в Model — его подставляет Mapper на выходе. Поле называется по роли
-файла в сущности (`avatar`, `mainImage`, `images`), а не общим `files[]`:
-у файлов разное назначение и разная форма ответа.
-
 ---
 
 ## ValueObject
