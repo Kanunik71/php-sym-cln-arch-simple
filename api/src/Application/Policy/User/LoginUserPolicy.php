@@ -8,7 +8,7 @@ use App\Application\Exception\User\InvalidCredentialsException;
 use App\Application\Model\User\UserModel;
 use App\Application\Port\PasswordHasherInterface;
 use App\Application\Port\User\UserRepositoryInterface;
-use App\Application\ValueObject\Common\Email;
+use App\Application\ValueObject\Common\EmailVo;
 
 final readonly class LoginUserPolicy
 {
@@ -20,7 +20,7 @@ final readonly class LoginUserPolicy
 
     public function resolveAuthenticatedUserIo(string $email, string $password): UserModel
     {
-        $user = $this->userRepository->findByEmail(new Email($email));
+        $user = $this->userRepository->findByEmail(new EmailVo($email));
 
         if ($user === null || !$this->passwordHasher->verify($password, $user->passwordHash)) {
             throw InvalidCredentialsException::create();

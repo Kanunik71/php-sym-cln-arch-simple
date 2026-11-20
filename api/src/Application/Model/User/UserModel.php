@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Application\Model\User;
 
-use App\Application\ValueObject\Common\Email;
-use App\Application\ValueObject\Common\Phone;
+use App\Application\ValueObject\Common\EmailVo;
+use App\Application\ValueObject\Common\PhoneVo;
 use App\Shared\Utils\Asserts\StringAssertUtils;
 use App\Shared\Utils\UidUtils;
 use DateTimeImmutable;
@@ -13,7 +13,7 @@ use DateTimeImmutable;
 /**
  * Persistence model — mirrors users table columns.
  *
- * Fields with an invariant are Value Objects (Email, Phone); the rest are scalars.
+ * Fields with an invariant are Value Objects (EmailVo, PhoneVo); the rest are scalars.
  */
 final readonly class UserModel
 {
@@ -38,13 +38,13 @@ final readonly class UserModel
         public string $id,
         ?string $fname,
         ?string $lname,
-        public Email $email,
+        public EmailVo $email,
         string $passwordHash,
         public DateTimeImmutable $createdAt,
         public DateTimeImmutable $updatedAt,
         ?string $city = null,
         public ?string $avatarFileId = null,
-        public ?Phone $phone = null,
+        public ?PhoneVo $phone = null,
     ) {
         $this->fname = StringAssertUtils::maxLengthOrNull(
             StringAssertUtils::nullIfBlank($fname),
@@ -69,12 +69,12 @@ final readonly class UserModel
     }
 
     public static function create(
-        Email $email,
+        EmailVo $email,
         string $passwordHash,
         ?string $fname = null,
         ?string $lname = null,
         ?string $city = null,
-        ?Phone $phone = null,
+        ?PhoneVo $phone = null,
     ): self {
         $now = new DateTimeImmutable();
 
@@ -112,7 +112,7 @@ final readonly class UserModel
         return $this->lname;
     }
 
-    public function getEmail(): Email
+    public function getEmail(): EmailVo
     {
         return $this->email;
     }
@@ -142,7 +142,7 @@ final readonly class UserModel
         return $this->avatarFileId;
     }
 
-    public function getPhone(): ?Phone
+    public function getPhone(): ?PhoneVo
     {
         return $this->phone;
     }
@@ -150,11 +150,11 @@ final readonly class UserModel
     public function withProfile(
         ?string $fname,
         ?string $lname,
-        Email $email,
+        EmailVo $email,
         string $passwordHash,
         ?string $city,
         ?string $avatarFileId,
-        ?Phone $phone = null,
+        ?PhoneVo $phone = null,
     ): self {
         return new self(
             id: $this->id,

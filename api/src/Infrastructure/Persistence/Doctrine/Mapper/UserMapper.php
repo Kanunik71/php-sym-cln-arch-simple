@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Infrastructure\Persistence\Doctrine\Mapper;
 
 use App\Application\Model\User\UserModel;
-use App\Application\ValueObject\Common\Email;
-use App\Application\ValueObject\Common\Phone;
+use App\Application\ValueObject\Common\EmailVo;
+use App\Application\ValueObject\Common\PhoneVo;
 use App\Infrastructure\Persistence\Doctrine\Entity\FileEntity;
 use App\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use App\Infrastructure\Persistence\Doctrine\EntityReferenceAdapter;
@@ -29,13 +29,13 @@ final class UserMapper
             id: UidUtils::toString($entity->getId()),
             fname: $entity->getFname(),
             lname: $entity->getLname(),
-            email: new Email($entity->getEmail()),
+            email: new EmailVo($entity->getEmail()),
             passwordHash: $entity->getPassword(),
             createdAt: $entity->getCreatedAt(),
             updatedAt: $entity->getUpdatedAt(),
             city: $entity->getCity(),
             avatarFileId: $avatarFileId !== null ? UidUtils::toString($avatarFileId) : null,
-            phone: $phone !== null && $phone !== '' ? new Phone($phone) : null,
+            phone: $phone !== null && $phone !== '' ? new PhoneVo($phone) : null,
         );
     }
 

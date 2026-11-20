@@ -9,8 +9,8 @@ use App\Application\Model\Notification\NotificationPreferenceModel;
 use App\Application\Model\User\UserModel;
 use App\Application\Port\Notification\NotificationPreferenceRepositoryInterface;
 use App\Application\Port\User\UserRepositoryInterface;
-use App\Application\ValueObject\Common\Email;
-use App\Application\ValueObject\Common\Phone;
+use App\Application\ValueObject\Common\EmailVo;
+use App\Application\ValueObject\Common\PhoneVo;
 use App\Shared\Utils\UidUtils;
 use App\Tests\Support\TestBed;
 use DateTimeImmutable;
@@ -44,12 +44,12 @@ trait UserTestBedTrait
             id: $id ?? UidUtils::generateString(),
             fname: $fname,
             lname: $lname,
-            email: new Email($email ?? ('user-'.UidUtils::generateString().'@example.com')),
+            email: new EmailVo($email ?? ('user-'.UidUtils::generateString().'@example.com')),
             passwordHash: $passwordHash ?? $this->passwordHasher->hash($password ?? TestBed::DEMO_PASSWORD),
             createdAt: $now,
             updatedAt: $now,
             city: $city,
-            phone: $phone !== null ? new Phone($phone) : null,
+            phone: $phone !== null ? new PhoneVo($phone) : null,
         );
 
         $saved = $this->users->save($user);
@@ -65,7 +65,7 @@ trait UserTestBedTrait
 
     public function findUserByEmail(string $email): ?UserModel
     {
-        return $this->users->findByEmail(new Email($email));
+        return $this->users->findByEmail(new EmailVo($email));
     }
 
     public function findUserById(string $id): ?UserModel

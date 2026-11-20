@@ -13,8 +13,8 @@ use App\Application\Policy\User\RegisterUserPolicy;
 use App\Application\Port\PasswordHasherInterface;
 use App\Application\Port\User\UserRepositoryInterface;
 use App\Application\Service\User\Lifecycle\UserLifecycleService;
-use App\Application\ValueObject\Common\Email;
-use App\Application\ValueObject\Common\Phone;
+use App\Application\ValueObject\Common\EmailVo;
+use App\Application\ValueObject\Common\PhoneVo;
 
 final readonly class UserRegisterService
 {
@@ -29,7 +29,7 @@ final readonly class UserRegisterService
 
     public function execute(UserRegisterModel $model): UserRegisterResponseModel
     {
-        $email = new Email($model->email);
+        $email = new EmailVo($model->email);
 
         $this->registerUserPolicy->assertEmailAvailableIo($email);
         $this->passwordPolicy->assertValid($model->password);
@@ -40,7 +40,7 @@ final readonly class UserRegisterService
             fname: $model->fname,
             lname: $model->lname,
             city: $model->location?->city,
-            phone: $model->phone !== null ? new Phone($model->phone) : null,
+            phone: $model->phone !== null ? new PhoneVo($model->phone) : null,
         );
 
         $savedUser = $this->userRepository->save($user);

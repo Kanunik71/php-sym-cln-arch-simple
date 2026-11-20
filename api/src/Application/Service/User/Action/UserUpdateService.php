@@ -17,8 +17,8 @@ use App\Application\Port\User\UserRepositoryInterface;
 use App\Application\Service\Auth\RefreshTokenService;
 use App\Application\Service\File\Lifecycle\FileLifecycleService;
 use App\Application\Service\User\Lifecycle\UserLifecycleService;
-use App\Application\ValueObject\Common\Email;
-use App\Application\ValueObject\Common\Phone;
+use App\Application\ValueObject\Common\EmailVo;
+use App\Application\ValueObject\Common\PhoneVo;
 
 final readonly class UserUpdateService
 {
@@ -41,7 +41,7 @@ final readonly class UserUpdateService
 
         $this->updateUserPolicy->assertCanUpdate($userId, $currentUserId);
 
-        $email = new Email($model->email);
+        $email = new EmailVo($model->email);
 
         $this->updateUserPolicy->assertEmailAvailableIo($email, $user);
 
@@ -60,7 +60,7 @@ final readonly class UserUpdateService
             passwordHash: $passwordHash,
             city: $model->location?->city,
             avatarFileId: $model->avatarFileId,
-            phone: $model->phone !== null ? new Phone($model->phone) : null,
+            phone: $model->phone !== null ? new PhoneVo($model->phone) : null,
         );
 
         if ($model->password !== null) {

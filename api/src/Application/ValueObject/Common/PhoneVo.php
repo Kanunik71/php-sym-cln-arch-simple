@@ -7,19 +7,20 @@ namespace App\Application\ValueObject\Common;
 use App\Shared\Utils\Asserts\StringAssertUtils;
 use InvalidArgumentException;
 
-final class Email
+final class PhoneVo
 {
-    /** Persisted column max length (users.email). */
-    public const MAX_LENGTH = 255;
+    /** Persisted column max length (users.phone). */
+    public const MAX_LENGTH = 20;
 
     private readonly string $value;
 
     public function __construct(string $value)
     {
-        $normalized = strtolower(StringAssertUtils::notBlankMaxLength($value, self::MAX_LENGTH, 'Email'));
+        $normalized = preg_replace('/[\s\-()]/', '', StringAssertUtils::notBlank($value, 'Phone')) ?? '';
+        $normalized = StringAssertUtils::maxLength($normalized, self::MAX_LENGTH, 'Phone');
 
-        if (filter_var($normalized, FILTER_VALIDATE_EMAIL) === false) {
-            throw new InvalidArgumentException('Email is invalid.');
+        if (!preg_match('/^\+[1-9]\d{7,14}$/', $normalized)) {
+            throw new InvalidArgumentException('Phone must be E.164 (e.g. +79001234567).');
         }
 
         $this->value = $normalized;

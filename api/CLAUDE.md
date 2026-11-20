@@ -52,8 +52,9 @@ Presentation  ──►  Application  ──►  Port  ◄──  Infrastructure
 
 | Суффикс | Назначение | Пример |
 |---------|-----------|--------|
-| **Model** | Wire VO: persistence, request, response, criteria, pagination, page | `UserModel`, `UserUpdateModel`, `UserPageModel`, `PaginationModel` |
+| **Model** | Wire-структура: persistence, request, response, criteria, pagination, page | `UserModel`, `UserUpdateModel`, `UserPageModel`, `PaginationModel` |
 | **Enum** | Закрытое множество значений | `TaskStatusEnum`, `FilterOperatorEnum` |
+| **Vo** | Value Object: инвариант поля | `EmailVo`, `PhoneVo` |
 | **Exception** | Исключение use case с `codeId` | `TaskNotFoundException` |
 | **Event** | Факт для Messenger | `UserUpdatedEvent` |
 | **RepositoryInterface** | Контракт репозитория (Port) | `UserRepositoryInterface` |
@@ -87,7 +88,6 @@ Presentation  ──►  Application  ──►  Port  ◄──  Infrastructure
 
 | Слой | Что | Пример |
 |------|-----|--------|
-| Application | Value Object — имя = Ubiquitous Language | `Email`, `Phone` |
 | Infrastructure | Framework-coupled имена | `SymfonyPasswordHasher`, `TwigEnvironmentFactory`, `SecurityUser` |
 | Infrastructure | Вспомогательные семейства Doctrine | `*EntityFetcher`, `*Applier`, `*DoctrineMap`, `Doctrine*Utils` |
 
@@ -144,9 +144,12 @@ use case. Транзакцию открывает вход (use case или job)
 | `Model/Common/` | Общее: пагинация, сортировка, фильтры, meta | `PaginationModel`, `SearchQueryMetaModel` |
 | `Model/Http/` | Формат ошибки | `ErrorResponseModel` |
 
+`Action/` и `Read/` — база; другие подпапки `Model/{Entity}/` — логическая
+группировка, роль модели определяется назначением.
+
 - Persistence `*Model` наружу не сериализуется — только `Read/*ViewModel`.
 - Entity не покидают Infrastructure; в поле Model — typed enum, не `string`.
-- Коллизия имён ролей — суффикс `*ResponseModel`.
+- Роли различаются именами: `*ResponseModel` — один из вариантов, не шаблон.
 
 Правила Model, Enum и VO — в [`src/Application/CLAUDE.md`](src/Application/CLAUDE.md#model).
 
@@ -187,7 +190,7 @@ Infrastructure `Persistence/Doctrine/Mapper/`. Инфикс `Model` в имен�
 
 ## Чеклист
 
-1. Слой и **один** суффикс (кроме VO и framework-coupled имён Infrastructure)
+1. Слой и **один** суффикс (кроме framework-coupled имён Infrastructure)
 2. `Presentation → Application → Port ← Infrastructure`: Application не импортирует Infrastructure
 3. Use case — `Action`/`Query`; `execute` наружу — **только** response Model \| void
 4. Граница входа: Controller → `Action`/`Query`, job → Service; Service не зовёт use case; транзакция — у входа

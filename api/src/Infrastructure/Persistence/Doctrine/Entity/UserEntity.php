@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Infrastructure\Persistence\Doctrine\Entity;
 
 use App\Application\Model\User\UserModel;
-use App\Application\ValueObject\Common\Email;
-use App\Application\ValueObject\Common\Phone;
+use App\Application\ValueObject\Common\EmailVo;
+use App\Application\ValueObject\Common\PhoneVo;
 use App\Shared\Utils\UidUtils;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -43,7 +43,7 @@ class UserEntity
     #[ORM\Column(length: UserModel::LNAME_MAX_LENGTH, nullable: true)]
     private ?string $lname = null;
 
-    #[ORM\Column(length: Email::MAX_LENGTH, unique: true)]
+    #[ORM\Column(length: EmailVo::MAX_LENGTH, unique: true)]
     private string $email = '';
 
     #[ORM\Column(length: UserModel::PASSWORD_HASH_MAX_LENGTH)]
@@ -52,7 +52,7 @@ class UserEntity
     #[ORM\Column(length: UserModel::CITY_MAX_LENGTH, nullable: true)]
     private ?string $city = null;
 
-    #[ORM\Column(length: Phone::MAX_LENGTH, nullable: true)]
+    #[ORM\Column(length: PhoneVo::MAX_LENGTH, nullable: true)]
     private ?string $phone = null;
 
     #[ORM\Column(name: 'created_at')]

@@ -113,7 +113,7 @@ $repo->save($model);
 
 ## Model
 
-Один суффикс `Model` — три роли, различаются папкой:
+Один суффикс `Model` — три роли:
 
 | Роль | Где | Кто потребитель |
 |------|-----|-----------------|
@@ -121,18 +121,29 @@ $repo->save($model);
 | **request** | `Model/{Entity}/Action/` | `Service::execute` |
 | **response** | `Model/{Entity}/Read/` | Presentation, Infrastructure (facts) |
 
+`Action/` и `Read/` — базовая раскладка, а не закрытый список папок. Внутри
+`Model/{Entity}/` допустимы и другие подпапки для логической группировки
+(`Search/`, `Meta/`, `Filter/`, любые новые): имя папки отвечает на вопрос
+«о чём эти модели», а роль модели определяется тем, куда она течёт — на вход
+записи, на выход чтения или как зеркало состояния. Ограничение одно: у класса
+одна роль, и она читается из его назначения.
+
 Правила:
 
 - Роли не смешиваются. Request Model не отдаётся наружу; persistence Model не
   сериализуется в ответ; response Model не принимается на вход записи.
-- Коллизия имён ролей решается суффиксом `*ResponseModel`, а не общей Model.
+- Роли различаются именами: если request и response — разные модели (разный
+  состав полей, разное назначение), разные и имена. Суффикс `ResponseModel` —
+  один из равноправных вариантов (`UserLoginResponseModel`), а не обязательный
+  шаблон: `UserViewModel`, `TaskPageModel`, `TaskLightModel` — такие же имена
+  роли. Общей Model «на все роли» не бывает.
 - Persistence Model — зеркало состояния, а не форма запроса и не DTO.
 - Закрытое множество в поле — **typed enum**, не `string`. Enum живёт в
   `Application/Enum/` — и доменный статус, и application-контракт (операторы
   фильтра, направления сортировки).
 - Нетипизированный `array` в полях Model допустим только на wire-границе
   (см. «Границы типизации»).
-- Поле с инвариантом в Model — **VO** (`Email`, `Phone`), без инварианта —
+- Поле с инвариантом в Model — **VO** (`EmailVo`, `PhoneVo`), без инварианта —
   скаляр. Union «VO|string» в сигнатуре запрещён: у входа один контракт.
 - Model — wire-структура: данные и минимальные инварианты формы. Бизнес-правила
   с I/O — в Policy, инварианты поля — в VO/persistence Model, а не в
@@ -148,9 +159,12 @@ final class FooViewModel { /* Read: typed → wire */ }
 final class FooModel { public array $payload; }
 ```
 
-Файл в ответе — отдельная структура `id + url`, а не пара `*FileId` + `*Url` в
-одной Model. Поля именуются по роли в сущности (`avatar`, `images`), а не общим
-`files[]`. В write-payload передаётся id файла; URL собирается на выходе.
+Файл на входе и в хранении — скаляр `*FileId`: в write-payload передаётся
+только id. В response файл — отдельная структура `FileItemModel` (`id` + `url`),
+а не пара `*FileId` + `*Url` в одной Model. URL не собирается в Service и не
+хранится в Model — его подставляет Mapper на выходе. Поле называется по роли
+файла в сущности (`avatar`, `mainImage`, `images`), а не общим `files[]`:
+у файлов разное назначение и разная форма ответа.
 
 ---
 
@@ -158,8 +172,10 @@ final class FooModel { public array $payload; }
 
 - VO заводится под **инвариант** (формат, диапазон, нормализация), а не под
   каждое поле. Поле без инварианта остаётся скаляром в Model.
-- Имя VO = ubiquitous language, без суффикса роли: `Email`, `Phone`, `Money`.
-  Суффиксы вроде `*ValueObject` или `UserEmail` вводят второй словарь.
+- Имя VO = ubiquitous language + суффикс `Vo`: `EmailVo`, `PhoneVo`, `MoneyVo`.
+  Суффикс отделяет VO от прочих классов и снимает коллизии с внешними типами
+  (`Symfony\Component\Mime\Email`). Имена вроде `*ValueObject` или `UserEmail`
+  вводят второй словарь и запрещены.
 - Короткое имя уникально в пределах `ValueObject/`. Общие — `Common/`,
   контекстные — `{Entity}/`.
 - Инвариант проверяется в конструкторе VO; наружу VO не сериализуется — на
@@ -167,7 +183,7 @@ final class FooModel { public array $payload; }
 
 ```php
 // ✅ инвариант в одном месте
-$email = new Email($raw);          // бросает на невалидном входе
+$email = new EmailVo($raw);          // бросает на невалидном входе
 
 // ❌ проверка формата продублирована в сервисах
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) { ... }

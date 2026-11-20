@@ -7,7 +7,7 @@ namespace App\Application\Policy\User;
 use App\Application\Exception\User\UserAlreadyExistsException;
 use App\Application\Model\User\UserModel;
 use App\Application\Port\User\UserRepositoryInterface;
-use App\Application\ValueObject\Common\Email;
+use App\Application\ValueObject\Common\EmailVo;
 
 final readonly class UpdateUserPolicy
 {
@@ -22,7 +22,7 @@ final readonly class UpdateUserPolicy
         $this->userAccessPolicy->assertSelfAccess($userId, $currentUserId);
     }
 
-    public function assertEmailAvailableIo(Email $email, UserModel $user): void
+    public function assertEmailAvailableIo(EmailVo $email, UserModel $user): void
     {
         if (!$email->equals($user->email) && $this->userRepository->existsByEmail($email)) {
             throw UserAlreadyExistsException::withEmail($email->toString());

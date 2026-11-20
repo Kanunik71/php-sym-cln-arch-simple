@@ -6,7 +6,7 @@ namespace App\Application\Policy\User;
 
 use App\Application\Exception\User\UserAlreadyExistsException;
 use App\Application\Port\User\UserRepositoryInterface;
-use App\Application\ValueObject\Common\Email;
+use App\Application\ValueObject\Common\EmailVo;
 
 final readonly class RegisterUserPolicy
 {
@@ -15,7 +15,7 @@ final readonly class RegisterUserPolicy
     ) {
     }
 
-    public function assertEmailAvailableIo(Email $email): void
+    public function assertEmailAvailableIo(EmailVo $email): void
     {
         if ($this->userRepository->existsByEmail($email)) {
             throw UserAlreadyExistsException::withEmail($email->toString());

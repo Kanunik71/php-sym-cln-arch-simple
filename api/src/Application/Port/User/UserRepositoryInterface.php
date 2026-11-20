@@ -9,7 +9,7 @@ use App\Application\Model\Common\SortModel;
 use App\Application\Model\User\Read\UserPaginatedModel;
 use App\Application\Model\User\UserFilterCriterionModel;
 use App\Application\Model\User\UserModel;
-use App\Application\ValueObject\Common\Email;
+use App\Application\ValueObject\Common\EmailVo;
 
 interface UserRepositoryInterface
 {
@@ -19,9 +19,9 @@ interface UserRepositoryInterface
 
     public function findOrFail(string $id): UserModel;
 
-    public function findByEmail(Email $email): ?UserModel;
+    public function findByEmail(EmailVo $email): ?UserModel;
 
-    public function existsByEmail(Email $email): bool;
+    public function existsByEmail(EmailVo $email): bool;
 
     /**
      * @param list<string> $ids

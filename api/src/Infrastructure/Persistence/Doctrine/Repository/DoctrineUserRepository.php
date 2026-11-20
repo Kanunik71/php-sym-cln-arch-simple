@@ -12,7 +12,7 @@ use App\Application\Model\User\Read\UserPaginatedModel;
 use App\Application\Model\User\UserFilterCriterionModel;
 use App\Application\Model\User\UserModel;
 use App\Application\Port\User\UserRepositoryInterface;
-use App\Application\ValueObject\Common\Email;
+use App\Application\ValueObject\Common\EmailVo;
 use App\Infrastructure\Persistence\Doctrine\Entity\UserEntity;
 use App\Infrastructure\Persistence\Doctrine\Mapper\UserMapper;
 use App\Infrastructure\Persistence\Doctrine\Query\Common\DoctrinePaginationApplier;
@@ -55,14 +55,14 @@ final readonly class DoctrineUserRepository implements UserRepositoryInterface
         return $this->findById($id) ?? throw UserNotFoundException::withId($id);
     }
 
-    public function findByEmail(Email $email): ?UserModel
+    public function findByEmail(EmailVo $email): ?UserModel
     {
         $entity = $this->userEntityFetcher->findByEmail($email->toString());
 
         return $entity !== null ? $this->userMapper->toModel($entity) : null;
     }
 
-    public function existsByEmail(Email $email): bool
+    public function existsByEmail(EmailVo $email): bool
     {
         return $this->findByEmail($email) !== null;
     }

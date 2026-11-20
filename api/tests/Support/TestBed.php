@@ -12,7 +12,7 @@ use App\Application\Port\PasswordHasherInterface;
 use App\Application\Port\Task\TaskRepositoryInterface;
 use App\Application\Port\TaskGroup\TaskGroupRepositoryInterface;
 use App\Application\Port\User\UserRepositoryInterface;
-use App\Application\ValueObject\Common\Email;
+use App\Application\ValueObject\Common\EmailVo;
 use App\Shared\Utils\ContainerUtils;
 use App\Tests\Support\Trait\TestBed\AssetTestBedTrait;
 use App\Tests\Support\Trait\TestBed\FileTestBedTrait;
@@ -115,6 +115,6 @@ final class TestBed
 
     public function userExistsByEmail(string $email): bool
     {
-        return $this->users->existsByEmail(new Email($email));
+        return $this->users->existsByEmail(new EmailVo($email));
     }
 }

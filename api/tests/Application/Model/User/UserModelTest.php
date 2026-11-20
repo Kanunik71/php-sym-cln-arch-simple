@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Tests\Application\Model\User;
 
 use App\Application\Model\User\UserModel;
-use App\Application\ValueObject\Common\Email;
-use App\Application\ValueObject\Common\Phone;
+use App\Application\ValueObject\Common\EmailVo;
+use App\Application\ValueObject\Common\PhoneVo;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
@@ -16,7 +16,7 @@ final class UserModelTest extends TestCase
     public function testGetAllFileIdsReturnsEmptyListWhenAvatarMissing(): void
     {
         $user = UserModel::create(
-            email: new Email('John@Example.com'),
+            email: new EmailVo('John@Example.com'),
             passwordHash: 'hash',
         );
 
@@ -31,7 +31,7 @@ final class UserModelTest extends TestCase
             id: 'user-1',
             fname: 'John',
             lname: 'Doe',
-            email: new Email('john@example.com'),
+            email: new EmailVo('john@example.com'),
             passwordHash: 'hash',
             createdAt: $now,
             updatedAt: $now,
@@ -50,7 +50,7 @@ final class UserModelTest extends TestCase
         ));
 
         UserModel::create(
-            email: new Email('john@example.com'),
+            email: new EmailVo('john@example.com'),
             passwordHash: 'hash',
             fname: str_repeat('a', UserModel::FNAME_MAX_LENGTH + 1),
         );
@@ -59,9 +59,9 @@ final class UserModelTest extends TestCase
     public function testStoresNormalizedPhone(): void
     {
         $user = UserModel::create(
-            email: new Email('john@example.com'),
+            email: new EmailVo('john@example.com'),
             passwordHash: 'hash',
-            phone: new Phone('+7 900 123-45-67'),
+            phone: new PhoneVo('+7 900 123-45-67'),
         );
 
         $this->assertSame('+79001234567', $user->phone?->toString());
