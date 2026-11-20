@@ -6,12 +6,7 @@ namespace App\Application\Event\TaskGroup;
 
 use App\Shared\Utils\ArrayUtils;
 
-/**
- * Пересчёт указанных групп.
- *
- * Payload канонический: без дублей, в детерминированном порядке.
- */
-final readonly class TaskGroupsRecalculationByGroupIdsRequestedEvent
+final readonly class TaskGroupRecalculationByGroupIdsRequestedEvent
 {
     /**
      * @var list<string>

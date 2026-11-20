@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Application\Service\Task\Action;
 
 use App\Application\Enum\Task\TaskUserStatusEnum;
-use App\Application\Event\TaskGroup\TaskGroupsRecalculationByGroupIdsRequestedEvent;
+use App\Application\Event\TaskGroup\TaskGroupRecalculationByGroupIdsRequestedEvent;
 use App\Application\Exception\Task\UnauthorizedTaskAccessException;
 use App\Application\Model\Task\TaskUserModel;
 use App\Application\Service\Task\Action\TaskDeleteService;
@@ -74,8 +74,8 @@ final class TaskDeleteServiceTest extends DatabaseTestCase
         );
 
         $this->assertDispatched(
-            TaskGroupsRecalculationByGroupIdsRequestedEvent::class,
-            predicate: fn (TaskGroupsRecalculationByGroupIdsRequestedEvent $event): bool => $event->taskGroupIds === [$group->getId()],
+            TaskGroupRecalculationByGroupIdsRequestedEvent::class,
+            predicate: fn (TaskGroupRecalculationByGroupIdsRequestedEvent $event): bool => $event->taskGroupIds === [$group->getId()],
         );
     }
 
@@ -89,7 +89,7 @@ final class TaskDeleteServiceTest extends DatabaseTestCase
             userId: $owner->getId(),
         );
 
-        $this->assertDispatched(TaskGroupsRecalculationByGroupIdsRequestedEvent::class, times: 0);
+        $this->assertDispatched(TaskGroupRecalculationByGroupIdsRequestedEvent::class, times: 0);
     }
 
     public function testDeleteDetachesTaskFromItsGroups(): void

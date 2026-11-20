@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Application\Service\Task\Lifecycle;
 
 use App\Application\Event\Task\TaskCreatedEvent;
-use App\Application\Event\TaskGroup\TaskGroupsRecalculationByTaskRequestedEvent;
+use App\Application\Event\TaskGroup\TaskGroupRecalculationByTaskRequestedEvent;
 use App\Application\Model\Task\TaskModel;
 use App\Application\Port\Messaging\MessageBusInterface;
 
@@ -29,6 +29,6 @@ final readonly class TaskLifecycleService
             return;
         }
 
-        $this->messageBus->dispatch(new TaskGroupsRecalculationByTaskRequestedEvent(taskId: $task->id));
+        $this->messageBus->dispatch(new TaskGroupRecalculationByTaskRequestedEvent(taskId: $task->id));
     }
 }

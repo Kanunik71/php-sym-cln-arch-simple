@@ -6,7 +6,7 @@ namespace App\Tests\Application\Service\Task\Action;
 
 use App\Application\Enum\Task\TaskStatusEnum;
 use App\Application\Enum\Task\TaskUserStatusEnum;
-use App\Application\Event\TaskGroup\TaskGroupsRecalculationByTaskRequestedEvent;
+use App\Application\Event\TaskGroup\TaskGroupRecalculationByTaskRequestedEvent;
 use App\Application\Exception\Task\InvalidTaskStatusTransitionException;
 use App\Application\Exception\Task\UnauthorizedTaskAccessException;
 use App\Application\Model\Task\Action\TaskChangeStatusModel;
@@ -44,8 +44,8 @@ final class TaskChangeStatusServiceTest extends DatabaseTestCase
         $this->assertSame($activate->assignUserId, $active->users[0]->userId);
         $this->assertSame(TaskUserStatusEnum::Active, $active->users[0]->status);
         $this->assertDispatched(
-            TaskGroupsRecalculationByTaskRequestedEvent::class,
-            predicate: fn (TaskGroupsRecalculationByTaskRequestedEvent $event): bool => $event->taskId === $task->getId(),
+            TaskGroupRecalculationByTaskRequestedEvent::class,
+            predicate: fn (TaskGroupRecalculationByTaskRequestedEvent $event): bool => $event->taskId === $task->getId(),
         );
 
         $finish = new TaskChangeStatusModel(status: TaskStatusEnum::Finished);
@@ -59,8 +59,8 @@ final class TaskChangeStatusServiceTest extends DatabaseTestCase
         $this->assertSame($finish->status, $finished->status);
         $this->assertNotNull($finished->finishedDate);
         $this->assertDispatched(
-            TaskGroupsRecalculationByTaskRequestedEvent::class,
-            predicate: fn (TaskGroupsRecalculationByTaskRequestedEvent $event): bool => $event->taskId === $task->getId(),
+            TaskGroupRecalculationByTaskRequestedEvent::class,
+            predicate: fn (TaskGroupRecalculationByTaskRequestedEvent $event): bool => $event->taskId === $task->getId(),
         );
 
         $this->bed->clear();

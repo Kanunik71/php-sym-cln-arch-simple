@@ -70,8 +70,8 @@ Docker `php` при `AUTO_MIGRATE=1` выполняет миграции при 
 ## Асинхронность (обзор)
 
 - `TaskCreatedEvent` — только лог.
-- `TaskGroupsRecalculationByTaskRequestedEvent` — пересчёт групп задачи.
-- `TaskGroupsRecalculationByGroupIdsRequestedEvent` — пересчёт указанных групп.
+- `TaskGroupRecalculationByTaskRequestedEvent` — пересчёт групп задачи.
+- `TaskGroupRecalculationByGroupIdsRequestedEvent` — пересчёт указанных групп.
 - `UserRegisteredEvent` — email.
 - `UserUpdatedEvent` — email/SMS по настройке.
 

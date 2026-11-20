@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Event\TaskGroup;
 
-/**
- * Пересчёт групп задачи.
- */
-final readonly class TaskGroupsRecalculationByTaskRequestedEvent
+final readonly class TaskGroupRecalculationByTaskRequestedEvent
 {
     public function __construct(
         public string $taskId,

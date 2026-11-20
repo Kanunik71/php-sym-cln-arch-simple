@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Messaging\TaskGroup\Handler;
 
-use App\Application\Event\TaskGroup\TaskGroupsRecalculationByGroupIdsRequestedEvent;
+use App\Application\Event\TaskGroup\TaskGroupRecalculationByGroupIdsRequestedEvent;
 use App\Application\Port\TaskGroup\TaskGroupLockInterface;
 use App\Application\Service\TaskGroup\Lifecycle\TaskGroupRecalculationService;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -25,7 +25,7 @@ final readonly class RecalculateTaskGroupsByGroupIdsMessageHandler
     ) {
     }
 
-    public function __invoke(TaskGroupsRecalculationByGroupIdsRequestedEvent $event): void
+    public function __invoke(TaskGroupRecalculationByGroupIdsRequestedEvent $event): void
     {
         $handle = $this->taskGroupLock->acquireByGroupIds($event->taskGroupIds);
 

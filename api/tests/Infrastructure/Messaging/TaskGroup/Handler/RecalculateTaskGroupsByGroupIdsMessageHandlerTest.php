@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Infrastructure\Messaging\TaskGroup\Handler;
 
 use App\Application\Enum\TaskGroup\TaskGroupStatusEnum;
-use App\Application\Event\TaskGroup\TaskGroupsRecalculationByGroupIdsRequestedEvent;
+use App\Application\Event\TaskGroup\TaskGroupRecalculationByGroupIdsRequestedEvent;
 use App\Application\Port\TaskGroup\TaskGroupLockInterface;
 use App\Application\Service\TaskGroup\Lifecycle\TaskGroupRecalculationService;
 use App\Infrastructure\Messaging\TaskGroup\Handler\RecalculateTaskGroupsByGroupIdsMessageHandler;
@@ -24,7 +24,7 @@ final class RecalculateTaskGroupsByGroupIdsMessageHandlerTest extends DatabaseTe
         );
         $this->bed->linkTaskGroupToTask($group, $task->getId());
 
-        ($this->handler())(new TaskGroupsRecalculationByGroupIdsRequestedEvent(taskGroupIds: [$group->getId()]));
+        ($this->handler())(new TaskGroupRecalculationByGroupIdsRequestedEvent(taskGroupIds: [$group->getId()]));
 
         $this->bed->clear();
         $this->assertSame(
@@ -47,7 +47,7 @@ final class RecalculateTaskGroupsByGroupIdsMessageHandlerTest extends DatabaseTe
         $held = $this->bed->get(TaskGroupLockInterface::class)->acquireByGroupIds([$group->getId()]);
         $this->assertNotNull($held);
 
-        ($this->handler())(new TaskGroupsRecalculationByGroupIdsRequestedEvent(taskGroupIds: [$group->getId()]));
+        ($this->handler())(new TaskGroupRecalculationByGroupIdsRequestedEvent(taskGroupIds: [$group->getId()]));
 
         $this->bed->clear();
         $this->assertSame(
@@ -58,7 +58,7 @@ final class RecalculateTaskGroupsByGroupIdsMessageHandlerTest extends DatabaseTe
 
         $held->release();
 
-        ($this->handler())(new TaskGroupsRecalculationByGroupIdsRequestedEvent(taskGroupIds: [$group->getId()]));
+        ($this->handler())(new TaskGroupRecalculationByGroupIdsRequestedEvent(taskGroupIds: [$group->getId()]));
 
         $this->bed->clear();
         $this->assertSame(
@@ -72,7 +72,7 @@ final class RecalculateTaskGroupsByGroupIdsMessageHandlerTest extends DatabaseTe
         $user = $this->bed->seedDefaultUser();
         $group = $this->bed->createTaskGroup(ownerId: $user->getId(), name: 'Release');
 
-        ($this->handler())(new TaskGroupsRecalculationByGroupIdsRequestedEvent(taskGroupIds: [$group->getId()]));
+        ($this->handler())(new TaskGroupRecalculationByGroupIdsRequestedEvent(taskGroupIds: [$group->getId()]));
 
         $handle = $this->bed->get(TaskGroupLockInterface::class)->acquireByGroupIds([$group->getId()]);
         $this->assertNotNull($handle, 'Лок должен быть освобождён после пересчёта.');

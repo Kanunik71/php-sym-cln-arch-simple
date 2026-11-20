@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Service\TaskGroup\Action;
 
-use App\Application\Event\TaskGroup\TaskGroupsRecalculationByGroupIdsRequestedEvent;
+use App\Application\Event\TaskGroup\TaskGroupRecalculationByGroupIdsRequestedEvent;
 use App\Application\Mapper\TaskGroup\TaskGroupViewModelMapper;
 use App\Application\Model\TaskGroup\Read\TaskGroupViewModel;
 use App\Application\Policy\Task\TaskAccessPolicy;
@@ -38,7 +38,7 @@ final readonly class TaskGroupAttachTaskService
         }
 
         $this->taskGroupRepository->attachTask($taskGroupId, $taskId);
-        $this->messageBus->dispatch(new TaskGroupsRecalculationByGroupIdsRequestedEvent(
+        $this->messageBus->dispatch(new TaskGroupRecalculationByGroupIdsRequestedEvent(
             taskGroupIds: [$taskGroupId],
         ));
 

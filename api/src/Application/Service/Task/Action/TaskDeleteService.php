@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Service\Task\Action;
 
-use App\Application\Event\TaskGroup\TaskGroupsRecalculationByGroupIdsRequestedEvent;
+use App\Application\Event\TaskGroup\TaskGroupRecalculationByGroupIdsRequestedEvent;
 use App\Application\Policy\Task\TaskAccessPolicy;
 use App\Application\Port\Asset\AssetRepositoryInterface;
 use App\Application\Port\Messaging\MessageBusInterface;
@@ -50,7 +50,7 @@ final readonly class TaskDeleteService
             return;
         }
 
-        $this->messageBus->dispatch(new TaskGroupsRecalculationByGroupIdsRequestedEvent(
+        $this->messageBus->dispatch(new TaskGroupRecalculationByGroupIdsRequestedEvent(
             taskGroupIds: $affectedGroupIds,
         ));
     }

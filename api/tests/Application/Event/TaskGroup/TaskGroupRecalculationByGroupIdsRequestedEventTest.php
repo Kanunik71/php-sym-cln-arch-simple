@@ -4,21 +4,21 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Event\TaskGroup;
 
-use App\Application\Event\TaskGroup\TaskGroupsRecalculationByGroupIdsRequestedEvent;
+use App\Application\Event\TaskGroup\TaskGroupRecalculationByGroupIdsRequestedEvent;
 use PHPUnit\Framework\TestCase;
 
-final class TaskGroupsRecalculationByGroupIdsRequestedEventTest extends TestCase
+final class TaskGroupRecalculationByGroupIdsRequestedEventTest extends TestCase
 {
     public function testPayloadIsDeduplicatedAndSorted(): void
     {
-        $event = new TaskGroupsRecalculationByGroupIdsRequestedEvent(['group-2', 'group-1', 'group-2']);
+        $event = new TaskGroupRecalculationByGroupIdsRequestedEvent(['group-2', 'group-1', 'group-2']);
 
         self::assertSame(['group-1', 'group-2'], $event->taskGroupIds);
     }
 
     public function testEmptyPayloadStaysEmpty(): void
     {
-        $event = new TaskGroupsRecalculationByGroupIdsRequestedEvent([]);
+        $event = new TaskGroupRecalculationByGroupIdsRequestedEvent([]);
 
         self::assertSame([], $event->taskGroupIds);
     }

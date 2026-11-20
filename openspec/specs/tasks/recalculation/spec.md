@@ -7,7 +7,7 @@
 ## Requirements
 
 ### Requirement: Пересчёт групп при изменениях
-The API SHALL при смене статуса задачи публиковать `TaskGroupsRecalculationByTaskRequestedEvent` (`taskId`), при удалении — `TaskGroupsRecalculationByGroupIdsRequestedEvent` с id затронутых групп (см. [task-groups](../../task-groups/spec.md)); при создании задачи событие публикуется, но обработчик только логирует. Список задач не кэшируется.
+The API SHALL при смене статуса задачи публиковать `TaskGroupRecalculationByTaskRequestedEvent` (`taskId`), при удалении — `TaskGroupRecalculationByGroupIdsRequestedEvent` с id затронутых групп (см. [task-groups](../../task-groups/spec.md)); при создании задачи событие публикуется, но обработчик только логирует. Список задач не кэшируется.
 
 #### Scenario: Пересчёт после смены статуса
 - **GIVEN** задача входит в группы

@@ -6,7 +6,7 @@ namespace App\Tests\Application\Service\Task\Lifecycle;
 
 use App\Application\Enum\Task\TaskStatusEnum;
 use App\Application\Event\Task\TaskCreatedEvent;
-use App\Application\Event\TaskGroup\TaskGroupsRecalculationByTaskRequestedEvent;
+use App\Application\Event\TaskGroup\TaskGroupRecalculationByTaskRequestedEvent;
 use App\Application\Service\Task\Lifecycle\TaskLifecycleService;
 use App\Tests\DatabaseTestCase;
 use App\Tests\Support\Trait\Common\AssertMessengerTrait;
@@ -50,8 +50,8 @@ final class TaskLifecycleServiceTest extends DatabaseTestCase
         $service->afterTaskPersisted(task: $finishedTask);
 
         $this->assertDispatched(
-            TaskGroupsRecalculationByTaskRequestedEvent::class,
-            predicate: fn (TaskGroupsRecalculationByTaskRequestedEvent $event): bool => $event->taskId === $task->getId(),
+            TaskGroupRecalculationByTaskRequestedEvent::class,
+            predicate: fn (TaskGroupRecalculationByTaskRequestedEvent $event): bool => $event->taskId === $task->getId(),
         );
 
         $this->assertSame(TaskStatusEnum::Finished, $this->bed->findTaskById($task->getId())->getStatus());
