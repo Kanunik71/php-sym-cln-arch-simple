@@ -8,6 +8,8 @@
 # IDE
 .idea/
 
-# OpenSpec: генерируется через `openspec update` (см. README.md)
-/.opencode/commands/
-/.opencode/skills/
+# OpenSpec: служебные файлы генерации артефактов инструментами
+/.opencode/node_modules/
+/.opencode/package.json
+/.opencode/package-lock.json
+/.opencode/bun.lock

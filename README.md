@@ -59,11 +59,18 @@ SHALL/MUST — на английском.
 openspec/
 ├── config.yaml      # контекст проекта и правила для артефактов
 ├── README.md        # индекс: карта доменов, схема данных, глоссарий
+├── schemas/         # workflow-схема проекта (fork`spec-driven` → cln-flow)
+│   └── cln-flow/    #   schema.yaml + templates/*.md — правим здесь
 ├── specs/           # источник истины: как система работает СЕЙЧАС
 │   ├── auth/ users/ tasks/ task-groups/ assets/ files/
 │   ├── notifications/ wire/ errors/ query/ async/   (spec.md в каждой)
 └── changes/         # изменения в работе + archive/ (история)
 ```
+
+Change называется `<ticket>-<slug>`, где `<ticket>` — номер задачи трекера в
+нижнем регистре (`ecom-1234-avatar-replace`); CLI заглавные в имени отвергает.
+Оригинальный номер и ссылка на work package — первой строкой `proposal.md`
+под заголовком (`**Задача**: ECOM-1234 — <ссылка>`): workflow берёт его оттуда.
 
 ### Когда нужен change
 
@@ -87,25 +94,40 @@ propose → apply → archive.
 ### Поток
 
 ```
-explore → propose (proposal + specs deltas + design + tasks) → review
-        → apply (задачи из tasks.md) → archive (deltas → specs/, история в archive/)
+propose (proposal + specs deltas + design + tasks) → анализ и утверждение
+        → apply (задачи из tasks.md) → review + тесты → critic
+        → verification.md → archive (deltas → specs/, история в archive/)
 ```
 
-1. **explore** — обдумать идею без кода (опционально).
-2. **propose** — агент создаёт change: `proposal.md` (зачем, scope),
-   `specs/` (дельты требований ADDED/MODIFIED/REMOVED), `design.md`
-   (технический подход, когда нужен), `tasks.md` (чеклист).
-3. **review** — правим артефакты до кода.
-4. **apply** — реализация по tasks.md, отмечаем галочки по ходу.
-5. **archive** — дельты вливаются в `openspec/specs/`, change уезжает в
-   `changes/archive/YYYY-MM-DD-<id>/`.
+1. **propose** — человек запускает `@openspec-propose <ticket> <текст>`; агент
+   создаёт change: `proposal.md` (зачем, scope, строка `**Задача**`), `specs/`
+   (дельты ADDED/MODIFIED/REMOVED), `design.md` (когда нужен), `tasks.md`.
+2. **анализ** — субагент `analyst` читает work package и сверяет артефакты с
+   задачей, main-спеками и `AGENTS.md`; расхождения правятся через
+   `@openspec-update-change`. Дальше — только после утверждения.
+3. **apply** — `@openspec-apply-change`: реализация по `tasks.md`, галочки по
+   ходу, проверки (`cs-check`, `phpstan`, `phpunit`) на каждой группе задач.
+4. **review + тесты** — параллельно субагенты `reviewer` (конвенции `AGENTS.md`)
+   и `test-runner` (итоги прогонов без логов).
+5. **critic** — независимая проверка по `BASE` (без рассуждений исполнителя),
+   не больше двух раундов; затем заполняется `verification.md`.
+6. **archive** — дельты вливаются в `openspec/specs/`, change уезжает в
+   `changes/archive/YYYY-MM-DD-<id>/`; статус задачи в трекере обновляется
+   только по явному согласию.
 
-Артефакты правятся в любой момент — фазовых ворот нет.
+Шаги 2–6 ведает workflow **`task-flow`** (см. ниже): он вызывает openspec-скиллы
+и добавляет гейты, которых в OpenSpec нет. Планирование остаётся ручным —
+propose запускает человек.
+
+Артефакты правятся в любой момент — фазовых ворот нет, кроме двух явных:
+утверждение плана перед реализацией и `verification.md` перед архивацией.
 
 ### Установка и обновление OpenSpec
 
-Файлы скиллов opencode (`.opencode/skills/`) генерируются OpenSpec и **не
-хранятся в git** — каждый разработчик создаёт их у себя.
+Файлы скиллов opencode (`.opencode/skills/`) и файлы workflow (`.opencode/agents/`,
+`.opencode/skills/task-flow/`) **версионируются в git** — разработчик получает их
+сразу после клона. Не отслеживаются только служебные `.opencode/node_modules/`,
+`package.json` и lock-файлы (см. `.gitignore`).
 
 Шаг 1 — установить CLI (standalone, Node не нужен):
 
@@ -125,27 +147,58 @@ openspec update
 После этого в opencode появляются скиллы `openspec-*` — модель видит их
 нативно и подхватывает сама. Вызвать конкретный можно явно: `@openspec-propose`
 в промпте или фразой «используй openspec-propose».
-Версию файлов держим одну на всю команду: обновляем через
-`openspec update` и фиксируем версию CLI в обсуждении PR.
+Сгенерированные файлы коммитятся, поэтому версия у команды одна по определению;
+обновляем их отдельным коммитом через `openspec update` (после апгрейда CLI),
+чтобы diff был виден отдельно от изменений проекта.
+
+**Не правьте `.opencode/skills/openspec-*` руками** — `openspec update` сравнивает
+тело каждого SKILL.md с эталоном и перезаписывает его, честно сообщая
+«skill files differ from the generated content». У OpenSpec есть штатные слои
+кастомизации, которые update не трогает:
+
+| Хочешь изменить | Куда |
+|-----------------|------|
+| как пишутся артефакты, их шаблоны, набор артефактов, граф зависимостей | `openspec/schemas/cln-flow/` (`schema.yaml` + `templates/*.md`; форк сделан, он резолвится выше встроенной `spec-driven`) |
+| конвенции проекта, правила к артефактам, подсказки apply/archive | `openspec/config.yaml` (`context`, `rules`, `operations.*.guidance`) |
+| порядок работы и гейты проверки | `.opencode/skills/task-flow/` + `.opencode/agents/` |
+
+Схеме — `openspec schema validate cln-flow`, `openspec schema which --all`,
+`openspec templates --schema cln-flow --json`. Команды `schema` помечены как
+experimental; форк — копия, изменения из новых версий пакета в него не
+подтягиваются автоматически, их мерджируют руками.
 
 Альтернатива без standalone-бинаря: `npm install -g @fission-ai/openspec`
 (нужен Node.js ≥ 22.12).
 
 ### Скиллы opencode
 
-| Скилл | Что делает |
-|-------|-----------|
-| `openspec-explore` | обдумать идею с чтением кода |
-| `openspec-propose` | создать change (артефакты планирования) |
-| `openspec-apply-change` | реализовать задачи из `tasks.md` |
-| `openspec-update-change` | скорректировать артефакты плана |
-| `openspec-sync-specs` | влить дельты в main-спеки (без архива) |
-| `openspec-archive-change` | завершить и заархивировать change |
+| Скилл | Что делает | Чей |
+|-------|-----------|-----|
+| `openspec-explore` | обдумать идею с чтением кода | генерируется |
+| `openspec-propose` | создать change (артефакты планирования) | генерируется |
+| `openspec-apply-change` | реализовать задачи из `tasks.md` | генерируется |
+| `openspec-update-change` | скорректировать артефакты плана | генерируется |
+| `openspec-sync-specs` | влить дельты в main-спеки (без архива) | генерируется |
+| `openspec-archive-change` | завершить и заархивировать change | генерируется |
+| [`task-flow`](.opencode/skills/task-flow/SKILL.md) | полный цикл задачи: анализ → утверждение → реализация → review/тесты → critic → verification → archive | проект |
 
 Расширенный профиль (`openspec-new-change`, `openspec-continue-change`,
 `openspec-ff-change`, `openspec-verify-change`,
 `openspec-bulk-archive-change`, `openspec-onboard`) включается через
 `openspec config profile` + `openspec update`.
+
+### Агенты проверки
+
+Определения — в `.opencode/agents/`, вызываются как субагенты (изоляция
+контекста: критик не видит рассуждений исполнителя). Все четверо без права
+править код; модель наследуется от сессии.
+
+| Агент | Роль | Вход |
+|-------|------|------|
+| `analyst` | сверяет артефакты change с задачей из WorkHub, main-спеками и `AGENTS.md`; ищет потерянные AC и расхождения | номер/текст задачи, имя change |
+| `reviewer` | конвенции проекта: слои, суффиксы ролей, границы зависимостей, DI-регистрация, формат ошибок, тесты | `BASE` (диф от него) |
+| `test-runner` | `cs-check`, `phpstan`, `phpunit`, `ArchitectureTest` — только итоги и разбор падений | затронутые области |
+| `critic` | состязательная проверка: трассировка AC, edge cases, конкурентность, откат посередине, миграции, качество тестов | задача + AC, имя change, `BASE` |
 
 ### Definition of Done
 
@@ -156,7 +209,11 @@ Change считается сделанным, когда:
 - [ ] `composer phpstan` проходит;
 - [ ] добавлены/обновлены тесты и `php bin/phpunit` проходит;
 - [ ] дельты спек отражают итоговое поведение (и влиты в `specs/` при archive);
-- [ ] при изменении поведения обновлён `README.md` / `AGENTS.md`.
+- [ ] при изменении поведения обновлён `README.md` / `AGENTS.md`;
+- [ ] `reviewer` и `test-runner` отработаны, `critic` дал `PASS` (или решение
+      после второго `NEEDS_WORK` принял пользователь);
+- [ ] заполнен `verification.md` — трассировка AC, замечания, фактические прогоны,
+      раунды критика, хвосты.
 
 Команды выполняются из `api/` (в Docker — через
 `docker compose -f ../docker/docker-compose.yml exec php ...`, см.
