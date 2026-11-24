@@ -8,7 +8,9 @@
 # IDE
 .idea/
 
-# OpenSpec: служебные файлы генерации артефактов инструментами
+# OpenSpec: служебные файлы генерации (npm/bun-обвязка вокруг скиллов).
+# Сами скиллы (.agents/skills/) и агенты (.opencode/agents/) версионируются:
+# их должны получать все разработчики сразу после клона.
 /.opencode/node_modules/
 /.opencode/package.json
 /.opencode/package-lock.json
