@@ -1,0 +1,42 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // Коммиты — исключительно руками пользователя. Ни основная сессия, ни субагенты
+  // не создают и не переписывают историю.
+  //
+  // Как это работает:
+  // - правила ниже добавляются после базовой политики (allow всего) и действуют
+  //   на всех агентов; свои разрешения у агентов этих deny не отменяют;
+  // - сохранённые «Allow always» не переопределяют configured deny;
+  // - составные команды разбираются сканером на подкоманды, поэтому
+  //   `git add -A && git commit -m …` блокируется по второй подкоманде;
+  //   динамический синтаксис (eval и т.п.) при наличии deny падает с ошибкой
+  //   сканера, а не выполняется.
+  //
+  // Вторая форма каждого правила (git * … *) ловит опции перед подкомандой
+  // (`git -c core.editor=true commit`). Цена — редкое ложное срабатывание на
+  // read-команде, где слово commit стоит отдельным аргументом; такие случаи
+  // формулируются иначе, и молча снимать deny не нужно — лучше уточнить у
+  // пользователя.
+  "permissions": [
+    // создаёт коммит
+    { "action": "shell", "resource": "git commit *", "effect": "deny" },
+    { "action": "shell", "resource": "git * commit *", "effect": "deny" },
+
+    // создают коммит как побочный эффект или переписывают историю
+    { "action": "shell", "resource": "git merge *", "effect": "deny" },
+    { "action": "shell", "resource": "git * merge *", "effect": "deny" },
+    { "action": "shell", "resource": "git rebase *", "effect": "deny" },
+    { "action": "shell", "resource": "git * rebase *", "effect": "deny" },
+    { "action": "shell", "resource": "git cherry-pick *", "effect": "deny" },
+    { "action": "shell", "resource": "git * cherry-pick *", "effect": "deny" },
+    { "action": "shell", "resource": "git revert *", "effect": "deny" },
+    { "action": "shell", "resource": "git * revert *", "effect": "deny" },
+    { "action": "shell", "resource": "git am *", "effect": "deny" },
+    { "action": "shell", "resource": "git * am *", "effect": "deny" },
+
+    // метки и push — тоже действия человека; раскомментируй, если нужно
+    // { "action": "shell", "resource": "git tag *", "effect": "deny" },
+    // { "action": "shell", "resource": "git push *", "effect": "deny" },
+  ]
+}
