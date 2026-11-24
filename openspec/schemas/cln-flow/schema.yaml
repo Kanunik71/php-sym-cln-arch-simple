@@ -337,6 +337,11 @@ artifacts:
         not a verdict - go back and run the checks. After two `NEEDS_WORK` rounds
         the decision belongs to the user - record their decision instead of a
         third round.
+      - **Record how the roles were run** - `subagents` or `inline`. The role texts
+        live in `.agents/roles/`, while rights and the launching mechanism live in
+        the tool's adapters (`.opencode/agents/` for OpenCode). An inline critic
+        sees the author's reasoning, so its independence is lower; that difference
+        belongs in the record, not in the prose of the verdict.
       - Anything deferred stays visible: Outstanding must be empty or name who
         owns each item.
 
