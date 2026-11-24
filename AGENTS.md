@@ -22,10 +22,9 @@
 
 ## Порядок работы над задачей
 
-Ведает workflow `task-flow` (`.agents/skills/task-flow/SKILL.md`): анализ по тексту
-запроса → утверждение плана → реализация по `tasks.md` → тесты → `verify` →
-`reviewer` → `critic` → `verification.md` → архивация. Полное описание шагов —
-в `README.md` («Поток»).
+Канон потока — `openspec/README.md` («Поток работы над change»): propose →
+`@custom-analyse` → apply → `@custom-verify` → archive. DoD — корневой
+`README.md` («Поток»).
 
 - Имя change — `<slug>`, задача трекера в него не входит. Трекер подключается
   только по указанию в тексте (строка `**Трекер**:` в `proposal.md`); его

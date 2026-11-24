@@ -3,7 +3,7 @@ version: 1
 description: >-
   cln-arch-sym-simple workflow - proposal → specs → design → tasks → verification
   (fork of spec-driven; slug-only change names, optional tracker, verification
-  written by task-flow)
+  written by custom-verify)
 artifacts:
   - id: proposal
     generates: proposal.md
@@ -12,7 +12,7 @@ artifacts:
     instruction: |
       Create the proposal document that establishes WHY this change is needed.
 
-      Change identity (project convention, enforced by task-flow). The input to a
+      Change identity (project convention; see openspec/README.md flow). The input to a
       change is plain text. A tracker reference is NOT part of the identity:
       - Directory name: `<slug>` in kebab-case describing the work, e.g.
         `avatar-replace`. No ticket prefix and no invented id - even when the
@@ -305,7 +305,7 @@ artifacts:
     instruction: |
       Record HOW the change was verified: conventions review, test runs and the
       independent critic rounds. This artifact is written AFTER implementation,
-      by the project's `task-flow` workflow - not during planning.
+      by the project's `custom-verify` skill - not during planning.
 
       Do not create it while code for the change does not exist: the sections can
       only hold guesses. If you are asked to write it before implementation is
@@ -358,4 +358,4 @@ apply:
     From `api/` run `composer cs-check`, `composer phpstan` and `php bin/phpunit`
     (in Docker: `docker compose -f ../docker/docker-compose.yml exec php <cmd>`)
     before marking a task group complete. When the last task is checked, the
-    project's `task-flow` workflow fills `verification.md` before archiving.
+    `custom-verify` skill fills `verification.md` before archiving.

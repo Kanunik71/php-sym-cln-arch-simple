@@ -59,14 +59,11 @@ context: |
   reviewer, прогоны с номером и хешем дерева, раунды критика — см. артефакт
   `verification`), а изменения поведения отражены в `openspec/specs/`.
 
-  Порядок работ по change ведает workflow `task-flow` (`.agents/skills/task-flow/`
-  + субагенты `analyst`, `test-runner`, `reviewer`, `critic`): планирование —
-  `openspec-propose`, реализация — `openspec-apply-change`, затем по шагам
-  `test-runner` → `openspec-verify-change` → `reviewer` → `critic`, заполнение
-  `verification.md`, затем `openspec-archive-change`. Инвариант цикла: любая
-  правка после прогона возвращает на тесты — вердикт без действующего прогона не
-  считается. Статус задачи в трекере обновляется только по явному согласию
-  пользователя.
+  Порядок работ по change — `openspec/README.md` («Поток работы над change»):
+  `openspec-propose` → скилл `custom-analyse` → `openspec-apply-change` → скилл
+  `custom-verify` → `openspec-archive-change`. Инвариант: любая правка кода после
+  прогона → снова `test-runner`; вердикт без прогона на текущем дереве не считается.
+  Статус задачи в трекере — только по явному согласию пользователя.
 
 rules:
   proposal:
@@ -93,7 +90,7 @@ rules:
     - "Задачи по Application называют роль класса (Action/Query/Lifecycle, Model, Port, Policy, Mapper) и раздел AGENTS.md, которому следует реализация"
     - "Шаги, которые нельзя выполнить до archive (обновление статуса в трекере, сама архивация) — plain-буллетами в `## Workflow follow-up`, не чекбоксами: они вне tracked-прогресса"
   verification:
-    - Артефакт пишется после реализации, ведает им workflow task-flow; на этапе планирования его не создавать
+    - Артефакт пишется после реализации в рамках `custom-verify`; на этапе планирования его не создавать
     - Каждый `#### Scenario:` дельт и каждый критерий из текста `**Задачи**` (при заполненном `**Трекер**` — и формулировки work package) — отдельной строкой трассировки AC с ссылкой на код и на тест
     - "Прогон фиксируется фактами: команда, окружение (host или docker), результат, номер прогона и git rev-parse HEAD; недоступные БД/Redis/RabbitMQ — «не запускалось», это не passing; правка после прогона требует нового прогона"
     - "Отчёт openspec-verify-change попадает в артефакт тремя измерениями (Completeness, Correctness, Coherence); «Not verified (причина)» пишется как причина пропуска, а не убирается"
@@ -107,7 +104,7 @@ operations:
       - Запускай `composer cs-check`, `composer phpstan` и `php bin/phpunit` из api/ (через docker), прежде чем отмечать группу выполненной
       - Перед правкой кода сверься с разделом AGENTS.md своего слоя; отступление от архитектурного правила согласуй с пользователем и зафиксируй в design.md
       - Отмечай чекбоксы tasks.md по мере работы; обновляй спеки openspec при изменении поведения
-      - "После последней задачи — порядок task-flow: test-runner → openspec-verify-change → reviewer → critic, затем заполни verification.md; любая правка возвращает на test-runner"
+      - "После последней задачи — @custom-verify (test-runner → openspec-verify-change → reviewer → critic), затем verification.md; любая правка кода возвращает на test-runner"
   archive:
     guidance:
       - Перед завершением перечисли, что поставляется и какие файлы спек обновлены

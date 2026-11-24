@@ -102,41 +102,23 @@ propose → apply → archive.
 
 ### Поток
 
-```
-propose (proposal + specs deltas + design + tasks) → анализ и утверждение
-        → apply → тесты → verify → reviewer → critic ─┐
-              ↑                                        │ правки — возврат на тесты
-              └────────────────────────────────────────┘
-        → verification.md → archive (deltas → specs/, история в archive/)
-```
+Полная **диаграмма**, легенда (человек / оркестратор / субагент / скилл) и
+нумерация — в [`openspec/README.md`](openspec/README.md) («Поток работы над
+change»). Скиллы шагов 2 и 5 — **`custom-analyse`**, **`custom-verify`**.
 
-1. **propose** — человек запускает `@openspec-propose <текст запроса>`; агент
-   создаёт change `<slug>`: `proposal.md` (зачем, scope, строки `**Задача**` и,
-   при работе по задаче трекера, `**Трекер**`), `specs/`
-   (дельты ADDED/MODIFIED/REMOVED), `design.md` (когда нужен), `tasks.md`.
-   Тикет не обязателен и не запрашивается: нужен трекер — его упоминают в тексте.
-2. **анализ** — субагент `analyst` сверяет артефакты с текстом запроса (и с
-   work package, если на него указывают), main-спеками и `AGENTS.md`; расхождения
-   правятся через `@openspec-update-change`. Дальше — только после утверждения.
-3. **apply** — `@openspec-apply-change`: реализация по `tasks.md`, галочки по
-   ходу, проверки (`cs-check`, `phpstan`, `phpunit`) на каждой группе задач.
-4. **тесты** — субагент `test-runner`: итоги прогонов и разбор падений без логов,
-   с номером прогона и хешем дерева.
-5. **verify** — `@openspec-verify-change`: реализация ↔ план, три измерения
-   (Completeness / Correctness / Coherence), уровни `CRITICAL`/`WARNING`/`SUGGESTION`.
-   Отчёт advisory: решаешь ты, но незакрытый `CRITICAL` — блок.
-6. **reviewer** — субагент `reviewer`: конвенции `AGENTS.md`, которых не видит
-   ни `verify`, ни линтер (слои, суффиксы, границы зависимостей, DI, дельты спек).
-7. **critic** — независимая проверка по `BASE` (без рассуждений исполнителя),
-   не больше двух раундов; затем заполняется `verification.md`.
-8. **archive** — дельты вливаются в `openspec/specs/`, change уезжает в
-   `changes/archive/YYYY-MM-DD-<id>/`. Статус задачи в трекере обновляется только
-   по явному согласию и только если `**Трекер**` заполнен; без него шаг просто
-   не выполняется и хвостом не считается.
+Кратко:
 
-Шаги 2–8 ведает workflow **`task-flow`** (см. ниже): он вызывает openspec-скиллы
-и добавляет то, чего в OpenSpec нет — прогоны, ревью конвенций, критика и петлю
-между ними. Планирование остаётся ручным — propose запускает человек.
+1. **propose** — человек: `@openspec-propose`; артефакты change в `openspec/changes/<slug>/`.
+2. **custom-analyse** — `@custom-analyse`: analyst → СТОП → `@openspec-update-change`.
+3. **ветка** `feat/<slug>` — оркестратор после согласия.
+4. **apply** — `@openspec-apply-change`, код в основной сессии.
+5. **custom-verify** — `@custom-verify`: 4.1 `test-runner` → 4.2 `openspec-verify-change` → 4.3 `reviewer` → 4.4 `critic` (≤ 2 раунда).
+6. **корректировки** — 6.1 код → снова 4.1; 6.2 план → снова шаг 2 (не больше 3 итераций).
+7. **финальное ревью** — человек (беглый осмотр).
+8. **archive** — `verification.md`, затем `@openspec-archive-change` по согласию.
+
+Шаги идут по схеме вручную или через `@custom-analyse` / `@custom-verify`.
+Propose запускает человек; коммиты — тоже человек.
 
 Коммиты делает **только человек**. Агент готовит их (staging, разбивку, тексты), но
 `git commit` не выполняет — ни в основной сессии, ни в субагентах. Текстом это
@@ -144,13 +126,11 @@ propose (proposal + specs deltas + design + tasks) → анализ и утве�
 (`permissions: deny` на `git commit`, `git merge`, `git rebase`, `git cherry-pick`,
 `git revert`, `git am`).
 
-Инвариант цикла: **любая правка после прогона обнуляет прогон**. Зелёным и
-действующим считается только прогон на текущем дереве; вердикт, не подкреплённый
-таким прогоном, — не готовность. Поэтому после исправлений из шагов 5–7 шаг 4
-повторяется, а `verification.md` хранит номер прогона и хеш.
+Инвариант цикла: **любая правка кода после прогона → снова 4.1 test-runner**.
+Зелёным считается только прогон на текущем дереве; `verification.md` хранит номер
+прогона и хеш. Ошибка в плане (6.2) возвращает на **шаг 2**, не на patch кода.
 
-Артефакты правятся в любой момент — фазовых ворот нет, кроме двух явных:
-утверждение плана перед реализацией и `verification.md` перед архивацией.
+Явные ворота: СТОП на плане (шаг 2), финальное ревью (шаг 7), согласие на archive.
 
 ### Установка и обновление OpenSpec
 
@@ -159,7 +139,7 @@ propose (proposal + specs deltas + design + tasks) → анализ и утве�
 только свою папку, получают по ссылке на каждый скилл (`.claude/skills/openspec-*`
 и т.п.). OpenCode читает `.agents/skills/` сам, поэтому для него ссылок нет.
 
-Версионируются в git: `.agents/skills/` (и `openspec-*`, и наш `task-flow`),
+Версионируются в git: `.agents/skills/` (и `openspec-*`, и `custom-analyse` / `custom-verify`),
 `.agents/roles/` (тексты ролей проверки) и адаптеры `.opencode/agents/`. Не
 отслеживаются служебные `.opencode/node_modules/`, `package.json`, lock-файлы
 (см. `.gitignore`).
@@ -202,7 +182,7 @@ built-in-скиллов целиком, включая файлы, добавл�
 |-----------------|------|
 | как пишутся артефакты, их шаблоны, набор артефактов, граф зависимостей | `openspec/schemas/cln-flow/` (`schema.yaml` + `templates/*.md`; форк сделан, он резолвится выше встроенной `spec-driven`) |
 | конвенции проекта, правила к артефактам, подсказки apply/archive | `openspec/config.yaml` (`context`, `rules`, `operations.*.guidance`) |
-| порядок работы и гейты проверки | `.agents/skills/task-flow/` (своё имя → `update` его не касается) |
+| поток change, диаграмма, субагенты | `openspec/README.md`; скиллы `custom-analyse/`, `custom-verify/` |
 | что именно проверяет каждая роль | `.agents/roles/<роль>.md` — канон, общий для всех инструментов |
 | как роль запускается и с какими правами (OpenCode) | `.opencode/agents/<роль>.md` — тонкий адаптер: `mode: subagent`, `permissions`, ссылка на канон |
 | набор установленных воркфлоу | `openspec config profile` (у нас ядро + `verify`) |
@@ -230,7 +210,8 @@ built-in-скиллов целиком, включая файлы, добавл�
 | `openspec-update-change` | скорректировать артефакты плана | генерируется |
 | `openspec-sync-specs` | влить дельты в main-спеки (без архива) | генерируется |
 | `openspec-archive-change` | завершить и заархивировать change | генерируется |
-| [`task-flow`](.agents/skills/task-flow/SKILL.md) | полный цикл задачи: анализ → утверждение → apply → тесты → verify → reviewer → critic → verification → archive | проект |
+| [`custom-analyse`](.agents/skills/custom-analyse/SKILL.md) | шаг 2: analyst, СТОП, update-change | проект |
+| [`custom-verify`](.agents/skills/custom-verify/SKILL.md) | шаги 5–8: прогоны, verify, reviewer, critic, verification, archive | проект |
 
 Профиль воркфлоу — ядро + `verify` (`openspec config profile`, затем
 `openspec update`). Остальные опции (`new`, `continue`, `ff`, `bulk-archive`,
@@ -256,7 +237,7 @@ OpenCode к нему добавляется тонкий адаптер `.openco
 | `critic` | `.agents/roles/critic.md` | состязательная проверка: трассировка AC, edge cases, конкурентность, откат посередине, миграции, качество и свежесть тестов | задача + AC, имя change, `BASE` |
 
 Новый инструмент подключается добавлением своего адаптера (и ссылкой на
-`.agents/skills/task-flow`, если он не читает общий корень скиллов) — тексты
+`.agents/skills/custom-analyse` и `custom-verify`, если не читает общий корень) — тексты
 ролей при этом не дублируются.
 
 ### Definition of Done
