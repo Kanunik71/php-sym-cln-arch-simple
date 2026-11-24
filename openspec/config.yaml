@@ -51,17 +51,20 @@ context: |
   Команды проверки (из `api/`; в Docker:
   `docker compose -f ../docker/docker-compose.yml exec php <cmd>`):
   `composer cs-check`, `composer phpstan`, `php bin/phpunit`.
-  Изменение считается готовым, только когда все три проходят, tasks.md отмечен
-  полностью, заполнен `verification.md` (трассировка AC, замечания reviewer,
-  прогоны, раунды критика — см. артефакт `verification`), а изменения поведения
-  отражены в `openspec/specs/`.
+  Изменение считается готовым, только когда все три проходят на текущем дереве,
+  tasks.md отмечен полностью, `openspec-verify-change` не даёт незакрытых
+  CRITICAL, заполнен `verification.md` (трассировка AC, отчёт verify, замечания
+  reviewer, прогоны с номером и хешем дерева, раунды критика — см. артефакт
+  `verification`), а изменения поведения отражены в `openspec/specs/`.
 
-  Порядок работ по change ведает workflow `task-flow` (`.opencode/skills/task-flow/`
-  + субагенты `analyst`, `reviewer`, `test-runner`, `critic`): планирование —
-  `openspec-propose`, реализация — `openspec-apply-change`, проверка —
-  `reviewer`/`test-runner`/`critic`, заполнение `verification.md`, затем
-  `openspec-archive-change`. Статус задачи в трекере обновляется только по явному
-  согласию пользователя.
+  Порядок работ по change ведает workflow `task-flow` (`.agents/skills/task-flow/`
+  + субагенты `analyst`, `test-runner`, `reviewer`, `critic`): планирование —
+  `openspec-propose`, реализация — `openspec-apply-change`, затем по шагам
+  `test-runner` → `openspec-verify-change` → `reviewer` → `critic`, заполнение
+  `verification.md`, затем `openspec-archive-change`. Инвариант цикла: любая
+  правка после прогона возвращает на тесты — вердикт без действующего прогона не
+  считается. Статус задачи в трекере обновляется только по явному согласию
+  пользователя.
 
 rules:
   proposal:
@@ -90,7 +93,8 @@ rules:
   verification:
     - Артефакт пишется после реализации, ведает им workflow task-flow; на этапе планирования его не создавать
     - Каждый `#### Scenario:` дельт и каждый критерий приёмки трекера — отдельной строкой трассировки AC с ссылкой на код и на тест
-    - "Прогон фиксируется фактами: команда, окружение (host или docker), результат; недоступные БД/Redis/RabbitMQ — «не запускалось», это не passing"
+    - "Прогон фиксируется фактами: команда, окружение (host или docker), результат, номер прогона и git rev-parse HEAD; недоступные БД/Redis/RabbitMQ — «не запускалось», это не passing; правка после прогона требует нового прогона"
+    - "Отчёт openspec-verify-change попадает в артефакт тремя измерениями (Completeness, Correctness, Coherence); «Not verified (причина)» пишется как причина пропуска, а не убирается"
     - Замечания reviewer сохраняют цитату правила и severity; неисправленный minor переезжает в «Хвосты», а не исчезает
     - Раунды критика — поимённо; после второго NEEDS_WORK фиксируется решение пользователя, третьего раунда не бывает
 
@@ -100,9 +104,10 @@ operations:
       - Запускай `composer cs-check`, `composer phpstan` и `php bin/phpunit` из api/ (через docker), прежде чем отмечать группу выполненной
       - Перед правкой кода сверься с разделом AGENTS.md своего слоя; отступление от архитектурного правила согласуй с пользователем и зафиксируй в design.md
       - Отмечай чекбоксы tasks.md по мере работы; обновляй спеки openspec при изменении поведения
-      - После последней задачи прогони проверку через workflow `task-flow` (reviewer, test-runner, critic) и заполни `verification.md` — до этого change не готов к archive
+      - "После последней задачи — порядок task-flow: test-runner → openspec-verify-change → reviewer → critic, затем заполни verification.md; любая правка возвращает на test-runner"
   archive:
     guidance:
       - Перед завершением перечисли, что поставляется и какие файлы спек обновлены
       - "Файл `verification.md` должен быть заполнен: незавершённые артефакты archive показывает как warning и просит подтверждения — подтверждать только по явному слову пользователя"
+      - "Не архивировать при незакрытом CRITICAL из verify, NEEDS_WORK критика без решения пользователя или прогоне, сделанном до последних правок"
       - Статус work package в трекере менять только после явного согласия пользователя, вместе с changelog-комментарием

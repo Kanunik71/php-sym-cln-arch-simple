@@ -95,7 +95,9 @@ propose → apply → archive.
 
 ```
 propose (proposal + specs deltas + design + tasks) → анализ и утверждение
-        → apply (задачи из tasks.md) → review + тесты → critic
+        → apply → тесты → verify → reviewer → critic ─┐
+              ↑                                        │ правки — возврат на тесты
+              └────────────────────────────────────────┘
         → verification.md → archive (deltas → specs/, история в archive/)
 ```
 
@@ -107,36 +109,52 @@ propose (proposal + specs deltas + design + tasks) → анализ и утве�
    `@openspec-update-change`. Дальше — только после утверждения.
 3. **apply** — `@openspec-apply-change`: реализация по `tasks.md`, галочки по
    ходу, проверки (`cs-check`, `phpstan`, `phpunit`) на каждой группе задач.
-4. **review + тесты** — параллельно субагенты `reviewer` (конвенции `AGENTS.md`)
-   и `test-runner` (итоги прогонов без логов).
-5. **critic** — независимая проверка по `BASE` (без рассуждений исполнителя),
+4. **тесты** — субагент `test-runner`: итоги прогонов и разбор падений без логов,
+   с номером прогона и хешем дерева.
+5. **verify** — `@openspec-verify-change`: реализация ↔ план, три измерения
+   (Completeness / Correctness / Coherence), уровни `CRITICAL`/`WARNING`/`SUGGESTION`.
+   Отчёт advisory: решаешь ты, но незакрытый `CRITICAL` — блок.
+6. **reviewer** — субагент `reviewer`: конвенции `AGENTS.md`, которых не видит
+   ни `verify`, ни линтер (слои, суффиксы, границы зависимостей, DI, дельты спек).
+7. **critic** — независимая проверка по `BASE` (без рассуждений исполнителя),
    не больше двух раундов; затем заполняется `verification.md`.
-6. **archive** — дельты вливаются в `openspec/specs/`, change уезжает в
+8. **archive** — дельты вливаются в `openspec/specs/`, change уезжает в
    `changes/archive/YYYY-MM-DD-<id>/`; статус задачи в трекере обновляется
    только по явному согласию.
 
-Шаги 2–6 ведает workflow **`task-flow`** (см. ниже): он вызывает openspec-скиллы
-и добавляет гейты, которых в OpenSpec нет. Планирование остаётся ручным —
-propose запускает человек.
+Шаги 2–8 ведает workflow **`task-flow`** (см. ниже): он вызывает openspec-скиллы
+и добавляет то, чего в OpenSpec нет — прогоны, ревью конвенций, критика и петлю
+между ними. Планирование остаётся ручным — propose запускает человек.
+
+Инвариант цикла: **любая правка после прогона обнуляет прогон**. Зелёным и
+действующим считается только прогон на текущем дереве; вердикт, не подкреплённый
+таким прогоном, — не готовность. Поэтому после исправлений из шагов 5–7 шаг 4
+повторяется, а `verification.md` хранит номер прогона и хеш.
 
 Артефакты правятся в любой момент — фазовых ворот нет, кроме двух явных:
 утверждение плана перед реализацией и `verification.md` перед архивацией.
 
 ### Установка и обновление OpenSpec
 
-Файлы скиллов opencode (`.opencode/skills/`) и файлы workflow (`.opencode/agents/`,
-`.opencode/skills/task-flow/`) **версионируются в git** — разработчик получает их
-сразу после клона. Не отслеживаются только служебные `.opencode/node_modules/`,
-`package.json` и lock-файлы (см. `.gitignore`).
+С 2.x скиллы лежат **в одном месте** — `.agents/skills/` (vendor-neutral корень),
+плюс маркер владения `.agents/skills/.openspec-target`; инструменты, которые читают
+только свою папку, получают по ссылке на каждый скилл (`.claude/skills/openspec-*`
+и т.п.). OpenCode читает `.agents/skills/` сам, поэтому для него ссылок нет.
 
-Шаг 1 — установить CLI (standalone, Node не нужен):
+Версионируются в git: `.agents/skills/` (и `openspec-*`, и наш `task-flow`),
+`.opencode/agents/`. Не отслеживаются служебные `.opencode/node_modules/`,
+`package.json`, lock-файлы (см. `.gitignore`).
+
+Шаг 1 — установить CLI 2.x (standalone, Node не нужен):
 
 ```powershell
 irm https://openspec.dev/cli/install.ps1 | iex
+openspec version          # должно быть 2.x и (standalone)
 ```
 
-CLI кладётся в `%LOCALAPPDATA%\Programs\openspec` и добавляется в PATH;
-проверка — `openspec --version`.
+CLI кладётся в `%LOCALAPPDATA%\Programs\openspec`; если параллельно стоит
+npm-копия (`npm ls -g @fission-ai/openspec`), она может идти раньше по PATH —
+тогда `npm uninstall -g @fission-ai/openspec` и проверь `(Get-Command openspec).Source`.
 
 Шаг 2 — сгенерировать файлы скиллов в проекте:
 
@@ -147,58 +165,69 @@ openspec update
 После этого в opencode появляются скиллы `openspec-*` — модель видит их
 нативно и подхватывает сама. Вызвать конкретный можно явно: `@openspec-propose`
 в промпте или фразой «используй openspec-propose».
-Сгенерированные файлы коммитятся, поэтому версия у команды одна по определению;
-обновляем их отдельным коммитом через `openspec update` (после апгрейда CLI),
-чтобы diff был виден отдельно от изменений проекта.
 
-**Не правьте `.opencode/skills/openspec-*` руками** — `openspec update` сравнивает
-тело каждого SKILL.md с эталоном и перезаписывает его, честно сообщая
-«skill files differ from the generated content». У OpenSpec есть штатные слои
-кастомизации, которые update не трогает:
+**Версия CLI — одна на команду.** Пока у разработчиков разные версии, каждый
+`openspec update` возвращает тексты скиллов из *своей* версии, и в репозитории
+ходют туда-обратно чужие diffs. Обновляем CLI, потом `openspec update` отдельным
+коммитом (diff от обновления скиллов не должен смешиваться с изменениями проекта).
+Если скиллы в проекте дополнены ссылками для другого инструмента, на Windows для
+них нужны `git config --global core.symlinks true` и Developer Mode — иначе при
+checkout ссылка становится текстовым файликом, а `openspec update` заменяет её
+копией.
+
+**Не правьте `.agents/skills/openspec-*` руками** — `update` заменяет папки
+built-in-скиллов целиком, включая файлы, добавленные внутрь них. Штатные слои
+кастомизации, которые `update` не трогает:
 
 | Хочешь изменить | Куда |
 |-----------------|------|
 | как пишутся артефакты, их шаблоны, набор артефактов, граф зависимостей | `openspec/schemas/cln-flow/` (`schema.yaml` + `templates/*.md`; форк сделан, он резолвится выше встроенной `spec-driven`) |
 | конвенции проекта, правила к артефактам, подсказки apply/archive | `openspec/config.yaml` (`context`, `rules`, `operations.*.guidance`) |
-| порядок работы и гейты проверки | `.opencode/skills/task-flow/` + `.opencode/agents/` |
+| порядок работы и гейты проверки | `.agents/skills/task-flow/` (своё имя → `update` его не касается) + `.opencode/agents/` |
+| набор установленных воркфлоу | `openspec config profile` (у нас ядро + `verify`) |
 
 Схеме — `openspec schema validate cln-flow`, `openspec schema which --all`,
-`openspec templates --schema cln-flow --json`. Команды `schema` помечены как
-experimental; форк — копия, изменения из новых версий пакета в него не
-подтягиваются автоматически, их мерджируют руками.
+`openspec templates --schema cln-flow --json`. Команды `schema` в CLI всё ещё
+помечены experimental; форк — копия, изменения из новых версий пакета в него не
+подтягиваются, их мерджируют руками.
 
-Альтернатива без standalone-бинаря: `npm install -g @fission-ai/openspec`
-(нужен Node.js ≥ 22.12).
+Альтернатива без standalone-бинаря: `npm install -g @fission-ai/openspec` — но 2.x
+требует Node ≥ 22.20; если Node старее, npm всё равно поставит пакет (предупреждение
+`EBADENGINE`) и запустит его, однако рекомендованный путь — standalone, он носит
+рантайм с собой.
 
-### Скиллы opencode
+### Скиллы workflow
+
+Лежат в `.agents/skills/`; вызов — `@<имя>` в промпте или запросом своими словами.
 
 | Скилл | Что делает | Чей |
 |-------|-----------|-----|
 | `openspec-explore` | обдумать идею с чтением кода | генерируется |
 | `openspec-propose` | создать change (артефакты планирования) | генерируется |
 | `openspec-apply-change` | реализовать задачи из `tasks.md` | генерируется |
+| `openspec-verify-change` | сверить реализацию с артефактами change (Completeness / Correctness / Coherence) | генерируется |
 | `openspec-update-change` | скорректировать артефакты плана | генерируется |
 | `openspec-sync-specs` | влить дельты в main-спеки (без архива) | генерируется |
 | `openspec-archive-change` | завершить и заархивировать change | генерируется |
-| [`task-flow`](.opencode/skills/task-flow/SKILL.md) | полный цикл задачи: анализ → утверждение → реализация → review/тесты → critic → verification → archive | проект |
+| [`task-flow`](.agents/skills/task-flow/SKILL.md) | полный цикл задачи: анализ → утверждение → apply → тесты → verify → reviewer → critic → verification → archive | проект |
 
-Расширенный профиль (`openspec-new-change`, `openspec-continue-change`,
-`openspec-ff-change`, `openspec-verify-change`,
-`openspec-bulk-archive-change`, `openspec-onboard`) включается через
-`openspec config profile` + `openspec update`.
+Профиль воркфлоу — ядро + `verify` (`openspec config profile`, затем
+`openspec update`). Остальные опции (`new`, `continue`, `ff`, `bulk-archive`,
+`onboard`) при необходимости добавляются туда же.
 
 ### Агенты проверки
 
 Определения — в `.opencode/agents/`, вызываются как субагенты (изоляция
 контекста: критик не видит рассуждений исполнителя). Все четверо без права
-править код; модель наследуется от сессии.
+править код; модель наследуется от сессии. `verify` — не агент, а скилл: он
+дешёвый, детерминированный по форме отчёта и работает в основном контексте.
 
 | Агент | Роль | Вход |
 |-------|------|------|
 | `analyst` | сверяет артефакты change с задачей из WorkHub, main-спеками и `AGENTS.md`; ищет потерянные AC и расхождения | номер/текст задачи, имя change |
+| `test-runner` | `cs-check`, `phpstan`, `phpunit`, `ArchitectureTest` — итоги, разбор падений, номер прогона и хеш дерева | затронутые области, `BASE` |
 | `reviewer` | конвенции проекта: слои, суффиксы ролей, границы зависимостей, DI-регистрация, формат ошибок, тесты | `BASE` (диф от него) |
-| `test-runner` | `cs-check`, `phpstan`, `phpunit`, `ArchitectureTest` — только итоги и разбор падений | затронутые области |
-| `critic` | состязательная проверка: трассировка AC, edge cases, конкурентность, откат посередине, миграции, качество тестов | задача + AC, имя change, `BASE` |
+| `critic` | состязательная проверка: трассировка AC, edge cases, конкурентность, откат посередине, миграции, качество и свежесть тестов | задача + AC, имя change, `BASE` |
 
 ### Definition of Done
 
@@ -210,8 +239,11 @@ Change считается сделанным, когда:
 - [ ] добавлены/обновлены тесты и `php bin/phpunit` проходит;
 - [ ] дельты спек отражают итоговое поведение (и влиты в `specs/` при archive);
 - [ ] при изменении поведения обновлён `README.md` / `AGENTS.md`;
+- [ ] `openspec-verify-change` не даёт незакрытых `CRITICAL`;
 - [ ] `reviewer` и `test-runner` отработаны, `critic` дал `PASS` (или решение
       после второго `NEEDS_WORK` принял пользователь);
+- [ ] зелёный прогон `test-runner` относится к текущему дереву (правки после
+      прогона — значит прогон был раньше, а не был);
 - [ ] заполнен `verification.md` — трассировка AC, замечания, фактические прогоны,
       раунды критика, хвосты.
 

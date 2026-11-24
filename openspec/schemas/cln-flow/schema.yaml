@@ -296,6 +296,14 @@ artifacts:
         delta specs, plus the tracker's stated criteria - to the code that
         implements it and the test that proves it. An AC with no test is an open
         finding, not a pass.
+      - **Runs are numbered and tied to a tree hash.** A run only proves the tree it
+        was made on: after any edit, run the checks again and record the new run
+        number and `git rev-parse HEAD`. Record the last valid run explicitly, and
+        make every verdict refer to it.
+      - **Record the `openspec-verify-change` report** as its three dimensions
+        (Completeness, Correctness, Coherence) with CRITICAL/WARNING/SUGGESTION
+        items. `Not verified (<reason>)` belongs in the report, not dropped: a
+        skipped check stated as skipped is honest, a silent gap is not.
       - **Record each run as facts**: command, environment (host or
         `docker compose ... exec php`), result. A test that could not run
         (missing DB, Redis, RabbitMQ) is reported as "не запускалось" with the
@@ -304,8 +312,10 @@ artifacts:
         `path:line` sample they follow) and their severity; `minor` items that
         were not fixed go to Outstanding, they are not dropped.
       - **Critic rounds are recorded per round** with the verdict and what was
-        changed in response. After two `NEEDS_WORK` rounds the decision belongs
-        to the user - record their decision instead of a third round.
+        changed in response. A `PASS` without a green run on the current tree is
+        not a verdict - go back and run the checks. After two `NEEDS_WORK` rounds
+        the decision belongs to the user - record their decision instead of a
+        third round.
       - Anything deferred stays visible: Outstanding must be empty or name who
         owns each item.
 

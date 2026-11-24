@@ -28,15 +28,34 @@
 
 ## Проверки
 
-| Команда | Окружение | Результат |
-|---------|-----------|-----------|
-| `composer cs-check` | host / `docker compose … exec php` | OK |
-| `composer phpstan` | | OK |
-| `php bin/phpunit` | | <passed>/<total>, failed: <n> |
+Прогон считается действующим только если сделан на дереве, к которому относится вердикт. Правка после прогона требует нового прогона — поэтому прогоны нумеруются и хранят хеш.
+
+| # | Команда | Окружение | Дерево | Результат |
+|---|---------|-----------|--------|-----------|
+| 1 | `composer cs-check` | host / `docker compose … exec php` | `<git rev-parse HEAD>` | OK |
+| 1 | `composer phpstan` | | тот же хеш | OK |
+| 1 | `php bin/phpunit` | | тот же хеш | <passed>/<total>, failed: <n> |
+| 1 | `ArchitectureTest` | | тот же хеш | OK |
+
+Последний действующий прогон: **№<n>** на дереве `<hash>` — все вердикты ниже относятся к нему.
 
 Падения: нет | <Тест.Имя> → <вероятная причина> → <связь с изменениями: да/нет/неизвестно>
 
 Не запускалось: нет | <что и почему — недоступная БД, Redis, RabbitMQ; не считается passing>
+
+## Отчёт verify
+
+Реализация ↔ артефакты change (`openspec-verify-change`).
+
+| Измерение | Статус |
+|-----------|--------|
+| Completeness | <X/Y tasks, N reqs> |
+| Correctness | <M/N reqs covered> |
+| Coherence | <Followed / issues> |
+
+- [CRITICAL] <что> — <`path:line`> → <что сделано>
+- [WARNING] <что> — <причина пропуска: «Not verified (…)» тоже сюда, с обоснованием>
+- [SUGGESTION] <что> → в «Хвосты»
 
 ## Критик
 
