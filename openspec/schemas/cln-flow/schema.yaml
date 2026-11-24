@@ -2,7 +2,8 @@ name: cln-flow
 version: 1
 description: >-
   cln-arch-sym-simple workflow - proposal → specs → design → tasks → verification
-  (fork of spec-driven; TICKET in the change name, verification written by task-flow)
+  (fork of spec-driven; slug-only change names, optional tracker, verification
+  written by task-flow)
 artifacts:
   - id: proposal
     generates: proposal.md
@@ -11,16 +12,35 @@ artifacts:
     instruction: |
       Create the proposal document that establishes WHY this change is needed.
 
-      Change identity (project convention, enforced by task-flow):
-      - The change directory is named `<ticket>-<slug>`, where `<ticket>` is the
-        tracker work package id in LOWERCASE (e.g. `ecom-1234-avatar-replace` for
-        ECOM-1234). `openspec new change` rejects uppercase names - the original
-        ticket id goes in the `**Задача**:` line below, not in the directory name.
-        Use the id the user gave; if none was given, ask before creating the change.
-      - The first line under `# Proposal` MUST be `**Задача**: <TICKET> — <ссылка на
-        work package>` (или исходный текст задачи, если трекер недоступен).
-        Everything downstream (analyst, critic, WorkHub status updates) reads the
-        ticket from this line.
+      Change identity (project convention, enforced by task-flow). The input to a
+      change is plain text. A tracker reference is NOT part of the identity:
+      - Directory name: `<slug>` in kebab-case describing the work, e.g.
+        `avatar-replace`. No ticket prefix and no invented id - even when the
+        request quotes a work package number, the number stays out of the name
+        (the CLI also rejects uppercase in it).
+      - Line 1 under `# Proposal`: `**Задача**: <текст запроса>` - the user's own
+        wording, close enough to verbatim that it alone can serve as the source of
+        the acceptance criteria.
+      - Line 2, optional: `**Трекер**: <id> - <ссылка>` - written ONLY when the work
+        is done against a tracker task (see below). Its presence or absence is how
+        later steps (analyst, critic, tracker status updates) know whether a
+        tracker is involved; they must not re-guess that from the prose.
+      - Never ask "what is the ticket number?" and never block on its absence.
+        Working without a tracker task is the normal state here, not an exception
+        that needs justifying.
+
+      Using a tracker task. The request text may refer to one - a work package
+      number, a `workhub.../work_packages/<id>` link, or an explicit instruction
+      ("возьми из трекера", "по задаче 8154"). When it does:
+      - read the work package and its activity before deciding scope, and add the
+        `**Трекер**:` line, so the decision is recorded rather than remembered;
+      - the tracker content refines the request, it does not replace it: when the
+        two disagree, that is an open question for the user, never a silent pick;
+      - if the reference exists but the task cannot be read (unknown id, no API
+        key, tracker unreachable), state that in the proposal and proceed on the
+        text alone. Do not claim the acceptance criteria came from the tracker.
+      - when a ticket appears later, record it in `**Трекер**:` - renaming the
+        change directory is a separate step, only on explicit user request.
 
       Sections:
       - **Why**: 1-2 sentences on the problem or opportunity. What problem does this solve? Why now?
@@ -293,9 +313,10 @@ artifacts:
 
       Content rules (project conventions):
       - **Trace every acceptance criterion** - each `#### Scenario:` of the change's
-        delta specs, plus the tracker's stated criteria - to the code that
-        implements it and the test that proves it. An AC with no test is an open
-        finding, not a pass.
+        delta specs, plus the criteria stated in the request text (and, when
+        `**Трекер**` is set, in the work package) - to the code that implements it
+        and the test that proves it. An AC with no test is an open finding, not a
+        pass.
       - **Runs are numbered and tied to a tree hash.** A run only proves the tree it
         was made on: after any edit, run the checks again and record the new run
         number and `git rev-parse HEAD`. Record the last valid run explicitly, and
